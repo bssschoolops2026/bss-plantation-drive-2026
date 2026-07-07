@@ -137,7 +137,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
   <div class="sb-section-label">Operations</div>
   <div class="nav" onclick="go('clusters');closeSidebar()" id="nav-clusters"><i class="ti ti-building-school" aria-hidden="true"></i><span>All Clusters</span></div>
   <div class="nav" onclick="go('dispatch');closeSidebar()" id="nav-dispatch"><i class="ti ti-truck-delivery" aria-hidden="true"></i><span>Dispatch Log</span></div>
+  <div class="nav" onclick="go('nearby');closeSidebar()" id="nav-nearby"><i class="ti ti-map-pins" aria-hidden="true"></i><span>Nearby Clusters</span></div>
   <div class="nav" onclick="go('alerts');closeSidebar()" id="nav-alerts"><i class="ti ti-bell" aria-hidden="true"></i><span>Alerts</span><span class="bc hidden" id="abc">0</span></div>
+  <div class="nav" onclick="go('plan');closeSidebar()" id="nav-plan"><i class="ti ti-route" aria-hidden="true"></i><span>Dispatch Plan</span></div>
   <div class="sb-section-label">Data</div>
   <div class="nav" onclick="go('lastyear');closeSidebar()" id="nav-lastyear"><i class="ti ti-plant-2" aria-hidden="true"></i><span>2025 Initiative</span></div>
   <div class="sb-section-label">Configure</div>
@@ -197,12 +199,31 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
   <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Date</th><th>Cluster</th><th>City</th><th>Qty sent</th><th>Species / notes</th><th>Logged by</th><th>Source</th><th></th></tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"><i class="ti ti-truck-delivery"></i>No dispatches logged yet</div></div></div>
 </div>
 
+<!-- NEARBY -->
+<div class="pane" id="pane-nearby">
+  <div class="ph"><h2>Nearby Clusters</h2><p>Clusters in the same city — coordinate deliveries to reduce trips and cost</p></div>
+  <div class="cg" id="ng"></div>
+</div>
+
 <!-- ALERTS -->
 <div class="pane" id="pane-alerts">
   <div class="ph-row ph">
     <div><h2>Preparation Alerts</h2><p>Clusters whose planting date requires dispatch preparation soon</p></div>
   </div>
   <div id="al"></div>
+</div>
+
+<!-- DISPATCH PLAN -->
+<div class="pane" id="pane-plan">
+  <div class="ph-row ph">
+    <div><h2>Suggested Dispatch Plan</h2><p>Container loads of 12,000–15,000 saplings · Grouped by proximity</p></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="renderPlan()"><i class="ti ti-refresh"></i>Refresh</button>
+      <button class="btn btn-p" onclick="exportPlan()"><i class="ti ti-download"></i>Export plan</button>
+    </div>
+  </div>
+  <div id="plan-summary"></div>
+  <div id="plan-zones"></div>
 </div>
 
 <!-- 2025 INITIATIVE -->
@@ -627,9 +648,11 @@ function go(p){
   if(p==='dashboard')rDash();
   if(p==='clusters')rClusters();
   if(p==='dispatch')rDispatch();
+  if(p==='nearby')rNearby();
   if(p==='alerts')rAlerts();
+  if(p==='plan')renderPlan();
   if(p==='settings')loadSettingsForm();
-  if(p==='lastyear'){render2025Summary();renderMap();render2025Table();}
+  if(p==='lastyear'){render2025Summary();try{renderMap();}catch(e){console.warn('Map unavailable (blocked or offline):',e.message);}render2025Table();}
 }
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-backdrop').classList.toggle('open');}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-backdrop').classList.remove('open');}
@@ -718,6 +741,195 @@ function updateBadge(n){
   const el=document.getElementById('abc');el.textContent=n;el.classList.toggle('hidden',n===0);
 }
 
+// ─── NEARBY CLUSTERS ──────────────────────────────────────────────────────────
+function rNearby(){
+  const cm={};
+  state.schools.forEach(s=>{s.city.split('/').map(c=>c.trim()).forEach(c=>{if(!cm[c])cm[c]=[];cm[c].push(s);});});
+  const groups=Object.entries(cm).filter(([,ss])=>ss.length>1).sort((a,b)=>b[1].length-a[1].length);
+  document.getElementById('ng').innerHTML=groups.map(([city,ss])=>{
+    const tot=ss.reduce((a,s)=>a+s.required,0);const dis=ss.reduce((a,s)=>a+s.dispatched,0);const p=Math.round(dis/tot*100);
+    return`<div class="cc"><h4><i class="ti ti-map-pin" style="color:var(--gr)"></i>${city} <span style="font-weight:400;font-size:12px;color:var(--tx3)">${ss.length} clusters · ${fmt(tot)} plants</span></h4><div class="prog" style="margin:4px 0 2px"><div class="pf ${p<30?'d':p<70?'w':''}" style="width:${p}%"></div></div><div style="font-size:11px;color:var(--tx3);margin-bottom:6px">${p}% dispatched · ${fmt(tot-dis)} remaining</div><div class="stags">${ss.map(s=>`<span class="stag">${s.cluster} · ${fmt(s.required-s.dispatched)} rem</span>`).join('')}</div></div>`;}).join('');
+}
+
+// ─── DISPATCH PLAN ────────────────────────────────────────────────────────────
+let CMIN=12000,CMAX=15000;
+const ZONES=[
+  {id:"NR-1",name:"Islamabad Core",region:"North",color:"b-n",
+   desc:"F-7/F-8/Margalla · Bahria Enclave · PWD · I-9/E-11/H-11 · F-9 Greenbelt",
+   note:"Via Jameel's Nursery, Rawalpindi. F-9 plants first, then Islamabad branches.",
+   cids:[15,1,2,4,5]},
+  {id:"NR-2",name:"Quaid-e-Azam University",region:"North",color:"b-n",
+   desc:"QAU campus, Islamabad — 16,000 plants (expect 2 full loads)",
+   note:"Direct delivery to campus. Coordinate with university admin 5 days in advance.",
+   cids:[13]},
+  {id:"NR-3",name:"Rawalpindi / Attock / Wah / Chakwal",region:"North",color:"b-n",
+   desc:"N-04 multi-site (Tipu Sultan, Wah Cantt, Attock, BEC G-15) · N-07 Chakwal",
+   note:"Club N-04 and N-07 Chakwal in same trip via Grand Trunk Road.",
+   cids:[3,7]},
+  {id:"NR-4",name:"N-07 Islamabad/Pindi (Potohar, Gulshan, Harley St, Gulraiz)",region:"North",color:"b-n",
+   desc:"Large multi-city cluster — 27,000 plants remaining (2–3 container loads)",
+   note:"Rawalpindi nursery pickup recommended. Deliver Rawalpindi campuses first.",
+   cids:[6]},
+  {id:"NR-5",name:"Swabi University + Mardan Women's University",region:"North",color:"b-n",
+   desc:"University of Swabi + Women's University Mardan — KPK corridor",
+   note:"Both on Peshawar–Mardan–Swabi road. Combine into one trip if capacity permits.",
+   cids:[12,14]},
+  {id:"NR-6",name:"Peshawar + Abbottabad + Gujrat + Mandi Bahauddin",region:"North",color:"b-n",
+   desc:"N-09 Peshawar campuses · N-11 Abbottabad/Mansehra · N-08 Gujrat/Jhelum/Kharian/MB · N-12 MB",
+   note:"Large route — consider splitting: Load A (Peshawar+Abbottabad), Load B (Gujrat+MB).",
+   cids:[9,10,8,11]},
+  {id:"CL-1",name:"Lahore (Liberty, LMA, Gulberg, Wapda Town, Bahria Town)",region:"Center",color:"b-c",
+   desc:"C-03 Liberty/LMA/Model Town · C-07 Wapda/Canal Side/Valencia · C-08 Bahria Town · Beaconhouse Estate",
+   note:"All within Lahore metro. One Mazda trip per container. Start from south (Bahria), work inward.",
+   cids:[17,21,22,36]},
+  {id:"CL-2",name:"Faisalabad + Gojra + TTS + Sahiwal + Okara",region:"Center",color:"b-c",
+   desc:"C-11 Faisalabad Civil Lines/Peoples Colony · C-11 Gojra/TTS · C-10 Faisalabad · C-08 Sahiwal · C-08 Okara",
+   note:"M3/M4 motorway corridor. Drop Sahiwal and Okara on return leg to save fuel.",
+   cids:[28,27,25,24,23]},
+  {id:"CL-3",name:"Jhang + University of Sargodha",region:"Center",color:"b-c",
+   desc:"C-10 Jhang campuses · University of Sargodha",
+   note:"Jhang and Sargodha are ~90 km apart. Confirm Sargodha species with university first.",
+   cids:[26,32]},
+  {id:"CL-4",name:"Multan + Bahawalpur",region:"Center",color:"b-c",
+   desc:"C-13 Multan campuses + ext. sites · C-14 Bahawalpur/RYK/Sadiqabad",
+   note:"C-13 pending 5,650 + C-14 5,000 = 10,650. Slightly under container capacity — consider adding nearby order.",
+   cids:[29,30,31]},
+  {id:"DO-1",name:"District Offices — Okara (LARGE: ~8 loads)",region:"Center",color:"b-c",
+   desc:"University of Agriculture Okara + District Office Okara — 96,200 plants total",
+   note:"Schedule 1 container/week over 8 weeks. Coordinate with District Administration for phased delivery.",
+   cids:[33,34]},
+  {id:"DO-2",name:"District Offices — Sahiwal (LARGE: ~10 loads)",region:"Center",color:"b-c",
+   desc:"District Office Sahiwal — 135,000 plants",
+   note:"Schedule 1-2 containers/week. Largest single order. Prioritize species mix with District Officer.",
+   cids:[35]},
+  {id:"SK-1",name:"Karachi North-East (Gulshan, Jauhar, Stadium)",region:"South",color:"b-s",
+   desc:"S-04 Gulshan · S-05 Gulshan/Stadium · S-08 Jauhar",
+   note:"Start Jauhar first (S-08 largest), then Gulshan. All within 15 km.",
+   cids:[38,39,42]},
+  {id:"SK-2",name:"Karachi Central + South (Clifton, PECHS, N.Nazimabad, Malir)",region:"South",color:"b-s",
+   desc:"S-03 Clifton/Jubilee · S-06 PECHS · S-07 Hill Park · S-10 North Nazimabad · S-13 Malir/Tipu Sultan",
+   note:"Hub-and-spoke from PECHS. S-13 Malir is furthest east — deliver last.",
+   cids:[37,40,41,43,49,50]},
+  {id:"SS-1",name:"Hyderabad + Sindh Interior",region:"South",color:"b-s",
+   desc:"S-11 Hyderabad · S-14 Hyderabad · S-11 Nawabshah · S-11 Thatta · S-11 Sukkur",
+   note:"Route via N-55 National Highway. Deliver Thatta first (closest), then Hyderabad, then Nawabshah, Sukkur last.",
+   cids:[44,51,45,46,47]}
+];
+
+function packContainers(zone){
+  const pending=zone.cids.map(id=>state.schools.find(s=>s.id===id))
+    .filter(s=>s&&(s.required-s.dispatched)>0)
+    .map(s=>({...s,rem:s.required-s.dispatched}));
+  if(!pending.length)return[];
+  const containers=[];
+  let cur={items:[],total:0};
+  for(const cl of pending){
+    let left=cl.rem;
+    while(left>0){
+      const space=CMAX-cur.total;
+      const take=Math.min(left,space);
+      cur.items.push({...cl,take,partial:take<cl.rem});
+      cur.total+=take;
+      left-=take;
+      if(cur.total>=CMIN){containers.push({...cur,belowMin:false});cur={items:[],total:0};}
+    }
+  }
+  if(cur.items.length&&cur.total>0)containers.push({...cur,belowMin:cur.total<CMIN});
+  containers.forEach(c=>{c.belowMin=c.total<CMIN;});
+  return containers;
+}
+
+function renderPlan(){
+  const totalRem=state.schools.reduce((a,s)=>a+Math.max(0,s.required-s.dispatched),0);
+  const loads=Math.ceil(totalRem/13000);
+  document.getElementById('plan-summary').innerHTML=`
+    <div class="metrics" style="margin-bottom:1rem">
+      <div class="metric"><div class="mlabel">Total remaining</div><div class="mval" style="color:var(--am)">${fmt(totalRem)}</div><div class="msub">plants to dispatch</div></div>
+      <div class="metric"><div class="mlabel">Est. container loads</div><div class="mval">${loads}</div><div class="msub">at avg 13,000/load</div></div>
+      <div class="metric"><div class="mlabel">Active zones</div><div class="mval">${ZONES.filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(s.required-s.dispatched)>0;})).length}</div><div class="msub">with pending clusters</div></div>
+      <div class="metric"><div class="mlabel">Container range</div><div class="mval" style="font-size:16px">${fmt(CMIN)}–${fmt(CMAX)}</div><div class="msub">plants per load</div></div>
+    </div>`;
+
+  let html='';
+  const regionOrder=['North','Center','South'];
+  regionOrder.forEach(rgn=>{
+    const zones=ZONES.filter(z=>z.region===rgn);
+    const anyPending=zones.some(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(s.required-s.dispatched)>0;}));
+    if(!anyPending)return;
+    html+=`<div style="font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin:1.5rem 0 .75rem">${rgn} Region</div>`;
+    zones.forEach(zone=>{
+      const containers=packContainers(zone);
+      if(!containers.length)return;
+      const zoneTot=containers.reduce((a,c)=>a+c.total,0);
+      html+=`<div class="card" style="margin-bottom:.75rem;padding:1rem 1.25rem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div style="font-weight:600;font-size:14px">${zone.id} &nbsp;<span class="badge ${zone.color}">${zone.region}</span> &nbsp;${zone.name}</div>
+            <div style="font-size:12px;color:var(--tx3);margin-top:2px">${zone.desc}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-left:1rem">
+            <div style="font-size:18px;font-weight:600;color:var(--am)">${fmt(zoneTot)}</div>
+            <div style="font-size:11px;color:var(--tx3)">${containers.length} load${containers.length>1?'s':''}</div>
+          </div>
+        </div>`;
+      if(zone.note){html+=`<div style="font-size:12px;color:var(--bl-d);background:var(--bl-l);border-radius:var(--r);padding:6px 10px;margin-bottom:10px;border:.5px solid #85B7EB"><i class="ti ti-bulb" style="font-size:13px;margin-right:4px" aria-hidden="true"></i>${zone.note}</div>`;}
+      if(zoneTot<CMIN){html+=`<div class="alert aw" style="margin-bottom:10px;font-size:12px"><i class="ti ti-alert-triangle"></i><div><strong>Zone total (${fmt(zoneTot)} plants) is below the 12,000 minimum truck load.</strong><br>Club this zone with a nearby zone in the same trip to meet minimum load requirement for OTIF.</div></div>`;}
+      containers.forEach((c,ci)=>{
+        html+=`<div style="border:.5px solid var(--bd);border-radius:var(--r);margin-top:8px;overflow:hidden">
+          <div style="background:var(--bg2);padding:6px 12px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
+            <span><i class="ti ti-truck-delivery" style="font-size:13px;margin-right:5px;color:var(--gr)" aria-hidden="true"></i>Load ${ci+1} of ${containers.length}</span>
+            <span style="color:${c.total<CMIN?'var(--re-d)':'var(--gr)'}"><i class="ti ti-${c.total>=CMIN?'circle-check':'alert-triangle'}" style="font-size:12px;margin-right:3px"></i>${fmt(c.total)} plants${c.total<CMIN?' — BELOW 12,000 MIN: combine with another load':' (min load met ✓)'}</span>
+          </div>`;
+        c.items.forEach(item=>{
+          const sp=CSP[item.id]||'Species to be confirmed';
+          const pd=item.plantingDate?du(item.plantingDate):null;
+          const otifColor2=pd===null?'var(--tx3)':pd<=0?'var(--re-d)':pd<=7?'var(--am-d)':'var(--gr-d)';
+          const otifLbl=pd===null?'No date set':pd<0?`Planting overdue by ${Math.abs(pd)} days — URGENT`:pd===0?'Planting TODAY':pd<=7?`Planting in ${pd} days — prepare now`:`Planting ${fmtD(item.plantingDate)} (${pd}d)`;
+
+          html+=`<div style="padding:8px 12px;border-top:.5px solid var(--bd)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <strong style="font-size:13px">${item.cluster}</strong>
+                <span style="font-size:12px;color:var(--tx3);margin-left:8px">${item.city}</span>
+                ${item.partial?`<span class="badge" style="background:var(--am-l);color:var(--am-d);margin-left:6px;font-size:10px">Partial — ${fmt(item.rem-item.take)} to next load</span>`:''}
+                ${pd!==null&&pd<=0?`<span class="badge b-pending" style="margin-left:6px;font-size:10px">OVERDUE</span>`:''}
+              </div>
+              <strong style="font-size:14px;color:var(--tx);white-space:nowrap">${fmt(item.take)} plants</strong>
+            </div>
+            <div style="font-size:11px;color:${otifColor2};margin-top:3px"><i class="ti ti-clock" style="font-size:11px" aria-hidden="true"></i> OTIF: ${otifLbl}</div>
+            <div style="font-size:11px;color:var(--tx3);margin-top:1px"><i class="ti ti-leaf" style="font-size:11px" aria-hidden="true"></i> ${sp}</div>
+          </div>`;
+        });
+        html+='</div>';
+      });
+      html+='</div>';
+    });
+  });
+  document.getElementById('plan-zones').innerHTML=html||'<div class="empty"><i class="ti ti-check"></i>All clusters fully dispatched!</div>';
+}
+
+function exportPlan(){
+  let txt=`PLANTATION DISPATCH PLAN\n${'='.repeat(50)}\nGenerated: ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}\n\n`;
+  ZONES.forEach(zone=>{
+    const c=packContainers(zone);
+    if(!c.length)return;
+    txt+=`\n${zone.id}: ${zone.name} (${zone.region})\n${'─'.repeat(50)}\n${zone.desc}\n`;
+    if(zone.note)txt+=`NOTE: ${zone.note}\n`;
+    c.forEach((load,i)=>{
+      txt+=`\n  Load ${i+1}: ${fmt(load.total)} plants\n`;
+      load.items.forEach(item=>{
+        const sp=CSP[item.id]||'TBD';
+        txt+=`    • ${item.cluster} (${item.city}): ${fmt(item.take)} plants${item.partial?' [PARTIAL]':''}\n      Species: ${sp}\n`;
+      });
+    });
+    txt+='\n';
+  });
+  const a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);
+  a.download=`dispatch-plan-${new Date().toISOString().split('T')[0]}.txt`;
+  a.click();
+}
+
 // ─── DISPATCH MODAL ───────────────────────────────────────────────────────────
 let delTarget=null;
 function openDM(schoolId){
@@ -749,7 +961,7 @@ async function saveDispatch(){
     }catch(e){console.warn('Firestore add failed:',e.message);updateSyncBadge('error');showInAppNotif('⚠️ Could not sync to shared database — check your connection.');}
   } else {
     state.dispatches.push(newDispatch);
-    recomputeDispatched();save();rDash();rDispatch();rAlerts();rClusters();updateBadge();
+    recomputeDispatched();save();rDash();rDispatch();rAlerts();rClusters();rNearby();renderPlan();updateBadge();
   }
 }
 function askDel(id){delTarget=id;document.getElementById('delm').classList.remove('hidden');}
@@ -764,7 +976,7 @@ async function doDelete(){
     }catch(e){console.warn('Firestore delete failed:',e.message);updateSyncBadge('error');}
   } else {
     state.dispatches=state.dispatches.filter(d=>d.id!==id);
-    recomputeDispatched();save();rDash();rDispatch();updateBadge();
+    recomputeDispatched();save();rDash();rDispatch();rAlerts();rClusters();rNearby();renderPlan();updateBadge();
   }
 }
 
@@ -863,7 +1075,9 @@ function listenDispatches(){
     rDash();updateBadge();
     if(document.getElementById('pane-clusters').classList.contains('active'))rClusters();
     if(document.getElementById('pane-dispatch').classList.contains('active'))rDispatch();
+    if(document.getElementById('pane-nearby').classList.contains('active'))rNearby();
     if(document.getElementById('pane-alerts').classList.contains('active'))rAlerts();
+    if(document.getElementById('pane-plan').classList.contains('active'))renderPlan();
   },err=>{console.warn('dispatches listener error:',err.message);updateSyncBadge('error');});
 }
 function listenSettings(){
