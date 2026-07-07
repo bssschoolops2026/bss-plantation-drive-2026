@@ -358,6 +358,15 @@ service cloud.firestore {
 </div>
 </div>
 
+<!-- School Heads modal -->
+<div class="mo hidden" id="heads-modal">
+<div class="md" style="width:640px">
+  <h3 id="heads-modal-title"><i class="ti ti-users" style="color:var(--gr)"></i> Campuses &amp; School Heads</h3>
+  <div id="heads-modal-body" style="max-height:420px;overflow-y:auto"></div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
+</div>
+</div>
+
 <script>
 // ─── CLUSTER DATA ─────────────────────────────────────────────────────────────
 // [id, cluster, city, region(N/C/S), required, dispatched_baseline, plantingDate, convenor, contact, baselineDispatchDate]
@@ -471,26 +480,132 @@ const CSP={
 let state={schools:[],dispatches:[],settings:{recipients:"mahnoor.safdar@bh.edu.pk, azal.zahir@bh.edu.pk",alertDays:5,digestDay:1,projectName:"BHS Plantation Drive",fbConfig:null}};
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
+function buildImportedDispatches(){
+  return SD.filter(sd=>sd[5]>0).map(sd=>({id:'imp_'+sd[0],schoolId:sd[0],cluster:sd[1],city:sd[2],date:sd[9],qty:sd[5],species:'',notes:'Imported from tracking sheet',by:'System Import',imported:true}));
+}
 function loadState(){
   const saved=localStorage.getItem('bhs_v4');
   if(saved){
     const p=JSON.parse(saved);
     state.dispatches=p.dispatches||[];
     state.settings={...state.settings,...(p.settings||{})};
+  } else {
+    state.dispatches=buildImportedDispatches();
   }
   state.schools=SD.map(mkSchool);
   recomputeDispatched();
 }
 function mkSchool(sd){
-  return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],baseline:sd[5],baselineDate:sd[9],dispatched:sd[5],plantingDate:sd[6],convenor:sd[7],contact:sd[8]};
+  return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:0,plantingDate:sd[6],convenor:sd[7],contact:sd[8]};
 }
 function save(){localStorage.setItem('bhs_v4',JSON.stringify({dispatches:state.dispatches,settings:{...state.settings,fbConfig:undefined}}));}
 
 function recomputeDispatched(){
   state.schools.forEach(s=>{
-    const logged=state.dispatches.filter(d=>String(d.schoolId)===String(s.id)).reduce((a,d)=>a+(parseInt(d.qty)||0),0);
-    s.dispatched=Math.min(s.baseline+logged,s.required);
+    const total=state.dispatches.filter(d=>String(d.schoolId)===String(s.id)).reduce((a,d)=>a+(parseInt(d.qty)||0),0);
+    s.dispatched=Math.min(total,s.required);
   });
+}
+
+// ─── LIVE SCHOOL HEADS (Google Sheet) ────────────────────────────────────────
+const SCHOOL_HEADS_URL='https://docs.google.com/spreadsheets/d/1-RNYLZARZHWgPw6siRJJfK27FbHAfd1OjtTwuIC1xCY/export?format=csv';
+let _liveHeads=null,_headsLoading=false;
+function getConvenor(s){
+  const heads=_liveHeads&&_liveHeads[s.cluster.toUpperCase()];
+  if(heads&&heads.length){
+    const names=[...new Set(heads.map(h=>h.head).filter(Boolean))];
+    if(names.length)return names.join(' / ');
+  }
+  return s.convenor;
+}
+async function fetchLiveHeads(){
+  if(_liveHeads||_headsLoading)return;
+  const cached=localStorage.getItem('bhs_live_heads');
+  const cachedTime=parseInt(localStorage.getItem('bhs_live_heads_time')||'0');
+  if(cached&&(Date.now()-cachedTime)<3600000){_liveHeads=JSON.parse(cached);refreshClusterViewsIfActive();return;}
+  _headsLoading=true;
+  try{
+    const resp=await fetch(SCHOOL_HEADS_URL+'&t='+Date.now());
+    if(!resp.ok){_headsLoading=false;return;}
+    const csv=await resp.text();
+    _liveHeads=parseHeadsCSV(csv);
+    localStorage.setItem('bhs_live_heads',JSON.stringify(_liveHeads));
+    localStorage.setItem('bhs_live_heads_time',String(Date.now()));
+  }catch(e){console.warn('Could not load live school heads:',e.message);}
+  _headsLoading=false;
+  refreshClusterViewsIfActive();
+}
+function refreshClusterViewsIfActive(){
+  if(document.getElementById('pane-clusters').classList.contains('active'))rClusters();
+  if(document.getElementById('pane-dashboard').classList.contains('active'))rDash();
+  if(document.getElementById('pane-alerts').classList.contains('active'))rAlerts();
+}
+function parseHeadsCSV(csv){
+  const lines=csv.split('\n');
+  const headerLine=lines[0].split(',');
+  const colIdx=(name)=>headerLine.findIndex(h=>h.toLowerCase().includes(name.toLowerCase()));
+  const iCluster=colIdx('cluster'),iCampus=colIdx('campus'),iCity=colIdx('city'),iHead=colIdx('school head'),iContact=colIdx('contact'),iEmail=colIdx('email'),iRegion=colIdx('region');
+  const result={};
+  lines.slice(1).forEach(line=>{
+    const cols=splitCSVLine(line);
+    const cluster=(cols[iCluster]||'').trim().toUpperCase();
+    if(!cluster||cluster==='.'||!cluster.match(/^[A-Z]+-?\d*/))return;
+    const entry={campus:(cols[iCampus]||'').trim(),city:(cols[iCity]||'').trim(),head:(cols[iHead]||'').trim(),contact:(cols[iContact]||'').trim(),email:(cols[iEmail]||'').trim(),region:(cols[iRegion]||'').trim()};
+    if(!entry.campus||entry.campus==='.')return;
+    if(!result[cluster])result[cluster]=[];
+    result[cluster].push(entry);
+  });
+  return result;
+}
+function splitCSVLine(line){
+  const result=[];let cur='';let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===','&&!inQ){result.push(cur.trim().replace(/^"|"$/g,''));cur='';}
+    else{cur+=c;}
+  }
+  result.push(cur.trim().replace(/^"|"$/g,''));
+  return result;
+}
+function showHeads(clusterCode){
+  const modal=document.getElementById('heads-modal');
+  document.getElementById('heads-modal-title').innerHTML=`<i class="ti ti-users" style="color:var(--gr)"></i> ${clusterCode} — Campuses &amp; School Heads`;
+  modal.classList.remove('hidden');
+  if(!_liveHeads){
+    document.getElementById('heads-modal-body').innerHTML='<div class="empty"><i class="ti ti-reload spin"></i>Loading from Google Sheet...</div>';
+    fetchLiveHeads().then(()=>renderHeadsModal(clusterCode));
+    return;
+  }
+  renderHeadsModal(clusterCode);
+}
+function renderHeadsModal(clusterCode){
+  const body=document.getElementById('heads-modal-body');
+  const campuses=(_liveHeads&&_liveHeads[clusterCode.toUpperCase()])||[];
+  if(!campuses.length){
+    body.innerHTML=`<div class="empty"><i class="ti ti-info-circle"></i>No campus data found for ${clusterCode} in the live sheet.<br><small style="color:var(--tx3)">Data refreshes from Google Sheet every hour.</small></div>`;
+    return;
+  }
+  const rows=campuses.map(c=>`
+    <tr>
+      <td style="font-size:13px;font-weight:500">${c.campus||'—'}</td>
+      <td style="font-size:12px;color:var(--tx2)">${c.city||'—'}</td>
+      <td style="font-size:13px">${c.head||'<span style="color:var(--tx3)">Vacant</span>'}</td>
+      <td><a href="tel:${c.contact}" class="btn btn-s" style="font-size:11px"><i class="ti ti-phone"></i>${c.contact||'—'}</a></td>
+    </tr>`).join('');
+  body.innerHTML=`
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:.75rem;display:flex;justify-content:space-between">
+      <span>Live data · ${campuses.length} campus${campuses.length>1?'es':''}</span>
+      <button class="btn btn-s" onclick="refreshHeads('${clusterCode}')"><i class="ti ti-refresh"></i>Refresh</button>
+    </div>
+    <div class="tw"><table><thead><tr><th>Campus / Branch</th><th>City</th><th>School Head</th><th>Contact</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+async function refreshHeads(clusterCode){
+  localStorage.removeItem('bhs_live_heads');localStorage.removeItem('bhs_live_heads_time');
+  _liveHeads=null;_headsLoading=false;
+  document.getElementById('heads-modal-body').innerHTML='<div class="empty"><i class="ti ti-reload spin"></i>Refreshing...</div>';
+  await fetchLiveHeads();
+  renderHeadsModal(clusterCode);
 }
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
@@ -539,7 +654,7 @@ function rDash(){
     urgent.map(s=>{const d=du(s.plantingDate);
       const msg=d<0?`Overdue ${Math.abs(d)}d`:d===0?'Today!':d===1?'Tomorrow':`In ${d}d`;
       const cls=d<0?'b-pending':d<=2?'b-pending':'b-partial';
-      return`<div class="stat-row"><div><strong>${s.cluster}</strong> <span style="font-size:11px;color:var(--tx3)">${s.city}</span><br><span style="font-size:11px;color:var(--tx3)">${s.convenor} · ${fmt(s.required-s.dispatched)} plants pending</span></div><span class="badge ${cls}">${msg}</span></div>`;}).join('');
+      return`<div class="stat-row"><div><strong>${s.cluster}</strong> <span style="font-size:11px;color:var(--tx3)">${s.city}</span><br><span style="font-size:11px;color:var(--tx3)">${getConvenor(s)} · ${fmt(s.required-s.dispatched)} plants pending</span></div><span class="badge ${cls}">${msg}</span></div>`;}).join('');
 
   const regs=['N','C','S'];
   document.getElementById('d-regions').innerHTML=regs.map(r=>{
@@ -552,7 +667,7 @@ function rDash(){
   const upLabel=up.length>0?`Upcoming ${up.length} dispatch${up.length>1?'es':''} in next 30 days`:`No upcoming dates — showing ${Math.min(overdue.length,5)} most recently overdue`;
   document.getElementById('d-upcoming').innerHTML=upShow.length===0?'<p style="color:var(--tx3);font-size:13px">No dates set. Assign planting dates in the cluster data to see scheduling.</p>':
     upShow.map(s=>{const d=du(s.plantingDate);const past=d!==null&&d<=0;
-    return`<div class="stat-row"><div><strong>${s.cluster}</strong> — ${s.city}<br><span style="font-size:11px;color:${past?'var(--re-d)':'var(--tx3)'}">${s.convenor} · Planting ${fmtD(s.plantingDate)}${past?` <strong>(overdue ${Math.abs(d)}d)</strong>`:''} · ${fmt(s.required-s.dispatched)} needed</span></div><button class="btn btn-s" onclick="openDM(${s.id})">Log</button></div>`;}).join('')+
+    return`<div class="stat-row"><div><strong>${s.cluster}</strong> — ${s.city}<br><span style="font-size:11px;color:${past?'var(--re-d)':'var(--tx3)'}">${getConvenor(s)} · Planting ${fmtD(s.plantingDate)}${past?` <strong>(overdue ${Math.abs(d)}d)</strong>`:''} · ${fmt(s.required-s.dispatched)} needed</span></div><button class="btn btn-s" onclick="openDM(${s.id})">Log</button></div>`;}).join('')+
     `<div style="font-size:11px;color:var(--tx3);margin-top:8px;padding-top:8px;border-top:.5px solid var(--bd)">${upLabel} · <a href="#" onclick="go('alerts')" style="color:var(--bl-d)">View all alerts →</a></div>`;
 }
 
@@ -562,7 +677,7 @@ function rClusters(){
   const rf=document.getElementById('fr').value;
   const sf=document.getElementById('fst').value;
   const filtered=state.schools.filter(s=>{
-    const mq=!q||s.cluster.toLowerCase().includes(q)||s.convenor.toLowerCase().includes(q)||s.city.toLowerCase().includes(q);
+    const mq=!q||s.cluster.toLowerCase().includes(q)||getConvenor(s).toLowerCase().includes(q)||s.city.toLowerCase().includes(q);
     return mq&&(!rf||s.region===rf)&&(!sf||gst(s)===sf);
   });
   const cEl=document.getElementById('clusters-count');
@@ -570,7 +685,7 @@ function rClusters(){
   document.getElementById('ct').innerHTML=filtered.map(s=>{
     const st=gst(s);const pc=pct(s);const d=du(s.plantingDate);
     const ds=s.plantingDate?fmtD(s.plantingDate)+(d!==null&&d<=7&&st!=='done'?` <span style="color:var(--re);font-size:10px">(${d<0?'overdue':d+'d'})</span>`:''):'—';
-    return`<tr><td><strong>${s.cluster}</strong><button class="btn btn-s" onclick="showSpecies(${s.id})" title="Species requested" style="margin-left:6px;padding:2px 6px;font-size:11px">🌱</button></td><td style="font-size:12px;color:var(--tx2)">${s.convenor}</td><td style="font-size:12px">${s.city}</td><td>${rgBadge(s.region)}</td><td style="font-weight:500">${fmt(s.required)}</td><td>${fmt(s.dispatched)}</td><td style="min-width:90px">${progBar(pc)}</td><td style="font-size:12px">${ds}</td><td><span class="badge b-${st}">${stLbl(s)}</span></td><td><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-truck-delivery"></i></button></td></tr>`;}).join('');
+    return`<tr><td><strong>${s.cluster}</strong><button class="btn btn-s" onclick="showSpecies(${s.id})" title="Species requested" style="margin-left:6px;padding:2px 6px;font-size:11px">🌱</button><button class="btn btn-s" onclick="showHeads('${s.cluster}')" title="View campuses & school heads (live)" style="margin-left:3px;padding:2px 6px;font-size:11px"><i class="ti ti-users"></i></button></td><td style="font-size:12px;color:var(--tx2)">${getConvenor(s)}</td><td style="font-size:12px">${s.city}</td><td>${rgBadge(s.region)}</td><td style="font-weight:500">${fmt(s.required)}</td><td>${fmt(s.dispatched)}</td><td style="min-width:90px">${progBar(pc)}</td><td style="font-size:12px">${ds}</td><td><span class="badge b-${st}">${stLbl(s)}</span></td><td><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-truck-delivery"></i></button></td></tr>`;}).join('');
 }
 function showSpecies(id){
   const s=state.schools.find(x=>x.id===id);if(!s)return;
@@ -596,7 +711,7 @@ function rAlerts(){
   updateBadge(due.length);
   document.getElementById('al').innerHTML=due.length===0?`<div class="alert ag"><i class="ti ti-circle-check"></i><div>No clusters with planting dates within the next ${days} days need dispatch preparation.</div></div>`:
     due.map(s=>{const d=du(s.plantingDate);const msg=d<0?`Overdue ${Math.abs(d)} days`:d===0?'Today!':d===1?'Tomorrow':`In ${d} days`;const cls=d<=2?'aw':'ai';
-    return`<div class="alert ${cls}"><i class="ti ti-bell"></i><div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong>${s.cluster}</strong> — ${s.convenor} (${s.city})</div><span class="badge b-pending">${msg}</span></div><div style="font-size:12px;margin-top:4px">Planting: ${fmtD(s.plantingDate)} · Still needed: <strong>${fmt(s.required-s.dispatched)} plants</strong></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-plus"></i>Log dispatch</button><a href="tel:${s.contact}" class="btn btn-s"><i class="ti ti-phone"></i>${s.contact}</a></div></div></div>`;}).join('');
+    return`<div class="alert ${cls}"><i class="ti ti-bell"></i><div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong>${s.cluster}</strong> — ${getConvenor(s)} (${s.city})</div><span class="badge b-pending">${msg}</span></div><div style="font-size:12px;margin-top:4px">Planting: ${fmtD(s.plantingDate)} · Still needed: <strong>${fmt(s.required-s.dispatched)} plants</strong></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-plus"></i>Log dispatch</button><a href="tel:${s.contact}" class="btn btn-s"><i class="ti ti-phone"></i>${s.contact}</a></div></div></div>`;}).join('');
 }
 function updateBadge(n){
   if(n===undefined){const days=parseInt(state.settings.alertDays)||5;n=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=days&&gst(s)!=='done';}).length;}
@@ -656,7 +771,7 @@ async function doDelete(){
 // ─── EXPORT ───────────────────────────────────────────────────────────────────
 function exportCSV(){
   const rows=[['Cluster','City','Region','Required','Dispatched','Remaining','Status','Planting Date','Convenor','Contact']];
-  state.schools.forEach(s=>rows.push([s.cluster,s.city,RN[s.region],s.required,s.dispatched,s.required-s.dispatched,stLbl(s),s.plantingDate||'',s.convenor,s.contact]));
+  state.schools.forEach(s=>rows.push([s.cluster,s.city,RN[s.region],s.required,s.dispatched,s.required-s.dispatched,stLbl(s),s.plantingDate||'',getConvenor(s),s.contact]));
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));a.download=`bhs-plantation-${new Date().toISOString().split('T')[0]}.csv`;a.click();
 }
 
@@ -712,6 +827,7 @@ async function initFirebaseFromConfig(configRaw){
     fbAuthReady=true;
     listenDispatches();
     listenSettings();
+    seedIfNeeded();
     updateSyncBadge('connected');
     return true;
   }catch(e){
@@ -763,6 +879,17 @@ function listenSettings(){
   },err=>console.warn('settings listener error:',err.message));
 }
 
+async function seedIfNeeded(){
+  try{
+    const seedDoc=await db.collection('meta').doc('seed').get();
+    if(seedDoc.exists)return;
+    const batch=db.batch();
+    buildImportedDispatches().forEach(rec=>{batch.set(db.collection('dispatches').doc(rec.id),rec);});
+    batch.set(db.collection('meta').doc('seed'),{done:true,at:new Date().toISOString()});
+    await batch.commit();
+  }catch(e){console.warn('seed check failed:',e.message);}
+}
+
 // ─── WEEKLY DIGEST SNAPSHOT (read by the GitHub Actions job) ─────────────────
 function fmtDigestEmail(){
   const tot=state.schools.reduce((a,s)=>a+s.required,0);const dis=state.schools.reduce((a,s)=>a+s.dispatched,0);
@@ -774,7 +901,7 @@ function fmtDigestEmail(){
   let body=`🌱 WEEKLY PLANTATION DRIVE UPDATE\n${'='.repeat(36)}\nWeek of ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}\n\n`;
   body+=`OVERALL PROGRESS\n${'─'.repeat(20)}\nTotal ordered:  ${fmt(tot)}\nDispatched:     ${fmt(dis)} (${Math.round(dis/tot*100)}%)\nRemaining:      ${fmt(tot-dis)}\nClusters done:  ${state.schools.filter(s=>gst(s)==='done').length} of ${state.schools.length}\n\n`;
   if(overdue.length){body+=`⚠️  OVERDUE (missed planting date)\n${'─'.repeat(36)}\n`;overdue.forEach(s=>{const d=Math.abs(du(s.plantingDate));body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — ${d}d overdue\n`;});body+='\n';}
-  if(thisWeek.length){body+=`📅 THIS WEEK'S DISPATCHES (0–7 days)\n${'─'.repeat(36)}\n`;thisWeek.forEach(s=>{const d=du(s.plantingDate);body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — Planting ${fmtD(s.plantingDate)} (${d===0?'today':d===1?'tomorrow':d+'d'})\n  Contact: ${s.convenor} · ${s.contact}\n`;});body+='\n';}
+  if(thisWeek.length){body+=`📅 THIS WEEK'S DISPATCHES (0–7 days)\n${'─'.repeat(36)}\n`;thisWeek.forEach(s=>{const d=du(s.plantingDate);body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — Planting ${fmtD(s.plantingDate)} (${d===0?'today':d===1?'tomorrow':d+'d'})\n  Contact: ${getConvenor(s)} · ${s.contact}\n`;});body+='\n';}
   else{body+=`✅  No planting dates this week.\n\n`;}
   if(next7.length){body+=`🗓️  UPCOMING (8–14 days)\n${'─'.repeat(36)}\n`;next7.forEach(s=>{body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — ${fmtD(s.plantingDate)}\n`;});body+='\n';}
   body+=`TOP 5 PENDING (by quantity)\n${'─'.repeat(36)}\n`;
@@ -888,6 +1015,7 @@ async function boot(){
   } else {
     updateSyncBadge('local');
   }
+  fetchLiveHeads();
 }
 
 loadState();
