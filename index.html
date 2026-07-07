@@ -91,6 +91,26 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
 .cc{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:1rem}
 .cc h4{font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:6px}
 .stags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.stag{font-size:11px;padding:3px 8px;background:var(--bg3);border-radius:4px;color:var(--tx2)}
+.tabular{font-variant-numeric:tabular-nums}
+.bulk-row{display:grid;grid-template-columns:1.4fr .9fr .8fr auto;gap:8px;margin-bottom:8px;align-items:center}
+.bulk-row select,.bulk-row input{padding:6px 9px;font-size:12px}
+#photo-modal{background:rgba(0,0,0,.75);cursor:pointer}
+.photo-thumb-btn{width:32px;height:32px;border-radius:6px;border:.5px solid var(--bd2);background:var(--bg2) center/cover no-repeat;cursor:pointer;flex-shrink:0}
+.feed-item{display:flex;gap:10px;padding:10px 0;border-bottom:.5px solid var(--bd);font-size:13px}
+.feed-item:last-child{border-bottom:none}
+.feed-avatar{width:28px;height:28px;border-radius:50%;background:var(--gr-l);color:var(--gr-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.spark-wrap{display:flex;align-items:flex-end;gap:1.25rem}
+.cd-grid{display:grid;grid-template-columns:240px 1fr;gap:1.25rem}
+.cd-side .stat{padding:10px 0;border-bottom:.5px solid var(--bd);font-size:13px}
+.cd-side .stat:last-child{border-bottom:none}
+.cd-label{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.cd-timeline{position:relative;padding-left:20px;max-height:360px;overflow-y:auto}
+.cd-timeline::before{content:'';position:absolute;left:5px;top:4px;bottom:4px;width:2px;background:var(--bd)}
+.cd-tl-item{position:relative;padding-bottom:16px}
+.cd-tl-item::before{content:'';position:absolute;left:-19px;top:3px;width:9px;height:9px;border-radius:50%;background:var(--gr);border:2px solid var(--bg)}
+.cd-tl-item.imported::before{background:var(--bl)}
+.species-chip{display:inline-block;font-size:11px;padding:3px 9px;background:var(--bg3);border-radius:20px;color:var(--tx2);margin:2px 3px 0 0}
+@media(max-width:640px){.cd-grid{grid-template-columns:1fr}}
 #sync-badge{font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:6px;cursor:pointer}
 .mobile-bar{display:none}.sb-backdrop{display:none}
 @media(max-width:768px){
@@ -165,7 +185,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
   </div>
   <div class="metrics">
     <div class="metric"><div class="mlabel">Total ordered</div><div class="mval" id="m1">—</div><div class="msub">across all clusters</div></div>
-    <div class="metric"><div class="mlabel">Dispatched</div><div class="mval" id="m2" style="color:var(--gr)">—</div><div class="msub" id="m2s">0%</div></div>
+    <div class="metric"><div class="mlabel">Dispatched</div><div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px"><div><div class="mval" id="m2" style="color:var(--gr)">—</div><div class="msub" id="m2s">0%</div></div><div id="dispatch-spark"></div></div></div>
     <div class="metric"><div class="mlabel">Remaining</div><div class="mval" id="m3" style="color:var(--am)">—</div><div class="msub">plants to send</div></div>
     <div class="metric"><div class="mlabel">Project completion</div><div class="mval" id="m4" style="color:var(--gr)">—</div><div class="msub" id="m4s">dispatched vs required</div></div>
   </div>
@@ -174,6 +194,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
     <div class="card"><div class="ch"><h3><i class="ti ti-chart-bar" style="color:var(--gr)"></i> Progress by region</h3></div><div id="d-regions"></div></div>
   </div>
   <div class="card"><div class="ch"><h3><i class="ti ti-calendar" style="color:var(--bl)"></i> Upcoming dispatches (next 30 days)</h3><button class="btn btn-s" onclick="go('alerts')">See all alerts</button></div><div id="d-upcoming"></div></div>
+  <div class="card"><div class="ch"><h3><i class="ti ti-activity" style="color:var(--gr)"></i> Recent activity</h3></div><div id="d-activity"></div></div>
 </div>
 
 <!-- CLUSTERS -->
@@ -194,9 +215,12 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
 <div class="pane" id="pane-dispatch">
   <div class="ph-row ph">
     <div><h2>Dispatch Log</h2><p>Full history · syncs live to your team when Firebase is connected</p></div>
-    <button class="btn btn-p" onclick="openDM(null)"><i class="ti ti-plus"></i>Log dispatch</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="openBulkDM()"><i class="ti ti-truck-delivery"></i>Bulk log (one truck, several clusters)</button>
+      <button class="btn btn-p" onclick="openDM(null)"><i class="ti ti-plus"></i>Log dispatch</button>
+    </div>
   </div>
-  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Date</th><th>Cluster</th><th>City</th><th>Qty sent</th><th>Species / notes</th><th>Logged by</th><th>Source</th><th></th></tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"><i class="ti ti-truck-delivery"></i>No dispatches logged yet</div></div></div>
+  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Date</th><th>Cluster</th><th>City</th><th>Qty sent</th><th>Species / notes</th><th>Logged by</th><th>Photo</th><th>Source</th><th></th></tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"><i class="ti ti-truck-delivery"></i>No dispatches logged yet</div></div></div>
 </div>
 
 <!-- NEARBY -->
@@ -357,8 +381,36 @@ service cloud.firestore {
   <div class="fr"><label>Logged by</label><input type="text" id="d-by" placeholder="Your name"></div>
   <div class="fr"><label>Species breakdown (optional)</label><textarea id="d-sp" placeholder="Kachnar: 100, Neem: 200..."></textarea></div>
   <div class="fr"><label>Notes (vehicle, driver, delivery point)</label><textarea id="d-notes" placeholder="e.g. Mazda truck LHR-1234, driver Ali, to school gate"></textarea></div>
+  <div class="fr"><label>Photo of delivered plants (optional)</label>
+    <input type="file" accept="image/*" id="d-photo" onchange="handlePhotoSelect(event)">
+    <div id="d-photo-preview" style="margin-top:6px"></div>
+  </div>
   <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-p" onclick="saveDispatch()"><i class="ti ti-check"></i>Save</button></div>
 </div>
+</div>
+
+<!-- Bulk dispatch modal -->
+<div class="mo hidden" id="bulk-dm">
+<div class="md" style="width:640px">
+  <h3><i class="ti ti-truck-delivery" style="color:var(--gr)"></i> Log one truck across multiple clusters</h3>
+  <div class="fg2">
+    <div class="fr"><label>Dispatch date *</label><input type="date" id="bd-date"></div>
+    <div class="fr"><label>Vehicle / notes</label><input type="text" id="bd-vehicle" placeholder="e.g. Mazda truck LHR-1234, driver Ali"></div>
+  </div>
+  <div class="fr"><label>Logged by</label><input type="text" id="bd-by" placeholder="Your name"></div>
+  <div style="font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 6px">Split across clusters</div>
+  <div id="bulk-rows"></div>
+  <button class="btn btn-s" onclick="addBulkRow()" style="margin-top:4px"><i class="ti ti-plus"></i> Add another cluster</button>
+  <div style="margin-top:14px;padding-top:14px;border-top:.5px solid var(--bd);display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:13px;color:var(--tx2)">Total this truck: <strong id="bulk-total" class="tabular">0</strong> plants</span>
+  </div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-p" onclick="saveBulkDispatch()"><i class="ti ti-check"></i>Save all entries</button></div>
+</div>
+</div>
+
+<!-- Photo lightbox -->
+<div class="mo hidden" id="photo-modal" onclick="closeMo()">
+<img id="photo-modal-img" style="max-width:90vw;max-height:90vh;border-radius:var(--r)" src="">
 </div>
 
 <!-- Delete modal -->
@@ -384,6 +436,14 @@ service cloud.firestore {
 <div class="md" style="width:640px">
   <h3 id="heads-modal-title"><i class="ti ti-users" style="color:var(--gr)"></i> Campuses &amp; School Heads</h3>
   <div id="heads-modal-body" style="max-height:420px;overflow-y:auto"></div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
+</div>
+</div>
+
+<!-- Cluster Detail modal -->
+<div class="mo hidden" id="cd-modal">
+<div class="md" style="width:720px">
+  <div id="cd-modal-body"></div>
   <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
 </div>
 </div>
@@ -523,10 +583,10 @@ function save(){localStorage.setItem('bhs_v4',JSON.stringify({dispatches:state.d
 
 function recomputeDispatched(){
   state.schools.forEach(s=>{
-    const total=state.dispatches.filter(d=>String(d.schoolId)===String(s.id)).reduce((a,d)=>a+(parseInt(d.qty)||0),0);
-    s.dispatched=Math.min(total,s.required);
+    s.dispatched=state.dispatches.filter(d=>String(d.schoolId)===String(s.id)).reduce((a,d)=>a+(parseInt(d.qty)||0),0);
   });
 }
+function remaining(s){return Math.max(0,s.required-s.dispatched);}
 
 // ─── LIVE SCHOOL HEADS (Google Sheet) ────────────────────────────────────────
 const SCHOOL_HEADS_URL='https://docs.google.com/spreadsheets/d/1-RNYLZARZHWgPw6siRJJfK27FbHAfd1OjtTwuIC1xCY/export?format=csv';
@@ -672,7 +732,7 @@ function rDash(){
     urgent.map(s=>{const d=du(s.plantingDate);
       const msg=d<0?`Overdue ${Math.abs(d)}d`:d===0?'Today!':d===1?'Tomorrow':`In ${d}d`;
       const cls=d<0?'b-pending':d<=2?'b-pending':'b-partial';
-      return`<div class="stat-row"><div><strong>${s.cluster}</strong> <span style="font-size:11px;color:var(--tx3)">${s.city}</span><br><span style="font-size:11px;color:var(--tx3)">${getConvenor(s)} · ${fmt(s.required-s.dispatched)} plants pending</span></div><span class="badge ${cls}">${msg}</span></div>`;}).join('');
+      return`<div class="stat-row"><div><strong>${s.cluster}</strong> <span style="font-size:11px;color:var(--tx3)">${s.city}</span><br><span style="font-size:11px;color:var(--tx3)">${getConvenor(s)} · ${fmt(remaining(s))} plants pending</span></div><span class="badge ${cls}">${msg}</span></div>`;}).join('');
 
   const regs=['N','C','S'];
   document.getElementById('d-regions').innerHTML=regs.map(r=>{
@@ -685,8 +745,60 @@ function rDash(){
   const upLabel=up.length>0?`Upcoming ${up.length} dispatch${up.length>1?'es':''} in next 30 days`:`No upcoming dates — showing ${Math.min(overdue.length,5)} most recently overdue`;
   document.getElementById('d-upcoming').innerHTML=upShow.length===0?'<p style="color:var(--tx3);font-size:13px">No dates set. Assign planting dates in the cluster data to see scheduling.</p>':
     upShow.map(s=>{const d=du(s.plantingDate);const past=d!==null&&d<=0;
-    return`<div class="stat-row"><div><strong>${s.cluster}</strong> — ${s.city}<br><span style="font-size:11px;color:${past?'var(--re-d)':'var(--tx3)'}">${getConvenor(s)} · Planting ${fmtD(s.plantingDate)}${past?` <strong>(overdue ${Math.abs(d)}d)</strong>`:''} · ${fmt(s.required-s.dispatched)} needed</span></div><button class="btn btn-s" onclick="openDM(${s.id})">Log</button></div>`;}).join('')+
+    return`<div class="stat-row"><div><strong>${s.cluster}</strong> — ${s.city}<br><span style="font-size:11px;color:${past?'var(--re-d)':'var(--tx3)'}">${getConvenor(s)} · Planting ${fmtD(s.plantingDate)}${past?` <strong>(overdue ${Math.abs(d)}d)</strong>`:''} · ${fmt(remaining(s))} needed</span></div><button class="btn btn-s" onclick="openDM(${s.id})">Log</button></div>`;}).join('')+
     `<div style="font-size:11px;color:var(--tx3);margin-top:8px;padding-top:8px;border-top:.5px solid var(--bd)">${upLabel} · <a href="#" onclick="go('alerts')" style="color:var(--bl-d)">View all alerts →</a></div>`;
+  renderDispatchSparkline();
+  renderActivityFeed();
+}
+
+// ─── DISPATCH TREND (from real dispatch dates, no synthetic data) ────────────
+function renderDispatchSparkline(){
+  const el=document.getElementById('dispatch-spark');if(!el)return;
+  const byDate={};
+  state.dispatches.filter(d=>d.date).forEach(d=>{byDate[d.date]=(byDate[d.date]||0)+(parseInt(d.qty)||0);});
+  const dates=Object.keys(byDate).sort();
+  if(dates.length<2){el.innerHTML='';return;}
+  let running=0;const cum=dates.map(d=>{running+=byDate[d];return running;});
+  const pts=cum.slice(-10);
+  const w=110,h=34,pad=3;
+  const min=Math.min(...pts),max=Math.max(...pts);
+  const range=max-min||1;
+  const coords=pts.map((v,i)=>{
+    const x=pad+(i/(pts.length-1))*(w-2*pad);
+    const y=h-pad-((v-min)/range)*(h-2*pad);
+    return[x,y];
+  });
+  const line=coords.map(c=>c.join(',')).join(' ');
+  const [lx,ly]=coords[coords.length-1];
+  const delta=pts[pts.length-1]-pts[pts.length-2];
+  el.innerHTML=`<svg width="${w}" height="${h}" style="overflow:visible" aria-label="Dispatch trend, ${delta>=0?'up':'down'} ${fmt(Math.abs(delta))} since previous entry">
+    <polyline points="${line}" fill="none" stroke="var(--gr)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${lx}" cy="${ly}" r="3" fill="var(--gr)"/>
+  </svg><div style="font-size:10px;color:var(--tx3);text-align:right;margin-top:2px">${delta>=0?'+':''}${fmt(delta)} last entry</div>`;
+}
+
+// ─── ACTIVITY FEED (real dispatch-log actions, most recent first) ────────────
+function timeAgo(iso){
+  if(!iso)return'';
+  const diff=Date.now()-new Date(iso).getTime();
+  const mins=Math.floor(diff/60000);
+  if(mins<1)return'just now';
+  if(mins<60)return mins+'m ago';
+  const hrs=Math.floor(mins/60);
+  if(hrs<24)return hrs+'h ago';
+  const days=Math.floor(hrs/24);
+  if(days<30)return days+'d ago';
+  return fmtD(iso);
+}
+function renderActivityFeed(){
+  const el=document.getElementById('d-activity');if(!el)return;
+  const items=state.dispatches.filter(d=>!d.imported).sort((a,b)=>new Date(b.createdAt||b.date||0)-new Date(a.createdAt||a.date||0)).slice(0,10);
+  if(!items.length){el.innerHTML='<p style="color:var(--tx3);font-size:13px">No manually logged dispatches yet — activity will show up here as your team logs them.</p>';return;}
+  el.innerHTML=items.map(d=>{
+    const name=(d.by||'—').trim();
+    const initials=name==='—'?'?':name.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return`<div class="feed-item"><div class="feed-avatar">${initials}</div><div><strong>${name||'Someone'}</strong> logged <strong>${fmt(d.qty)}</strong> plants to <strong>${d.cluster}</strong>${d.photo?' <i class="ti ti-photo" style="font-size:12px;color:var(--tx3)" title="Photo attached"></i>':''}<br><span class="feed-time">${timeAgo(d.createdAt||d.date)}</span></div></div>`;
+  }).join('');
 }
 
 // ─── CLUSTERS TABLE ───────────────────────────────────────────────────────────
@@ -699,17 +811,54 @@ function rClusters(){
     return mq&&(!rf||s.region===rf)&&(!sf||gst(s)===sf);
   });
   const cEl=document.getElementById('clusters-count');
-  if(cEl)cEl.textContent=`${state.schools.length} clusters · Click 🌱 to see requested species`;
+  if(cEl)cEl.textContent=`${state.schools.length} clusters · Click a cluster name for full detail`;
   document.getElementById('ct').innerHTML=filtered.map(s=>{
     const st=gst(s);const pc=pct(s);const d=du(s.plantingDate);
     const ds=s.plantingDate?fmtD(s.plantingDate)+(d!==null&&d<=7&&st!=='done'?` <span style="color:var(--re);font-size:10px">(${d<0?'overdue':d+'d'})</span>`:''):'—';
-    return`<tr><td><strong>${s.cluster}</strong><button class="btn btn-s" onclick="showSpecies(${s.id})" title="Species requested" style="margin-left:6px;padding:2px 6px;font-size:11px">🌱</button><button class="btn btn-s" onclick="showHeads('${s.cluster}')" title="View campuses & school heads (live)" style="margin-left:3px;padding:2px 6px;font-size:11px"><i class="ti ti-users"></i></button></td><td style="font-size:12px;color:var(--tx2)">${getConvenor(s)}</td><td style="font-size:12px">${s.city}</td><td>${rgBadge(s.region)}</td><td style="font-weight:500">${fmt(s.required)}</td><td>${fmt(s.dispatched)}</td><td style="min-width:90px">${progBar(pc)}</td><td style="font-size:12px">${ds}</td><td><span class="badge b-${st}">${stLbl(s)}</span></td><td><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-truck-delivery"></i></button></td></tr>`;}).join('');
+    return`<tr><td><strong class="cluster-link" onclick="showClusterDetail(${s.id})" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--bd2)" title="View cluster detail">${s.cluster}</strong><button class="btn btn-s" onclick="showSpecies(${s.id})" title="Species requested" style="margin-left:6px;padding:2px 6px;font-size:11px">🌱</button><button class="btn btn-s" onclick="showHeads('${s.cluster}')" title="View campuses & school heads (live)" style="margin-left:3px;padding:2px 6px;font-size:11px"><i class="ti ti-users"></i></button></td><td style="font-size:12px;color:var(--tx2)">${getConvenor(s)}</td><td style="font-size:12px">${s.city}</td><td>${rgBadge(s.region)}</td><td style="font-weight:500">${fmt(s.required)}</td><td>${fmt(s.dispatched)}</td><td style="min-width:90px">${progBar(pc)}</td><td style="font-size:12px">${ds}</td><td><span class="badge b-${st}">${stLbl(s)}</span></td><td><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-truck-delivery"></i></button></td></tr>`;}).join('');
 }
 function showSpecies(id){
   const s=state.schools.find(x=>x.id===id);if(!s)return;
   document.getElementById('sp-modal-title').innerHTML=`🌱 ${s.cluster} — Species requested`;
   document.getElementById('sp-modal-body').innerHTML=`<p style="font-size:13px;line-height:1.7;color:var(--tx2)">${CSP[id]||'No species list recorded for this cluster yet.'}</p>`;
   document.getElementById('sp-modal').classList.remove('hidden');
+}
+
+// ─── CLUSTER DETAIL ───────────────────────────────────────────────────────────
+function showClusterDetail(id){
+  const s=state.schools.find(x=>x.id===id);if(!s)return;
+  const st=gst(s);const pc=pct(s);
+  const speciesList=(CSP[id]||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const speciesHtml=speciesList.length?speciesList.map(sp=>`<span class="species-chip">${sp}</span>`).join(''):'<span style="font-size:12px;color:var(--tx3)">No species list recorded yet.</span>';
+  const history=state.dispatches.filter(d=>String(d.schoolId)===String(s.id)).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  const historyHtml=history.length?history.map(d=>`
+    <div class="cd-tl-item${d.imported?' imported':''}">
+      <div style="font-size:11px;color:var(--tx3)">${fmtD(d.date)}</div>
+      <div style="font-size:13px;margin-top:2px"><strong>${fmt(d.qty)} plants</strong>${d.notes?' — '+d.notes:''}${d.species?'<br><span style="font-size:11px;color:var(--tx3)">'+d.species+'</span>':''}
+        <br><span style="font-size:11px;color:var(--tx3)">${d.imported?'Imported from tracking sheet':'Logged by '+(d.by||'—')}</span>
+        ${d.photo?`<div class="photo-thumb-btn" style="background-image:url('${d.photo}');margin-top:4px" onclick="showPhoto('${d.photo}')" title="View photo"></div>`:''}
+      </div>
+    </div>`).join(''):'<div style="font-size:13px;color:var(--tx3)">No dispatches logged yet.</div>';
+
+  document.getElementById('cd-modal-body').innerHTML=`
+    <h3 style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <span><i class="ti ti-building-school" style="color:var(--gr)"></i> ${s.cluster} — ${s.city}</span>
+      <span class="badge b-${st}">${stLbl(s)} · ${pc}%</span>
+    </h3>
+    <div class="cd-grid">
+      <div class="cd-side">
+        <div class="stat"><div class="cd-label">Convenor</div>${getConvenor(s)}<br><a href="tel:${s.contact}" style="color:var(--bl-d);font-size:12px"><i class="ti ti-phone"></i> ${s.contact}</a></div>
+        <div class="stat"><div class="cd-label">Planting date</div>${fmtD(s.plantingDate)}</div>
+        <div class="stat"><div class="cd-label">Required / dispatched</div>${fmt(s.required)} / ${fmt(s.dispatched)}<div class="prog" style="margin-top:6px"><div class="pf ${pc<30?'d':pc<70?'w':''}" style="width:${pc}%"></div></div></div>
+        <div class="stat"><div class="cd-label">Species requested</div><div>${speciesHtml}</div></div>
+        <div class="stat"><button class="btn btn-p btn-s" style="width:100%;justify-content:center" onclick="closeMo();openDM(${s.id})"><i class="ti ti-truck-delivery"></i> Log a dispatch here</button></div>
+      </div>
+      <div>
+        <div class="cd-label" style="margin-bottom:10px">Dispatch history</div>
+        <div class="cd-timeline">${historyHtml}</div>
+      </div>
+    </div>`;
+  document.getElementById('cd-modal').classList.remove('hidden');
 }
 
 // ─── DISPATCH LOG ─────────────────────────────────────────────────────────────
@@ -719,7 +868,8 @@ function rDispatch(){
   document.getElementById('dt').innerHTML=state.dispatches.slice().reverse().map((d)=>{
     const src=d.imported?'<span class="badge b-imp">Imported</span>':'<span class="badge b-done">Manual</span>';
     const del=d.imported?'':` <button class="btn btn-s btn-d" onclick="askDel('${d.id}')" title="Delete"><i class="ti ti-trash"></i></button>`;
-    return`<tr><td style="font-size:12px;white-space:nowrap">${fmtD(d.date)}</td><td><strong>${d.cluster}</strong></td><td style="font-size:12px;color:var(--tx2)">${d.city}</td><td style="font-weight:600;color:var(--gr)">${fmt(d.qty)}</td><td style="font-size:11px;color:var(--tx2);max-width:200px">${d.species||d.notes||'—'}</td><td style="font-size:12px">${d.by||'—'}</td><td>${src}</td><td>${del}</td></tr>`;}).join('');
+    const photo=d.photo?`<div class="photo-thumb-btn" style="background-image:url('${d.photo}')" onclick="showPhoto('${d.photo}')" title="View photo"></div>`:'<span style="font-size:11px;color:var(--tx3)">—</span>';
+    return`<tr><td style="font-size:12px;white-space:nowrap">${fmtD(d.date)}</td><td><strong>${d.cluster}</strong></td><td style="font-size:12px;color:var(--tx2)">${d.city}</td><td style="font-weight:600;color:var(--gr)">${fmt(d.qty)}</td><td style="font-size:11px;color:var(--tx2);max-width:200px">${d.species||d.notes||'—'}</td><td style="font-size:12px">${d.by||'—'}</td><td>${photo}</td><td>${src}</td><td>${del}</td></tr>`;}).join('');
 }
 
 // ─── ALERTS ───────────────────────────────────────────────────────────────────
@@ -729,7 +879,7 @@ function rAlerts(){
   updateBadge(due.length);
   document.getElementById('al').innerHTML=due.length===0?`<div class="alert ag"><i class="ti ti-circle-check"></i><div>No clusters with planting dates within the next ${days} days need dispatch preparation.</div></div>`:
     due.map(s=>{const d=du(s.plantingDate);const msg=d<0?`Overdue ${Math.abs(d)} days`:d===0?'Today!':d===1?'Tomorrow':`In ${d} days`;const cls=d<=2?'aw':'ai';
-    return`<div class="alert ${cls}"><i class="ti ti-bell"></i><div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong>${s.cluster}</strong> — ${getConvenor(s)} (${s.city})</div><span class="badge b-pending">${msg}</span></div><div style="font-size:12px;margin-top:4px">Planting: ${fmtD(s.plantingDate)} · Still needed: <strong>${fmt(s.required-s.dispatched)} plants</strong></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-plus"></i>Log dispatch</button><a href="tel:${s.contact}" class="btn btn-s"><i class="ti ti-phone"></i>${s.contact}</a></div></div></div>`;}).join('');
+    return`<div class="alert ${cls}"><i class="ti ti-bell"></i><div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong>${s.cluster}</strong> — ${getConvenor(s)} (${s.city})</div><span class="badge b-pending">${msg}</span></div><div style="font-size:12px;margin-top:4px">Planting: ${fmtD(s.plantingDate)} · Still needed: <strong>${fmt(remaining(s))} plants</strong></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-plus"></i>Log dispatch</button><a href="tel:${s.contact}" class="btn btn-s"><i class="ti ti-phone"></i>${s.contact}</a></div></div></div>`;}).join('');
 }
 function updateBadge(n){
   if(n===undefined){const days=parseInt(state.settings.alertDays)||5;n=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=days&&gst(s)!=='done';}).length;}
@@ -743,7 +893,7 @@ function rNearby(){
   const groups=Object.entries(cm).filter(([,ss])=>ss.length>1).sort((a,b)=>b[1].length-a[1].length);
   document.getElementById('ng').innerHTML=groups.map(([city,ss])=>{
     const tot=ss.reduce((a,s)=>a+s.required,0);const dis=ss.reduce((a,s)=>a+s.dispatched,0);const p=Math.round(dis/tot*100);
-    return`<div class="cc"><h4><i class="ti ti-map-pin" style="color:var(--gr)"></i>${city} <span style="font-weight:400;font-size:12px;color:var(--tx3)">${ss.length} clusters · ${fmt(tot)} plants</span></h4><div class="prog" style="margin:4px 0 2px"><div class="pf ${p<30?'d':p<70?'w':''}" style="width:${p}%"></div></div><div style="font-size:11px;color:var(--tx3);margin-bottom:6px">${p}% dispatched · ${fmt(tot-dis)} remaining</div><div class="stags">${ss.map(s=>`<span class="stag">${s.cluster} · ${fmt(s.required-s.dispatched)} rem</span>`).join('')}</div></div>`;}).join('');
+    return`<div class="cc"><h4><i class="ti ti-map-pin" style="color:var(--gr)"></i>${city} <span style="font-weight:400;font-size:12px;color:var(--tx3)">${ss.length} clusters · ${fmt(tot)} plants</span></h4><div class="prog" style="margin:4px 0 2px"><div class="pf ${p<30?'d':p<70?'w':''}" style="width:${p}%"></div></div><div style="font-size:11px;color:var(--tx3);margin-bottom:6px">${p}% dispatched · ${fmt(tot-dis)} remaining</div><div class="stags">${ss.map(s=>`<span class="stag">${s.cluster} · ${fmt(remaining(s))} rem</span>`).join('')}</div></div>`;}).join('');
 }
 
 // ─── DISPATCH PLAN ────────────────────────────────────────────────────────────
@@ -813,8 +963,8 @@ const ZONES=[
 
 function packContainers(zone){
   const pending=zone.cids.map(id=>state.schools.find(s=>s.id===id))
-    .filter(s=>s&&(s.required-s.dispatched)>0)
-    .map(s=>({...s,rem:s.required-s.dispatched}));
+    .filter(s=>s&&(remaining(s))>0)
+    .map(s=>({...s,rem:remaining(s)}));
   if(!pending.length)return[];
   const containers=[];
   let cur={items:[],total:0};
@@ -835,13 +985,13 @@ function packContainers(zone){
 }
 
 function renderPlan(){
-  const totalRem=state.schools.reduce((a,s)=>a+Math.max(0,s.required-s.dispatched),0);
+  const totalRem=state.schools.reduce((a,s)=>a+Math.max(0,remaining(s)),0);
   const loads=Math.ceil(totalRem/13000);
   document.getElementById('plan-summary').innerHTML=`
     <div class="metrics" style="margin-bottom:1rem">
       <div class="metric"><div class="mlabel">Total remaining</div><div class="mval" style="color:var(--am)">${fmt(totalRem)}</div><div class="msub">plants to dispatch</div></div>
       <div class="metric"><div class="mlabel">Est. container loads</div><div class="mval">${loads}</div><div class="msub">at avg 13,000/load</div></div>
-      <div class="metric"><div class="mlabel">Active zones</div><div class="mval">${ZONES.filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(s.required-s.dispatched)>0;})).length}</div><div class="msub">with pending clusters</div></div>
+      <div class="metric"><div class="mlabel">Active zones</div><div class="mval">${ZONES.filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;})).length}</div><div class="msub">with pending clusters</div></div>
       <div class="metric"><div class="mlabel">Container range</div><div class="mval" style="font-size:16px">${fmt(CMIN)}–${fmt(CMAX)}</div><div class="msub">plants per load</div></div>
     </div>`;
 
@@ -849,7 +999,7 @@ function renderPlan(){
   const regionOrder=['North','Center','South'];
   regionOrder.forEach(rgn=>{
     const zones=ZONES.filter(z=>z.region===rgn);
-    const anyPending=zones.some(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(s.required-s.dispatched)>0;}));
+    const anyPending=zones.some(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
     if(!anyPending)return;
     html+=`<div style="font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin:1.5rem 0 .75rem">${rgn} Region</div>`;
     zones.forEach(zone=>{
@@ -929,14 +1079,53 @@ function exportPlan(){
 let delTarget=null;
 function openDM(schoolId){
   const sel=document.getElementById('d-cluster');
-  sel.innerHTML=state.schools.map(s=>`<option value="${s.id}">${s.cluster} — ${s.city} (${fmt(s.required-s.dispatched)} remaining)</option>`).join('');
+  sel.innerHTML=state.schools.map(s=>`<option value="${s.id}">${s.cluster} — ${s.city} (${fmt(remaining(s))} remaining)</option>`).join('');
   if(schoolId)sel.value=schoolId;
   document.getElementById('d-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('d-qty').value='';
   document.getElementById('d-by').value=localStorage.getItem('bhs_by')||'';
   document.getElementById('d-sp').value='';
   document.getElementById('d-notes').value='';
+  document.getElementById('d-photo').value='';
+  document.getElementById('d-photo-preview').innerHTML='';
+  _pendingPhoto=null;
   document.getElementById('dm').classList.remove('hidden');
+}
+
+// ─── PHOTO CAPTURE (resized client-side, stored as a data URI) ───────────────
+let _pendingPhoto=null;
+function resizeImageFile(file,maxDim){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const reader=new FileReader();
+    reader.onload=e=>{img.src=e.target.result;};
+    reader.onerror=reject;
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>h&&w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}
+      else if(h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(canvas.toDataURL('image/jpeg',0.6));
+    };
+    img.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function handlePhotoSelect(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const preview=document.getElementById('d-photo-preview');
+  preview.innerHTML='<span style="font-size:12px;color:var(--tx3)">Processing photo...</span>';
+  try{
+    _pendingPhoto=await resizeImageFile(file,900);
+    preview.innerHTML=`<img src="${_pendingPhoto}" style="max-height:80px;border-radius:var(--r);border:.5px solid var(--bd)"> <button class="btn btn-s" type="button" onclick="_pendingPhoto=null;document.getElementById('d-photo').value='';document.getElementById('d-photo-preview').innerHTML=''">Remove</button>`;
+  }catch(e){preview.innerHTML='<span style="font-size:12px;color:var(--re-d)">Could not read this photo — try another.</span>';_pendingPhoto=null;}
+}
+function showPhoto(src){
+  document.getElementById('photo-modal-img').src=src;
+  document.getElementById('photo-modal').classList.remove('hidden');
 }
 async function saveDispatch(){
   const sid=parseInt(document.getElementById('d-cluster').value);
@@ -945,7 +1134,7 @@ async function saveDispatch(){
   const s=state.schools.find(x=>x.id===sid);
   const by=document.getElementById('d-by').value.trim();
   if(by)localStorage.setItem('bhs_by',by);
-  const newDispatch={id:'d_'+Date.now(),schoolId:sid,cluster:s.cluster,city:s.city,date:document.getElementById('d-date').value,qty,species:document.getElementById('d-sp').value.trim(),notes:document.getElementById('d-notes').value.trim(),by,imported:false};
+  const newDispatch={id:'d_'+Date.now(),schoolId:sid,cluster:s.cluster,city:s.city,date:document.getElementById('d-date').value,qty,species:document.getElementById('d-sp').value.trim(),notes:document.getElementById('d-notes').value.trim(),by,imported:false,createdAt:new Date().toISOString(),photo:_pendingPhoto||null};
   closeMo();
   if(fbReady()){
     updateSyncBadge('saving');
@@ -975,10 +1164,67 @@ async function doDelete(){
   }
 }
 
+// ─── BULK DISPATCH ENTRY (one truck, split across clusters) ──────────────────
+let _bulkRowN=0;
+function openBulkDM(){
+  document.getElementById('bulk-rows').innerHTML='';
+  document.getElementById('bd-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('bd-vehicle').value='';
+  document.getElementById('bd-by').value=localStorage.getItem('bhs_by')||'';
+  addBulkRow();addBulkRow();
+  document.getElementById('bulk-dm').classList.remove('hidden');
+}
+function addBulkRow(){
+  const id=_bulkRowN++;
+  const row=document.createElement('div');
+  row.className='bulk-row';
+  row.id='bulk-row-'+id;
+  row.innerHTML=`<select class="bulk-cluster">${state.schools.map(s=>`<option value="${s.id}">${s.cluster} — ${s.city}</option>`).join('')}</select><input type="text" class="bulk-species" placeholder="Species"><input type="number" class="bulk-qty" placeholder="Qty" min="1" oninput="updateBulkTotal()"><button class="btn btn-s btn-d" onclick="document.getElementById('bulk-row-${id}').remove();updateBulkTotal()"><i class="ti ti-x"></i></button>`;
+  document.getElementById('bulk-rows').appendChild(row);
+  updateBulkTotal();
+}
+function updateBulkTotal(){
+  const qtys=[...document.querySelectorAll('#bulk-rows .bulk-qty')].map(el=>parseInt(el.value)||0);
+  document.getElementById('bulk-total').textContent=fmt(qtys.reduce((a,b)=>a+b,0));
+}
+async function saveBulkDispatch(){
+  const date=document.getElementById('bd-date').value;
+  const vehicle=document.getElementById('bd-vehicle').value.trim();
+  const by=document.getElementById('bd-by').value.trim();
+  if(by)localStorage.setItem('bhs_by',by);
+  const rows=[...document.querySelectorAll('#bulk-rows .bulk-row')];
+  const createdAt=new Date().toISOString();
+  const entries=[];
+  rows.forEach((row,i)=>{
+    const sid=parseInt(row.querySelector('.bulk-cluster').value);
+    const qty=parseInt(row.querySelector('.bulk-qty').value)||0;
+    const species=row.querySelector('.bulk-species').value.trim();
+    if(!sid||qty<=0)return;
+    const s=state.schools.find(x=>x.id===sid);
+    entries.push({id:'d_'+Date.now()+'_'+i,schoolId:sid,cluster:s.cluster,city:s.city,date,qty,species,notes:vehicle,by,imported:false,createdAt,photo:null});
+  });
+  if(!entries.length){alert('Enter a quantity for at least one cluster.');return;}
+  closeMo();
+  if(fbReady()){
+    updateSyncBadge('saving');
+    try{
+      const batch=db.batch();
+      entries.forEach(rec=>batch.set(db.collection('dispatches').doc(rec.id),rec));
+      await batch.commit();
+      updateSyncBadge('connected');
+      pushDigestSnapshot();
+    }catch(e){console.warn('Firestore bulk add failed:',e.message);updateSyncBadge('error');showInAppNotif('⚠️ Could not sync to shared database — check your connection.');}
+  } else {
+    state.dispatches.push(...entries);
+    recomputeDispatched();save();rDash();rDispatch();rAlerts();rClusters();rNearby();renderPlan();updateBadge();
+  }
+  showInAppNotif(`Logged ${entries.length} entries totaling ${fmt(entries.reduce((a,e)=>a+e.qty,0))} plants`);
+}
+
 // ─── EXPORT ───────────────────────────────────────────────────────────────────
 function exportCSV(){
   const rows=[['Cluster','City','Region','Required','Dispatched','Remaining','Status','Planting Date','Convenor','Contact']];
-  state.schools.forEach(s=>rows.push([s.cluster,s.city,RN[s.region],s.required,s.dispatched,s.required-s.dispatched,stLbl(s),s.plantingDate||'',getConvenor(s),s.contact]));
+  state.schools.forEach(s=>rows.push([s.cluster,s.city,RN[s.region],s.required,s.dispatched,remaining(s),stLbl(s),s.plantingDate||'',getConvenor(s),s.contact]));
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));a.download=`bhs-plantation-${new Date().toISOString().split('T')[0]}.csv`;a.click();
 }
 
@@ -1105,16 +1351,16 @@ function fmtDigestEmail(){
   const thisWeek=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>=0&&d<=7&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
   const next7=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>7&&d<=14&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
   const overdue=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<0&&gst(s)!=='done';});
-  const top5=state.schools.filter(s=>gst(s)!=='done').sort((a,b)=>(b.required-b.dispatched)-(a.required-a.dispatched)).slice(0,5);
+  const top5=state.schools.filter(s=>gst(s)!=='done').sort((a,b)=>remaining(b)-remaining(a)).slice(0,5);
 
   let body=`🌱 WEEKLY PLANTATION DRIVE UPDATE\n${'='.repeat(36)}\nWeek of ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}\n\n`;
   body+=`OVERALL PROGRESS\n${'─'.repeat(20)}\nTotal ordered:  ${fmt(tot)}\nDispatched:     ${fmt(dis)} (${Math.round(dis/tot*100)}%)\nRemaining:      ${fmt(tot-dis)}\nClusters done:  ${state.schools.filter(s=>gst(s)==='done').length} of ${state.schools.length}\n\n`;
-  if(overdue.length){body+=`⚠️  OVERDUE (missed planting date)\n${'─'.repeat(36)}\n`;overdue.forEach(s=>{const d=Math.abs(du(s.plantingDate));body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — ${d}d overdue\n`;});body+='\n';}
-  if(thisWeek.length){body+=`📅 THIS WEEK'S DISPATCHES (0–7 days)\n${'─'.repeat(36)}\n`;thisWeek.forEach(s=>{const d=du(s.plantingDate);body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — Planting ${fmtD(s.plantingDate)} (${d===0?'today':d===1?'tomorrow':d+'d'})\n  Contact: ${getConvenor(s)} · ${s.contact}\n`;});body+='\n';}
+  if(overdue.length){body+=`⚠️  OVERDUE (missed planting date)\n${'─'.repeat(36)}\n`;overdue.forEach(s=>{const d=Math.abs(du(s.plantingDate));body+=`• ${s.cluster} (${s.city}) — ${fmt(remaining(s))} plants — ${d}d overdue\n`;});body+='\n';}
+  if(thisWeek.length){body+=`📅 THIS WEEK'S DISPATCHES (0–7 days)\n${'─'.repeat(36)}\n`;thisWeek.forEach(s=>{const d=du(s.plantingDate);body+=`• ${s.cluster} (${s.city}) — ${fmt(remaining(s))} plants — Planting ${fmtD(s.plantingDate)} (${d===0?'today':d===1?'tomorrow':d+'d'})\n  Contact: ${getConvenor(s)} · ${s.contact}\n`;});body+='\n';}
   else{body+=`✅  No planting dates this week.\n\n`;}
-  if(next7.length){body+=`🗓️  UPCOMING (8–14 days)\n${'─'.repeat(36)}\n`;next7.forEach(s=>{body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — ${fmtD(s.plantingDate)}\n`;});body+='\n';}
+  if(next7.length){body+=`🗓️  UPCOMING (8–14 days)\n${'─'.repeat(36)}\n`;next7.forEach(s=>{body+=`• ${s.cluster} (${s.city}) — ${fmt(remaining(s))} plants — ${fmtD(s.plantingDate)}\n`;});body+='\n';}
   body+=`TOP 5 PENDING (by quantity)\n${'─'.repeat(36)}\n`;
-  top5.forEach((s,i)=>{body+=`${i+1}. ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants remaining\n`;});
+  top5.forEach((s,i)=>{body+=`${i+1}. ${s.cluster} (${s.city}) — ${fmt(remaining(s))} plants remaining\n`;});
   body+=`\nPrepared by: ${state.settings.projectName||'Plantation Drive'} System`;
   return body;
 }
