@@ -532,11 +532,6 @@ function recomputeDispatched(){
 const SCHOOL_HEADS_URL='https://docs.google.com/spreadsheets/d/1-RNYLZARZHWgPw6siRJJfK27FbHAfd1OjtTwuIC1xCY/export?format=csv';
 let _liveHeads=null,_headsLoading=false;
 function getConvenor(s){
-  const heads=_liveHeads&&_liveHeads[s.cluster.toUpperCase()];
-  if(heads&&heads.length){
-    const names=[...new Set(heads.map(h=>h.head).filter(Boolean))];
-    if(names.length)return names.join(' / ');
-  }
   return s.convenor;
 }
 async function fetchLiveHeads(){
