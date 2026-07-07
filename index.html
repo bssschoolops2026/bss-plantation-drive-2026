@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌱 BSS Plantation Drive — 2026</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/tabler-icons.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<style>
+:root{--gr:#1D9E75;--gr-l:#E1F5EE;--gr-d:#0F6E56;--am:#BA7517;--am-l:#FAEEDA;--am-d:#854F0B;--re:#E24B4A;--re-l:#FCEBEB;--re-d:#A32D2D;--bl:#378ADD;--bl-l:#E6F1FB;--bl-d:#185FA5;--bg:#fff;--bg2:#f8f8f6;--bg3:#f1efe8;--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--bd:rgba(0,0,0,.12);--bd2:rgba(0,0,0,.2);--r:8px;--rl:12px}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--bd:rgba(255,255,255,.1);--bd2:rgba(255,255,255,.18)}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--tx);font-size:14px;min-height:100vh}
+.app{display:flex;min-height:100vh}
+.sb{width:226px;background:var(--bg);border-right:.5px solid var(--bd);padding:1.5rem 0;flex-shrink:0;position:fixed;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+.main{margin-left:226px;padding:2rem;flex:1;max-width:1140px}
+.sb-logo{padding:0 1.25rem 1.25rem;border-bottom:.5px solid var(--bd);margin-bottom:.75rem}
+.sb-logo h1{font-size:15px;font-weight:600}.sb-logo p{font-size:11px;color:var(--tx3);margin-top:2px}
+.sb-section-label{padding:.5rem 1.25rem .15rem;font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
+.nav{display:flex;align-items:center;gap:10px;padding:9px 1.25rem;cursor:pointer;color:var(--tx2);font-size:13px;font-weight:400;transition:all .15s;border-left:2px solid transparent}
+.nav:hover{background:var(--bg2);color:var(--tx)}.nav.active{color:var(--gr-d);background:var(--gr-l);border-left-color:var(--gr);font-weight:500}
+.nav i{font-size:17px}.bc{background:var(--re);color:#fff;font-size:10px;padding:1px 5px;border-radius:8px;margin-left:auto}
+.sb-bottom{margin-top:auto;padding:1.25rem;border-top:.5px solid var(--bd)}
+.sb-backdrop{display:none}
+#setup{position:fixed;inset:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;z-index:1000;padding:2rem}
+.sc{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:2rem;width:460px;max-width:100%;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.sc h2{font-size:18px;font-weight:600;margin-bottom:.5rem}.sc p{font-size:13px;color:var(--tx2);margin-bottom:1.5rem;line-height:1.6}
+.pane{display:none}.pane.active{display:block}
+.ph{margin-bottom:1.5rem}.ph h2{font-size:20px;font-weight:600}.ph p{font-size:13px;color:var(--tx2);margin-top:3px}
+.ph-row{display:flex;align-items:flex-start;justify-content:space-between}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.metric{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:1.1rem 1.25rem}
+.mlabel{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.mval{font-size:26px;font-weight:600}.msub{font-size:11px;color:var(--tx3);margin-top:3px}
+.card{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:1.25rem;margin-bottom:1rem}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}.ch h3{font-size:14px;font-weight:600}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--bg);color:var(--tx);font-size:13px;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn:hover{background:var(--bg2)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-p{background:var(--gr);color:#fff;border-color:var(--gr-d)}.btn-p:hover{background:var(--gr-d)}
+.btn-b{background:var(--bl-l);color:var(--bl-d);border-color:var(--bl)}.btn-b:hover{background:var(--bl);color:#fff}
+.btn-s{padding:4px 10px;font-size:12px}.btn-d{background:var(--re-l);color:var(--re-d);border-color:var(--re)}
+input,select,textarea{width:100%;padding:8px 12px;border:.5px solid var(--bd2);border-radius:var(--r);background:var(--bg);color:var(--tx);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--gr);box-shadow:0 0 0 3px rgba(29,158,117,.1)}
+textarea{resize:vertical;min-height:72px}
+label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px;font-weight:500}
+.fr{margin-bottom:12px}.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:8px 12px;font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;border-bottom:.5px solid var(--bd);white-space:nowrap}
+td{padding:9px 12px;border-bottom:.5px solid var(--bd);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;white-space:nowrap}
+.b-n{background:var(--bl-l);color:var(--bl-d)}.b-c{background:var(--gr-l);color:var(--gr-d)}.b-s{background:var(--am-l);color:var(--am-d)}
+.b-north{background:var(--bl-l);color:var(--bl-d)}.b-center{background:var(--gr-l);color:var(--gr-d)}.b-south{background:var(--am-l);color:var(--am-d)}
+.b-done{background:var(--gr-l);color:var(--gr-d)}.b-partial{background:var(--am-l);color:var(--am-d)}.b-pending{background:var(--re-l);color:var(--re-d)}.b-imp{background:var(--bl-l);color:var(--bl-d)}
+.prog{background:var(--bg3);border-radius:4px;height:6px;overflow:hidden}
+.pf{height:100%;border-radius:4px;background:var(--gr)}.pf.w{background:var(--am)}.pf.d{background:var(--re)}
+.alert{padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px}
+.aw{background:var(--am-l);color:var(--am-d);border:.5px solid #EF9F27}.ai{background:var(--bl-l);color:var(--bl-d);border:.5px solid #85B7EB}.ag{background:var(--gr-l);color:var(--gr-d);border:.5px solid #5DCAA5}
+.alert i{font-size:16px;flex-shrink:0;margin-top:1px}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:500}
+.md{background:var(--bg);border-radius:var(--rl);border:.5px solid var(--bd);padding:1.75rem;width:540px;max-width:92vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.md h3{font-size:16px;font-weight:600;margin-bottom:1.25rem}
+.ma{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:.5px solid var(--bd)}
+.sec-t{font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem;margin-top:1.5rem}.sec-t:first-child{margin-top:0}
+.info-box{background:var(--bl-l);border:.5px solid #85B7EB;border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--bl-d);line-height:1.6;margin-bottom:12px}
+.info-box code{background:rgba(0,0,0,.08);padding:1px 4px;border-radius:3px;font-size:11px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:.5px solid var(--bd);font-size:13px}.stat-row:last-child{border-bottom:none}
+.filters{display:flex;gap:8px;margin-bottom:1rem;align-items:center;flex-wrap:wrap}
+.filters input[type=text]{width:220px}.filters select{width:140px}
+.empty{text-align:center;padding:2.5rem;color:var(--tx3);font-size:13px}.empty i{font-size:32px;margin-bottom:8px;display:block}
+.hidden{display:none!important}
+.spin{animation:sp 1s linear infinite;display:inline-block}
+@keyframes sp{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.map-wrap{border-radius:var(--rl);overflow:hidden;border:.5px solid var(--bd)}
+#plantation-map{height:480px;width:100%;background:var(--bg3)}
+.yr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem}
+.yr-card{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:1rem}
+.yr-card .yr-val{font-size:28px;font-weight:600}.yr-card .yr-lbl{font-size:12px;color:var(--tx3);margin-top:2px}
+.tab-btns{display:flex;gap:8px;margin-bottom:1rem}
+.tab-btn{padding:6px 16px;border-radius:var(--r);border:.5px solid var(--bd2);font-size:13px;cursor:pointer;background:var(--bg);color:var(--tx2);font-family:inherit}
+.tab-btn.on{background:var(--gr);color:#fff;border-color:var(--gr-d)}
+.map-legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:12px;color:var(--tx2);padding:.75rem 0}
+.legend-dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cc{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:1rem}
+.cc h4{font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.stags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.stag{font-size:11px;padding:3px 8px;background:var(--bg3);border-radius:4px;color:var(--tx2)}
+#sync-badge{font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:6px;cursor:pointer}
+.mobile-bar{display:none}.sb-backdrop{display:none}
+@media(max-width:768px){
+  .mobile-bar{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:var(--bg);border-bottom:.5px solid var(--bd);position:sticky;top:0;z-index:300}
+  .mobile-bar h1{font-size:15px;font-weight:600}
+  .mobile-bar button{background:none;border:none;font-size:22px;color:var(--tx);cursor:pointer;padding:4px 8px}
+  .sb{display:none;position:fixed;top:0;left:0;height:100vh;width:78vw;max-width:280px;z-index:500;box-shadow:2px 0 16px rgba(0,0,0,.2)}
+  .sb.open{display:flex}.sb-backdrop.open{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:400}
+  .main{margin-left:0;padding:1rem}.metrics{grid-template-columns:1fr 1fr}
+  .cg{grid-template-columns:1fr}.fg2{grid-template-columns:1fr}
+  .yr-grid{grid-template-columns:1fr 1fr}#plantation-map{height:320px}
+}
+</style>
+</head>
+<body>
+
+<div id="setup">
+<div class="sc">
+  <div style="font-size:32px;margin-bottom:.75rem">🌱</div>
+  <h2>BSS Plantation Drive</h2>
+  <p>Beaconhouse School System · 2026 · Pre-loaded with all tracking data. Connect Firebase below to sync live with your team, or skip and connect later from Settings.</p>
+  <div class="fr"><label>Firebase config <span style="font-weight:400;color:var(--tx3)">(optional — paste the JSON snippet from your Firebase project settings)</span></label><textarea id="sk" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea></div>
+  <div style="font-size:11px;color:var(--tx3);margin-bottom:1.25rem">Stored only in your browser · Get this from <a href="https://console.firebase.google.com" target="_blank" style="color:var(--gr)">console.firebase.google.com</a> → Project settings → Your apps</div>
+  <div style="display:flex;gap:8px"><button class="btn btn-p" onclick="boot()" style="flex:1;justify-content:center">Open dashboard</button></div>
+</div>
+</div>
+
+<div class="app hidden" id="app">
+<div class="mobile-bar">
+  <button onclick="toggleSidebar()" aria-label="Open menu"><i class="ti ti-menu-2"></i></button>
+  <h1 id="mobile-title">🌱 BSS Plantation Drive</h1>
+  <span style="width:30px"></span>
+</div>
+<div class="sb-backdrop" id="sb-backdrop" onclick="closeSidebar()"></div>
+<nav class="sb" id="sidebar">
+  <div class="sb-logo">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:22px">🌱</div>
+      <div><h1>BSS Plantation Drive</h1><p>2026 Dispatch Tracker</p></div>
+    </div>
+  </div>
+  <div class="sb-section-label">Overview</div>
+  <div class="nav active" onclick="go('dashboard');closeSidebar()" id="nav-dashboard"><i class="ti ti-dashboard" aria-hidden="true"></i><span>Dashboard</span></div>
+  <div class="sb-section-label">Operations</div>
+  <div class="nav" onclick="go('clusters');closeSidebar()" id="nav-clusters"><i class="ti ti-building-school" aria-hidden="true"></i><span>All Clusters</span></div>
+  <div class="nav" onclick="go('dispatch');closeSidebar()" id="nav-dispatch"><i class="ti ti-truck-delivery" aria-hidden="true"></i><span>Dispatch Log</span></div>
+  <div class="nav" onclick="go('alerts');closeSidebar()" id="nav-alerts"><i class="ti ti-bell" aria-hidden="true"></i><span>Alerts</span><span class="bc hidden" id="abc">0</span></div>
+  <div class="sb-section-label">Data</div>
+  <div class="nav" onclick="go('lastyear');closeSidebar()" id="nav-lastyear"><i class="ti ti-plant-2" aria-hidden="true"></i><span>2025 Initiative</span></div>
+  <div class="sb-section-label">Configure</div>
+  <div class="nav" onclick="go('settings');closeSidebar()" id="nav-settings"><i class="ti ti-settings" aria-hidden="true"></i><span>Settings</span></div>
+  <div class="sb-bottom">
+    <button class="btn btn-p" onclick="openDM(null)" style="width:100%;justify-content:center;margin-bottom:8px"><i class="ti ti-plus"></i>Log Dispatch</button>
+    <button class="btn" onclick="exportCSV()" style="width:100%;justify-content:center"><i class="ti ti-download"></i>Export CSV</button>
+  </div>
+</nav>
+
+<main class="main">
+<!-- DASHBOARD -->
+<div class="pane active" id="pane-dashboard">
+  <div class="ph-row ph">
+    <div><h2>Dashboard</h2><p>Live overview · BSS 2026 Plantation Drive</p></div>
+    <div id="sync-badge" onclick="go('settings')">
+      <i class="ti ti-cloud-off" id="sync-icon"></i><span id="sync-text">Local only — not shared</span>
+    </div>
+  </div>
+  <div class="alert ai" style="margin-bottom:1rem;cursor:pointer" onclick="go('lastyear')">
+    <i class="ti ti-plant-2"></i>
+    <div><strong>2025 Initiative (BSS + Educators):</strong> 39,190 trees self-planted — BSS: 8,044 · Educators: 31,045 · <a href="#" onclick="go('lastyear');return false" style="color:var(--bl-d)">View map &amp; data →</a></div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="mlabel">Total ordered</div><div class="mval" id="m1">—</div><div class="msub">across all clusters</div></div>
+    <div class="metric"><div class="mlabel">Dispatched</div><div class="mval" id="m2" style="color:var(--gr)">—</div><div class="msub" id="m2s">0%</div></div>
+    <div class="metric"><div class="mlabel">Remaining</div><div class="mval" id="m3" style="color:var(--am)">—</div><div class="msub">plants to send</div></div>
+    <div class="metric"><div class="mlabel">Project completion</div><div class="mval" id="m4" style="color:var(--gr)">—</div><div class="msub" id="m4s">dispatched vs required</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+    <div class="card"><div class="ch"><h3><i class="ti ti-alert-triangle" style="color:var(--re)"></i> Prepare immediately</h3></div><div id="d-urgent"></div></div>
+    <div class="card"><div class="ch"><h3><i class="ti ti-chart-bar" style="color:var(--gr)"></i> Progress by region</h3></div><div id="d-regions"></div></div>
+  </div>
+  <div class="card"><div class="ch"><h3><i class="ti ti-calendar" style="color:var(--bl)"></i> Upcoming dispatches (next 30 days)</h3><button class="btn btn-s" onclick="go('alerts')">See all alerts</button></div><div id="d-upcoming"></div></div>
+</div>
+
+<!-- CLUSTERS -->
+<div class="pane" id="pane-clusters">
+  <div class="ph-row ph">
+    <div><h2>All Clusters</h2><p id="clusters-count">Loading...</p></div>
+    <button class="btn btn-p" onclick="openDM(null)"><i class="ti ti-truck-delivery"></i>Log dispatch</button>
+  </div>
+  <div class="filters">
+    <input type="text" id="fs" placeholder="Search cluster, city, convenor..." oninput="rClusters()">
+    <select id="fr" onchange="rClusters()"><option value="">All regions</option><option value="N">North</option><option value="C">Center</option><option value="S">South</option></select>
+    <select id="fst" onchange="rClusters()"><option value="">All statuses</option><option value="pending">Pending</option><option value="partial">Partial</option><option value="done">Done</option></select>
+  </div>
+  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Cluster</th><th>Convenor</th><th>City</th><th>Rgn</th><th>Required</th><th>Dispatched</th><th>Progress</th><th>Planting date</th><th>Status</th><th></th></tr></thead><tbody id="ct"></tbody></table></div></div>
+</div>
+
+<!-- DISPATCH LOG -->
+<div class="pane" id="pane-dispatch">
+  <div class="ph-row ph">
+    <div><h2>Dispatch Log</h2><p>Full history · syncs live to your team when Firebase is connected</p></div>
+    <button class="btn btn-p" onclick="openDM(null)"><i class="ti ti-plus"></i>Log dispatch</button>
+  </div>
+  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Date</th><th>Cluster</th><th>City</th><th>Qty sent</th><th>Species / notes</th><th>Logged by</th><th>Source</th><th></th></tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"><i class="ti ti-truck-delivery"></i>No dispatches logged yet</div></div></div>
+</div>
+
+<!-- ALERTS -->
+<div class="pane" id="pane-alerts">
+  <div class="ph-row ph">
+    <div><h2>Preparation Alerts</h2><p>Clusters whose planting date requires dispatch preparation soon</p></div>
+  </div>
+  <div id="al"></div>
+</div>
+
+<!-- 2025 INITIATIVE -->
+<div class="pane" id="pane-lastyear">
+  <div class="ph-row ph">
+    <div><h2>2025 Tree Plantation Initiative</h2><p>Self-planted by schools &amp; individuals — no saplings provided</p></div>
+  </div>
+  <div class="yr-grid" id="yr-summary"></div>
+  <div class="tab-btns">
+    <button class="tab-btn on" id="tb-map" onclick="show2025Tab('map')"><i class="ti ti-map"></i> Map view</button>
+    <button class="tab-btn" id="tb-table" onclick="show2025Tab('table')"><i class="ti ti-table"></i> Table view</button>
+  </div>
+  <div id="yr-map-section">
+    <div class="card" style="padding:.75rem 1.25rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+        <div class="map-legend">
+          <span><span class="legend-dot" style="background:#1D9E75"></span>Beaconhouse School</span>
+          <span><span class="legend-dot" style="background:#9B59B6"></span>The Educators</span>
+          <span><span class="legend-dot" style="background:#378ADD"></span>HO/RON/ROS</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <select id="map-brand-filter" onchange="renderMap()" style="font-size:12px;padding:4px 8px;width:auto"><option value="">All brands</option><option value="B">BSS</option><option value="E">Educators</option><option value="H">HO/RON/ROS</option></select>
+          <select id="map-region-filter" onchange="renderMap()" style="font-size:12px;padding:4px 8px;width:auto"><option value="">All regions</option><option value="N">North</option><option value="C">Centre</option><option value="S">South</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="map-wrap" style="margin-top:.5rem"><div id="plantation-map"></div></div>
+  </div>
+  <div id="yr-table-section" class="hidden">
+    <div class="filters" style="margin-bottom:.75rem">
+      <input type="text" id="yr-search" placeholder="Search name, city, species..." oninput="render2025Table()">
+      <select id="yr-type-filter" onchange="render2025Table()"><option value="">All types</option><option value="S">School</option><option value="I">Individual</option></select>
+      <select id="yr-brand-filter" onchange="render2025Table()" style="width:auto"><option value="">All brands</option><option value="B">BSS</option><option value="E">Educators</option><option value="H">HO/RON/ROS</option></select>
+    </div>
+    <div class="card" style="padding:0"><div class="tw">
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Brand</th><th>Type</th><th>City</th><th>Trees</th><th>Species</th></tr></thead>
+        <tbody id="yr-tbody"></tbody>
+      </table>
+    </div></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="pane" id="pane-settings">
+  <div class="ph"><h2>Settings</h2><p>Connect live team sync · configure alerts &amp; weekly digest</p></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+  <div>
+    <div class="sec-t">Live team sync (Firebase)</div>
+    <div class="info-box" style="font-size:12px">
+      <strong>One-time setup (~3 min, free, no credit card):</strong><br>
+      1. Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--bl-d)">console.firebase.google.com</a> → Add project → give it any name<br>
+      2. In the project, click Build → Firestore Database → Create database → Start in <em>test mode</em><br>
+      3. Click Build → Authentication → Get started → Sign-in method → enable <em>Anonymous</em><br>
+      4. Click the gear icon → Project settings → scroll to "Your apps" → Add app → Web (&lt;/&gt;) → register it<br>
+      5. Copy the <code>firebaseConfig</code> object shown → paste it below → Connect<br>
+      6. In Firestore → Rules tab, paste the rules below → Publish
+    </div>
+    <div class="card">
+      <div class="fr"><label>Firestore security rules — paste into Firebase Console → Firestore → Rules</label>
+        <textarea id="rules-snippet" readonly rows="9" style="font-family:monospace;font-size:11px;background:var(--bg3);color:var(--tx2);border-color:var(--bd)">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /dispatches/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /meta/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}</textarea>
+        <button class="btn btn-s" style="margin-top:6px" onclick="navigator.clipboard.writeText(document.getElementById('rules-snippet').value).then(()=>this.textContent='Copied ✓')"><i class="ti ti-copy"></i> Copy rules</button>
+      </div>
+      <div class="fr"><label>Firebase config <span style="font-weight:400;color:var(--tx3)">(paste the whole JSON object)</span></label><textarea id="s-fb-config" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-p" onclick="connectFirebase()"><i class="ti ti-plug"></i>Connect</button>
+        <button class="btn btn-d" onclick="disconnectFirebase()" style="font-size:12px"><i class="ti ti-unlink"></i>Disconnect</button>
+        <span id="fb-status" style="font-size:12px;align-self:center;color:var(--tx3)"></span>
+      </div>
+    </div>
+
+    <div class="sec-t">Weekly email digest (GitHub Actions)</div>
+    <div class="info-box" style="font-size:12px">
+      A scheduled job in this project's GitHub repo emails the digest every week — it runs on GitHub's servers, independent of anyone opening this dashboard.<br><br>
+      <strong>One-time setup:</strong><br>
+      1. In Google Account → Security → 2-Step Verification → App passwords → create one for "Mail"<br>
+      2. In the GitHub repo → Settings → Secrets and variables → Actions → New repository secret:<br>
+      &nbsp;&nbsp;<code>GMAIL_USER</code> = your Gmail address, <code>GMAIL_APP_PASSWORD</code> = the 16-character app password<br>
+      3. Same page → Variables tab → New repository variable:<br>
+      &nbsp;&nbsp;<code>DIGEST_RECIPIENTS</code> = comma-separated emails, <code>FIREBASE_PROJECT_ID</code> = your Firebase project ID<br>
+      The workflow file (<code>.github/workflows/weekly-digest.yml</code>) is already in the repo — nothing else to do.
+    </div>
+
+    <div class="sec-t">Manual actions</div>
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn" onclick="exportCSV()"><i class="ti ti-download"></i>Export data as CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="sec-t">Alert &amp; digest preferences</div>
+    <div class="card">
+      <div class="fr"><label>Recipient emails <span style="font-weight:400;color:var(--tx3)">(shown here for reference — the GitHub Actions variable above is what actually sends the email)</span></label><textarea id="s-recipients" rows="2" placeholder="e.g. mahnoor.safdar@bh.edu.pk, azal.zahir@bh.edu.pk"></textarea></div>
+      <div class="fg2">
+        <div class="fr"><label>Alert days before planting</label><input type="number" id="s-days" value="5" min="1" max="30"></div>
+        <div class="fr"><label>Weekly digest day</label><select id="s-dday"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select></div>
+      </div>
+      <div class="fr"><label>Project name</label><input type="text" id="s-pname" placeholder="e.g. BHS Plantation Drive"></div>
+      <button class="btn btn-p" onclick="saveSettings()"><i class="ti ti-check"></i>Save settings</button>
+    </div>
+  </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- Dispatch modal -->
+<div class="mo hidden" id="dm">
+<div class="md">
+  <h3><i class="ti ti-truck-delivery" style="color:var(--gr)"></i> Log a dispatch</h3>
+  <div class="fr"><label>Cluster *</label><select id="d-cluster"></select></div>
+  <div class="fg2">
+    <div class="fr"><label>Dispatch date *</label><input type="date" id="d-date"></div>
+    <div class="fr"><label>Plants dispatched *</label><input type="number" id="d-qty" min="1" placeholder="e.g. 500"></div>
+  </div>
+  <div class="fr"><label>Logged by</label><input type="text" id="d-by" placeholder="Your name"></div>
+  <div class="fr"><label>Species breakdown (optional)</label><textarea id="d-sp" placeholder="Kachnar: 100, Neem: 200..."></textarea></div>
+  <div class="fr"><label>Notes (vehicle, driver, delivery point)</label><textarea id="d-notes" placeholder="e.g. Mazda truck LHR-1234, driver Ali, to school gate"></textarea></div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-p" onclick="saveDispatch()"><i class="ti ti-check"></i>Save</button></div>
+</div>
+</div>
+
+<!-- Delete modal -->
+<div class="mo hidden" id="delm">
+<div class="md" style="width:380px">
+  <h3>Delete this dispatch?</h3>
+  <p style="color:var(--tx2);font-size:13px;margin-bottom:1.25rem">This will subtract the quantity from the cluster's dispatched total. Cannot be undone.</p>
+  <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-d" onclick="doDelete()"><i class="ti ti-trash"></i>Delete</button></div>
+</div>
+</div>
+
+<!-- Species modal -->
+<div class="mo hidden" id="sp-modal">
+<div class="md" style="width:480px">
+  <h3 id="sp-modal-title"><i class="ti ti-seeding" style="color:var(--gr)"></i> Species requested</h3>
+  <div id="sp-modal-body"></div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
+</div>
+</div>
+
+<script>
+// ─── CLUSTER DATA ─────────────────────────────────────────────────────────────
+// [id, cluster, city, region(N/C/S), required, dispatched_baseline, plantingDate, convenor, contact, baselineDispatchDate]
+const SD=[
+[1,"N-02","Islamabad","N",234,0,null,"Ayesha Sohail","03008501614",null],
+[2,"N-03","Islamabad","N",7000,4033,"2026-04-08","Ayesha Shams","03204097661","2026-03-28"],
+[3,"N-04","Rawalpindi/Attock/Wah","N",9800,0,null,"Nabila Khalid","03068752180",null],
+[4,"N-06 (Bahria)","Islamabad","N",2400,0,null,"Nighat Javed","03215566630",null],
+[5,"N-06 (PWD)","Islamabad","N",1200,0,null,"Nighat Javed","03215566630",null],
+[6,"N-07 (multi-city)","Chakwal/ISL/Pindi","N",31000,4000,null,"Ayesha Ansar","03008589945","2026-03-28"],
+[7,"N-07 (Chakwal only)","Chakwal","N",3200,0,"2026-04-29","Ayesha Ansar","03335554706",null],
+[8,"N-08","Gujrat","N",4000,0,"2026-05-23","Kashif Hussain","03009510657",null],
+[9,"N-09","Peshawar","N",3000,0,"2026-05-12","Sadia Yousaf","03005980595",null],
+[10,"N-11","Abbottabad","N",1000,0,"2026-06-01","Zainab Jamil","03335202397",null],
+[11,"N-12","Mandi Bahauddin","N",6000,0,"2026-05-21","Saima Bhatti","03006269061",null],
+[12,"RON-HO (Swabi Uni)","Islamabad","N",16500,8000,null,"Iffat Ashhad","03075122223","2026-03-21"],
+[13,"RON-HO (QAU)","Islamabad","N",16000,0,null,"Iffat Ashhad","03075122223",null],
+[14,"RON-HO (Mardan Women Uni)","Islamabad","N",17000,8000,null,"Iffat Ashhad","03075122223","2026-03-21"],
+[15,"RON-HO (F-9/ISB Greenbelts)","Islamabad","N",4000,2730,null,"Iffat Ashhad","03075122223","2026-03-17"],
+[16,"C-02","Lahore","C",3000,3000,"2026-04-04","Naila Khalid","03334379599","2026-04-01"],
+[17,"C-03","Lahore","C",10000,3000,"2026-04-04","Tehmina Naeem","03008409856","2026-04-01"],
+[18,"C-04","Lahore","C",5000,5000,"2026-04-05","Fariha Najam","03164480006","2026-04-03"],
+[19,"C-05","Lahore","C",5000,5000,"2026-04-10","M. Irshad Barkat","03004164491","2026-04-03"],
+[20,"C-06","Lahore","C",200,200,null,"—","—","2026-04-06"],
+[21,"C-07","Lahore","C",3000,0,null,"Nayyer Naveed Qureshi","03334066095",null],
+[22,"C-08 (Lahore/Bahria)","Lahore","C",2400,0,null,"Syeda Aniqa Shafique","03004839188",null],
+[23,"C-08 (Okara)","Okara","C",700,0,null,"Syeda Aniqa Shafique","03004839188",null],
+[24,"C-08 (Sahiwal)","Sahiwal","C",1400,0,null,"Syeda Aniqa Shafique","03004839188",null],
+[25,"C-10 (Faisalabad)","Faisalabad","C",3000,0,null,"Sabahet Malik","03026020050",null],
+[26,"C-10 (Jhang)","Jhang","C",5000,0,"2026-05-20","Nazish Arfa","03026020050",null],
+[27,"C-11 (Gojra/TTS)","Gojra","C",4260,0,"2026-04-23","Nousheen Haider","03009664983",null],
+[28,"C-11 (Faisalabad)","Faisalabad","C",4000,0,null,"Nousheen Haider","03009664983",null],
+[29,"C-13 (Campus)","Multan","C",450,0,null,"Asifa Tareen","03464811148",null],
+[30,"C-13 (Ext. Sites)","Multan","C",17905,12705,"2026-05-20","Asifa Tareen","03464811148","2026-04-08"],
+[31,"C-14","Bahawalpur","C",5000,0,"2026-05-05","Anjum Kaiwan","03008673833",null],
+[32,"Univ. of Sargodha","Sargodha","C",5000,0,null,"—","—",null],
+[33,"Univ. of Agriculture (Okara)","Okara","C",2200,3600,null,"—","—","2026-03-27"],
+[34,"District Offices (Okara)","Okara","C",115000,21000,null,"—","—","2026-03-27"],
+[35,"District Offices (Sahiwal)","Sahiwal","C",135000,0,null,"—","—",null],
+[36,"Beaconhouse Estate","Lahore","C",2650,0,null,"—","—",null],
+[37,"S-03","Karachi","S",3500,0,"2026-05-06","Tabinda Raza","03034442913",null],
+[38,"S-04","Karachi","S",3200,0,null,"—","—",null],
+[39,"S-05","Karachi","S",5200,0,"2026-06-04","Maliha Noman","03223508046",null],
+[40,"S-06","Karachi","S",3000,0,"2026-06-16","Nausheen Bashir","03323416446",null],
+[41,"S-07","Karachi","S",300,0,"2026-05-27","Sadia Aamir","03009256638",null],
+[42,"S-08","Karachi","S",6200,0,"2026-05-26","Nausheen Ubaid","03333453753",null],
+[43,"S-10","Karachi","S",1000,0,"2026-06-04","—","—",null],
+[44,"S-11 (Hyderabad)","Hyderabad","S",3300,0,"2026-05-15","Shifa Farhan","03123841292",null],
+[45,"S-11 (Nawabshah)","Nawabshah","S",1400,0,"2026-04-26","Shifa Farhan","03123841292",null],
+[46,"S-11 (Thatta)","Thatta","S",700,0,"2026-08-21","Shifa Farhan","03123841292",null],
+[47,"S-11 (Sukkur)","Sukkur","S",1150,0,null,"Shifa Farhan","03123841292",null],
+[48,"S-12 (Quetta)","Quetta","S",4000,4000,null,"Quratulain Khalid","03218150573","2026-04-14"],
+[49,"S-13 (Malir etc)","Karachi","S",1000,0,"2026-05-28","Rawaha Azfar","03332084219",null],
+[50,"S-13 (Tipu Sultan)","Karachi","S",700,0,null,"Rawaha Azfar","03332084219",null],
+[51,"S-14 (Hyderabad)","Hyderabad","S",3250,0,"2026-05-29","Anjuman Rashdi","03332646379",null]
+];
+
+const RN={N:"North",C:"Center",S:"South"};
+const TODAY=new Date();
+
+// ─── SPECIES REQUESTED PER CLUSTER ────────────────────────────────────────────
+const CSP={
+  1:"Lemon, Gul-e-Nishter, Sukh Chayn, Alstonia",
+  2:"Kachnar, Lemon, Alstonia, Moringa, Citrus",
+  3:"Kachnar, Lemon, Jamun, Moringa, Guava, Sheesham",
+  4:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Guava, Sheesham, Semal, Poplar",
+  5:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Guava",
+  6:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Mulberry, Citrus, Arjun, Neem (Bakain), Guava, Sheesham",
+  7:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun",
+  8:"Kachnar, Amaltas, Lemon, Sukh Chayn, Jamun, Alstonia, Moringa, Mulberry, Neem (Bakain), Arjun, Poplar, Guava",
+  9:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Neem (Bakain)",
+  10:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Citrus",
+  11:"Kachnar, Sukh Chayn, Arjun, Neem (Bakain), Sheesham",
+  12:"Kachnar, Amaltas, Lemon, Sukh Chayn, Alstonia, Moringa, Citrus, Neem (Bakain)",
+  13:"Kachnar, Lemon, Gul-e-Nishter, Jamun, Moringa, Mulberry, Citrus, Arjun",
+  14:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Neem (Bakain)",
+  15:"Kachnar, Lemon, Sukh Chayn, Alstonia, Moringa, Citrus, Neem (Bakain)",
+  17:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Neem, Guava, Sheesham, Semal",
+  21:"Kachnar, Amaltas, Gul-e-Nishter, Sukh Chayn, Moringa, Mulberry, Arjun, Neem (Bakain), Semal",
+  22:"Kachnar, Amaltas, Lemon, Sukh Chayn, Jamun, Moringa, Mulberry, Citrus, Arjun, Neem, Guava, Sheesham, Semal",
+  23:"Kachnar, Amaltas, Lemon, Sukh Chayn, Jamun, Moringa, Mulberry, Citrus, Arjun, Neem, Guava, Sheesham, Semal",
+  24:"Kachnar, Amaltas, Lemon, Sukh Chayn, Jamun, Moringa, Mulberry, Citrus, Arjun, Neem, Guava, Sheesham, Semal",
+  25:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Neem, Guava, Sheesham, Poplar",
+  26:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Neem, Guava, Sheesham, Poplar",
+  27:"Kachnar, Amaltas, Sukh Chayn, Alstonia, Moringa, Neem (Bakain), Guava, Sheesham, Semal, Poplar",
+  28:"Kachnar, Amaltas, Sukh Chayn, Moringa, Mulberry, Neem (Bakain), Guava, Sheesham",
+  29:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Neem (Bakain)",
+  30:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Neem (Bakain)",
+  31:"Kachnar, Amaltas, Sukh Chayn, Jamun, Alstonia, Gum Arabic, Neem (Bakain)",
+  32:"Species to be confirmed with University of Sargodha",
+  33:"Species to be confirmed with University of Agriculture",
+  34:"Kachnar, Amaltas, Lemon, Sukh Chayn, Jamun, Moringa, Mulberry, Neem (Bakain), Arjun, Poplar, Alstonia, Gum Arabic, Sheesham, Semal, Guava",
+  35:"Sukh Chayn, Alstonia, Gum Arabic, Mulberry, Neem (Bakain), Sheesham, Semal, Poplar, Guava, Jamun",
+  36:"Species to be confirmed with Beaconhouse Estate",
+  37:"Kachnar, Amaltas, Gul-e-Nishter, Jamun, Moringa, Mulberry, Neem (Bakain)",
+  38:"Species to be confirmed with S-04 convenor",
+  39:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Neem (Bakain)",
+  40:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Arjun, Neem (Bakain), Guava, Sheesham, Semal",
+  41:"Sukh Chayn, Jamun, Mulberry, Neem (Bakain)",
+  42:"Jamun, Moringa, Gum Arabic, Neem (Bakain)",
+  43:"Lemon, Jamun, Moringa, Neem (Bakain), Guava",
+  44:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Moringa, Mulberry, Neem (Bakain), Sheesham, Semal, Poplar",
+  45:"Amaltas, Gul-e-Nishter, Neem (Bakain)",
+  46:"Kachnar, Lemon, Sukh Chayn, Jamun, Moringa, Guava, Sheesham, Poplar",
+  47:"Lemon, Sukh Chayn, Moringa, Neem (Bakain), Poplar",
+  49:"Kachnar, Lemon, Gul-e-Nishter, Moringa, Neem (Bakain)",
+  50:"Kachnar, Lemon, Gul-e-Nishter, Moringa",
+  51:"Kachnar, Amaltas, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Mulberry, Arjun, Neem (Bakain), Guava, Semal"
+};
+
+let state={schools:[],dispatches:[],settings:{recipients:"mahnoor.safdar@bh.edu.pk, azal.zahir@bh.edu.pk",alertDays:5,digestDay:1,projectName:"BHS Plantation Drive",fbConfig:null}};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+function loadState(){
+  const saved=localStorage.getItem('bhs_v4');
+  if(saved){
+    const p=JSON.parse(saved);
+    state.dispatches=p.dispatches||[];
+    state.settings={...state.settings,...(p.settings||{})};
+  }
+  state.schools=SD.map(mkSchool);
+  recomputeDispatched();
+}
+function mkSchool(sd){
+  return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],baseline:sd[5],baselineDate:sd[9],dispatched:sd[5],plantingDate:sd[6],convenor:sd[7],contact:sd[8]};
+}
+function save(){localStorage.setItem('bhs_v4',JSON.stringify({dispatches:state.dispatches,settings:{...state.settings,fbConfig:undefined}}));}
+
+function recomputeDispatched(){
+  state.schools.forEach(s=>{
+    const logged=state.dispatches.filter(d=>String(d.schoolId)===String(s.id)).reduce((a,d)=>a+(parseInt(d.qty)||0),0);
+    s.dispatched=Math.min(s.baseline+logged,s.required);
+  });
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function fmt(n){return Math.round(n).toLocaleString();}
+function fmtD(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+function du(d){if(!d)return null;return Math.floor((new Date(d)-TODAY)/86400000);}
+function gst(s){if(s.dispatched>=s.required)return'done';if(s.dispatched>0)return'partial';return'pending';}
+function stLbl(s){const st=gst(s);return st==='done'?'Done':st==='partial'?'Partial':'Pending';}
+function pct(s){return s.required>0?Math.min(100,Math.round(s.dispatched/s.required*100)):0;}
+function progBar(p){return`<div class="prog" style="margin-bottom:2px"><div class="pf ${p<30?'d':p<70?'w':''}" style="width:${p}%"></div></div><span style="font-size:10px;color:var(--tx3)">${p}%</span>`;}
+function rgBadge(r){return`<span class="badge b-${r.toLowerCase()}">${RN[r]||r}</span>`;}
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+function go(p){
+  document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));
+  document.getElementById('pane-'+p).classList.add('active');
+  document.getElementById('nav-'+p).classList.add('active');
+  if(p==='dashboard')rDash();
+  if(p==='clusters')rClusters();
+  if(p==='dispatch')rDispatch();
+  if(p==='alerts')rAlerts();
+  if(p==='settings')loadSettingsForm();
+  if(p==='lastyear'){render2025Summary();renderMap();render2025Table();}
+}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-backdrop').classList.toggle('open');}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-backdrop').classList.remove('open');}
+function closeMo(){document.querySelectorAll('.mo').forEach(x=>x.classList.add('hidden'));}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function rDash(){
+  const tot=state.schools.reduce((a,s)=>a+s.required,0);
+  const dis=state.schools.reduce((a,s)=>a+s.dispatched,0);
+  const rem=tot-dis;
+  const p=tot>0?Math.round(dis/tot*100):0;
+  document.getElementById('m1').textContent=fmt(tot);
+  document.getElementById('m2').textContent=fmt(dis);
+  document.getElementById('m2s').textContent=p+'% complete';
+  document.getElementById('m3').textContent=fmt(rem);
+  document.getElementById('m4').textContent=p+'%';
+  document.getElementById('m4s').textContent=fmt(dis)+' of '+fmt(tot)+' dispatched';
+
+  const urgent=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=7&&gst(s)!=='done';})
+    .sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate)).slice(0,8);
+  document.getElementById('d-urgent').innerHTML=urgent.length===0?`<div style="color:var(--tx3);font-size:13px;padding:.5rem 0">No overdue or imminent dispatches — <a href="#" onclick="go('alerts')" style="color:var(--bl-d)">check Alerts tab</a> for full picture.</div>`:
+    urgent.map(s=>{const d=du(s.plantingDate);
+      const msg=d<0?`Overdue ${Math.abs(d)}d`:d===0?'Today!':d===1?'Tomorrow':`In ${d}d`;
+      const cls=d<0?'b-pending':d<=2?'b-pending':'b-partial';
+      return`<div class="stat-row"><div><strong>${s.cluster}</strong> <span style="font-size:11px;color:var(--tx3)">${s.city}</span><br><span style="font-size:11px;color:var(--tx3)">${s.convenor} · ${fmt(s.required-s.dispatched)} plants pending</span></div><span class="badge ${cls}">${msg}</span></div>`;}).join('');
+
+  const regs=['N','C','S'];
+  document.getElementById('d-regions').innerHTML=regs.map(r=>{
+    const rs=state.schools.filter(s=>s.region===r);const rt=rs.reduce((a,s)=>a+s.required,0);const rd=rs.reduce((a,s)=>a+s.dispatched,0);const rp=rt>0?Math.round(rd/rt*100):0;
+    return`<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>${rgBadge(r)} <span style="color:var(--tx3)">${rs.length} clusters</span></span><span style="color:var(--tx2)">${fmt(rd)}/${fmt(rt)} (${rp}%)</span></div><div class="prog"><div class="pf ${rp<30?'d':rp<70?'w':''}" style="width:${rp}%"></div></div></div>`;}).join('');
+
+  const up=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>0&&d<=30&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
+  const overdue=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=0&&gst(s)!=='done';}).sort((a,b)=>new Date(b.plantingDate)-new Date(a.plantingDate));
+  const upShow=up.length>0?up:overdue.slice(0,5);
+  const upLabel=up.length>0?`Upcoming ${up.length} dispatch${up.length>1?'es':''} in next 30 days`:`No upcoming dates — showing ${Math.min(overdue.length,5)} most recently overdue`;
+  document.getElementById('d-upcoming').innerHTML=upShow.length===0?'<p style="color:var(--tx3);font-size:13px">No dates set. Assign planting dates in the cluster data to see scheduling.</p>':
+    upShow.map(s=>{const d=du(s.plantingDate);const past=d!==null&&d<=0;
+    return`<div class="stat-row"><div><strong>${s.cluster}</strong> — ${s.city}<br><span style="font-size:11px;color:${past?'var(--re-d)':'var(--tx3)'}">${s.convenor} · Planting ${fmtD(s.plantingDate)}${past?` <strong>(overdue ${Math.abs(d)}d)</strong>`:''} · ${fmt(s.required-s.dispatched)} needed</span></div><button class="btn btn-s" onclick="openDM(${s.id})">Log</button></div>`;}).join('')+
+    `<div style="font-size:11px;color:var(--tx3);margin-top:8px;padding-top:8px;border-top:.5px solid var(--bd)">${upLabel} · <a href="#" onclick="go('alerts')" style="color:var(--bl-d)">View all alerts →</a></div>`;
+}
+
+// ─── CLUSTERS TABLE ───────────────────────────────────────────────────────────
+function rClusters(){
+  const q=(document.getElementById('fs').value||'').toLowerCase();
+  const rf=document.getElementById('fr').value;
+  const sf=document.getElementById('fst').value;
+  const filtered=state.schools.filter(s=>{
+    const mq=!q||s.cluster.toLowerCase().includes(q)||s.convenor.toLowerCase().includes(q)||s.city.toLowerCase().includes(q);
+    return mq&&(!rf||s.region===rf)&&(!sf||gst(s)===sf);
+  });
+  const cEl=document.getElementById('clusters-count');
+  if(cEl)cEl.textContent=`${state.schools.length} clusters · Click 🌱 to see requested species`;
+  document.getElementById('ct').innerHTML=filtered.map(s=>{
+    const st=gst(s);const pc=pct(s);const d=du(s.plantingDate);
+    const ds=s.plantingDate?fmtD(s.plantingDate)+(d!==null&&d<=7&&st!=='done'?` <span style="color:var(--re);font-size:10px">(${d<0?'overdue':d+'d'})</span>`:''):'—';
+    return`<tr><td><strong>${s.cluster}</strong><button class="btn btn-s" onclick="showSpecies(${s.id})" title="Species requested" style="margin-left:6px;padding:2px 6px;font-size:11px">🌱</button></td><td style="font-size:12px;color:var(--tx2)">${s.convenor}</td><td style="font-size:12px">${s.city}</td><td>${rgBadge(s.region)}</td><td style="font-weight:500">${fmt(s.required)}</td><td>${fmt(s.dispatched)}</td><td style="min-width:90px">${progBar(pc)}</td><td style="font-size:12px">${ds}</td><td><span class="badge b-${st}">${stLbl(s)}</span></td><td><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-truck-delivery"></i></button></td></tr>`;}).join('');
+}
+function showSpecies(id){
+  const s=state.schools.find(x=>x.id===id);if(!s)return;
+  document.getElementById('sp-modal-title').innerHTML=`🌱 ${s.cluster} — Species requested`;
+  document.getElementById('sp-modal-body').innerHTML=`<p style="font-size:13px;line-height:1.7;color:var(--tx2)">${CSP[id]||'No species list recorded for this cluster yet.'}</p>`;
+  document.getElementById('sp-modal').classList.remove('hidden');
+}
+
+// ─── DISPATCH LOG ─────────────────────────────────────────────────────────────
+function rDispatch(){
+  const has=state.dispatches.length>0;
+  document.getElementById('de').classList.toggle('hidden',has);
+  document.getElementById('dt').innerHTML=state.dispatches.slice().reverse().map((d)=>{
+    const src=d.imported?'<span class="badge b-imp">Imported</span>':'<span class="badge b-done">Manual</span>';
+    const del=d.imported?'':` <button class="btn btn-s btn-d" onclick="askDel('${d.id}')" title="Delete"><i class="ti ti-trash"></i></button>`;
+    return`<tr><td style="font-size:12px;white-space:nowrap">${fmtD(d.date)}</td><td><strong>${d.cluster}</strong></td><td style="font-size:12px;color:var(--tx2)">${d.city}</td><td style="font-weight:600;color:var(--gr)">${fmt(d.qty)}</td><td style="font-size:11px;color:var(--tx2);max-width:200px">${d.species||d.notes||'—'}</td><td style="font-size:12px">${d.by||'—'}</td><td>${src}</td><td>${del}</td></tr>`;}).join('');
+}
+
+// ─── ALERTS ───────────────────────────────────────────────────────────────────
+function rAlerts(){
+  const days=parseInt(state.settings.alertDays)||5;
+  const due=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=days&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
+  updateBadge(due.length);
+  document.getElementById('al').innerHTML=due.length===0?`<div class="alert ag"><i class="ti ti-circle-check"></i><div>No clusters with planting dates within the next ${days} days need dispatch preparation.</div></div>`:
+    due.map(s=>{const d=du(s.plantingDate);const msg=d<0?`Overdue ${Math.abs(d)} days`:d===0?'Today!':d===1?'Tomorrow':`In ${d} days`;const cls=d<=2?'aw':'ai';
+    return`<div class="alert ${cls}"><i class="ti ti-bell"></i><div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong>${s.cluster}</strong> — ${s.convenor} (${s.city})</div><span class="badge b-pending">${msg}</span></div><div style="font-size:12px;margin-top:4px">Planting: ${fmtD(s.plantingDate)} · Still needed: <strong>${fmt(s.required-s.dispatched)} plants</strong></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-plus"></i>Log dispatch</button><a href="tel:${s.contact}" class="btn btn-s"><i class="ti ti-phone"></i>${s.contact}</a></div></div></div>`;}).join('');
+}
+function updateBadge(n){
+  if(n===undefined){const days=parseInt(state.settings.alertDays)||5;n=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=days&&gst(s)!=='done';}).length;}
+  const el=document.getElementById('abc');el.textContent=n;el.classList.toggle('hidden',n===0);
+}
+
+// ─── DISPATCH MODAL ───────────────────────────────────────────────────────────
+let delTarget=null;
+function openDM(schoolId){
+  const sel=document.getElementById('d-cluster');
+  sel.innerHTML=state.schools.map(s=>`<option value="${s.id}">${s.cluster} — ${s.city} (${fmt(s.required-s.dispatched)} remaining)</option>`).join('');
+  if(schoolId)sel.value=schoolId;
+  document.getElementById('d-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('d-qty').value='';
+  document.getElementById('d-by').value=localStorage.getItem('bhs_by')||'';
+  document.getElementById('d-sp').value='';
+  document.getElementById('d-notes').value='';
+  document.getElementById('dm').classList.remove('hidden');
+}
+async function saveDispatch(){
+  const sid=parseInt(document.getElementById('d-cluster').value);
+  const qty=parseInt(document.getElementById('d-qty').value)||0;
+  if(!sid||qty<=0){alert('Select a cluster and enter a quantity.');return;}
+  const s=state.schools.find(x=>x.id===sid);
+  const by=document.getElementById('d-by').value.trim();
+  if(by)localStorage.setItem('bhs_by',by);
+  const newDispatch={id:'d_'+Date.now(),schoolId:sid,cluster:s.cluster,city:s.city,date:document.getElementById('d-date').value,qty,species:document.getElementById('d-sp').value.trim(),notes:document.getElementById('d-notes').value.trim(),by,imported:false};
+  closeMo();
+  if(fbReady()){
+    updateSyncBadge('saving');
+    try{
+      await db.collection('dispatches').add(newDispatch);
+      updateSyncBadge('connected');
+      pushDigestSnapshot();
+    }catch(e){console.warn('Firestore add failed:',e.message);updateSyncBadge('error');showInAppNotif('⚠️ Could not sync to shared database — check your connection.');}
+  } else {
+    state.dispatches.push(newDispatch);
+    recomputeDispatched();save();rDash();rDispatch();rAlerts();rClusters();updateBadge();
+  }
+}
+function askDel(id){delTarget=id;document.getElementById('delm').classList.remove('hidden');}
+async function doDelete(){
+  const id=delTarget;closeMo();
+  if(fbReady()){
+    updateSyncBadge('saving');
+    try{
+      await db.collection('dispatches').doc(id).delete();
+      updateSyncBadge('connected');
+      pushDigestSnapshot();
+    }catch(e){console.warn('Firestore delete failed:',e.message);updateSyncBadge('error');}
+  } else {
+    state.dispatches=state.dispatches.filter(d=>d.id!==id);
+    recomputeDispatched();save();rDash();rDispatch();updateBadge();
+  }
+}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function exportCSV(){
+  const rows=[['Cluster','City','Region','Required','Dispatched','Remaining','Status','Planting Date','Convenor','Contact']];
+  state.schools.forEach(s=>rows.push([s.cluster,s.city,RN[s.region],s.required,s.dispatched,s.required-s.dispatched,stLbl(s),s.plantingDate||'',s.convenor,s.contact]));
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));a.download=`bhs-plantation-${new Date().toISOString().split('T')[0]}.csv`;a.click();
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function loadSettingsForm(){
+  const s=state.settings;
+  document.getElementById('s-recipients').value=s.recipients||'';
+  document.getElementById('s-days').value=s.alertDays||5;
+  document.getElementById('s-dday').value=s.digestDay!==undefined?s.digestDay:1;
+  document.getElementById('s-pname').value=s.projectName||'BHS Plantation Drive';
+  document.getElementById('s-fb-config').value=s.fbConfigRaw||'';
+  updateFbStatus();
+}
+function saveSettings(){
+  state.settings.recipients=document.getElementById('s-recipients').value.trim();
+  state.settings.alertDays=parseInt(document.getElementById('s-days').value)||5;
+  state.settings.digestDay=parseInt(document.getElementById('s-dday').value)||1;
+  state.settings.projectName=document.getElementById('s-pname').value.trim()||'BHS Plantation Drive';
+  save();
+  if(fbReady()){
+    db.collection('meta').doc('settings').set({recipients:state.settings.recipients,alertDays:state.settings.alertDays,digestDay:state.settings.digestDay,projectName:state.settings.projectName},{merge:true}).catch(e=>console.warn(e));
+  }
+  rAlerts();updateBadge();
+  showInAppNotif('Settings saved');
+}
+
+// ─── FIREBASE ─────────────────────────────────────────────────────────────────
+let fbApp=null, db=null, fbAuthReady=false;
+function fbReady(){return !!db && fbAuthReady;}
+
+function updateFbStatus(){
+  const el=document.getElementById('fb-status');if(!el)return;
+  el.textContent=fbReady()?'✓ Connected':(state.settings.fbConfigRaw?'Saved, not yet connected':'Not connected');
+  el.style.color=fbReady()?'var(--gr-d)':'var(--tx3)';
+}
+function updateSyncBadge(status){
+  const icon=document.getElementById('sync-icon');const text=document.getElementById('sync-text');
+  if(!icon||!text)return;
+  if(status==='connected'){icon.className='ti ti-cloud-check';icon.style.color='var(--gr)';text.textContent='Live — synced with team';text.style.color='var(--gr-d)';}
+  else if(status==='saving'){icon.className='ti ti-cloud-upload spin';icon.style.color='var(--am)';text.textContent='Syncing...';text.style.color='var(--am-d)';}
+  else if(status==='error'){icon.className='ti ti-cloud-x';icon.style.color='var(--re)';text.textContent='Sync error — click to check Settings';text.style.color='var(--re-d)';}
+  else{icon.className='ti ti-cloud-off';icon.style.color='var(--tx3)';text.textContent='Local only — connect Firebase to share';text.style.color='var(--tx3)';}
+}
+
+async function initFirebaseFromConfig(configRaw){
+  let config;
+  try{config=JSON.parse(configRaw);}catch(e){alert('That doesn\'t look like valid JSON. Paste the whole firebaseConfig object, including the curly braces.');return false;}
+  try{
+    fbApp=firebase.initializeApp(config);
+    db=firebase.firestore();
+    updateSyncBadge('saving');
+    await firebase.auth().signInAnonymously();
+    fbAuthReady=true;
+    listenDispatches();
+    listenSettings();
+    updateSyncBadge('connected');
+    return true;
+  }catch(e){
+    console.warn('Firebase init failed:',e.message);
+    updateSyncBadge('error');
+    alert('Could not connect to Firebase.\n\nError: '+e.message+'\n\nCheck that:\n• The config was pasted correctly\n• Firestore is created (test mode)\n• Anonymous sign-in is enabled\n• The security rules from Settings are published');
+    return false;
+  }
+}
+
+async function connectFirebase(){
+  const raw=document.getElementById('s-fb-config').value.trim();
+  if(!raw){alert('Paste your Firebase config first.');return;}
+  state.settings.fbConfigRaw=raw;save();
+  const ok=await initFirebaseFromConfig(raw);
+  updateFbStatus();
+  if(ok)alert('✅ Connected! Dispatches will now sync live with your team.\n\nShare the same Firebase config with your teammates — they paste it into their own Settings → Connect.');
+}
+function disconnectFirebase(){
+  if(!confirm('Disconnect from Firebase? (Your local data stays safe, but you\'ll stop syncing with your team.)'))return;
+  state.settings.fbConfigRaw='';save();
+  db=null;fbApp=null;fbAuthReady=false;
+  document.getElementById('s-fb-config').value='';
+  updateSyncBadge('local');updateFbStatus();
+}
+
+let _dispatchesUnsub=null, _settingsUnsub=null;
+function listenDispatches(){
+  if(_dispatchesUnsub)_dispatchesUnsub();
+  _dispatchesUnsub=db.collection('dispatches').onSnapshot(snap=>{
+    state.dispatches=snap.docs.map(doc=>({id:doc.id,...doc.data()}));
+    recomputeDispatched();
+    rDash();updateBadge();
+    if(document.getElementById('pane-clusters').classList.contains('active'))rClusters();
+    if(document.getElementById('pane-dispatch').classList.contains('active'))rDispatch();
+    if(document.getElementById('pane-alerts').classList.contains('active'))rAlerts();
+  },err=>{console.warn('dispatches listener error:',err.message);updateSyncBadge('error');});
+}
+function listenSettings(){
+  if(_settingsUnsub)_settingsUnsub();
+  _settingsUnsub=db.collection('meta').doc('settings').onSnapshot(doc=>{
+    if(doc.exists){
+      const d=doc.data();
+      ['recipients','alertDays','digestDay','projectName'].forEach(k=>{if(d[k]!==undefined)state.settings[k]=d[k];});
+      save();
+      if(document.getElementById('pane-settings').classList.contains('active'))loadSettingsForm();
+      rAlerts();updateBadge();
+    }
+  },err=>console.warn('settings listener error:',err.message));
+}
+
+// ─── WEEKLY DIGEST SNAPSHOT (read by the GitHub Actions job) ─────────────────
+function fmtDigestEmail(){
+  const tot=state.schools.reduce((a,s)=>a+s.required,0);const dis=state.schools.reduce((a,s)=>a+s.dispatched,0);
+  const thisWeek=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>=0&&d<=7&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
+  const next7=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>7&&d<=14&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
+  const overdue=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<0&&gst(s)!=='done';});
+  const top5=state.schools.filter(s=>gst(s)!=='done').sort((a,b)=>(b.required-b.dispatched)-(a.required-a.dispatched)).slice(0,5);
+
+  let body=`🌱 WEEKLY PLANTATION DRIVE UPDATE\n${'='.repeat(36)}\nWeek of ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}\n\n`;
+  body+=`OVERALL PROGRESS\n${'─'.repeat(20)}\nTotal ordered:  ${fmt(tot)}\nDispatched:     ${fmt(dis)} (${Math.round(dis/tot*100)}%)\nRemaining:      ${fmt(tot-dis)}\nClusters done:  ${state.schools.filter(s=>gst(s)==='done').length} of ${state.schools.length}\n\n`;
+  if(overdue.length){body+=`⚠️  OVERDUE (missed planting date)\n${'─'.repeat(36)}\n`;overdue.forEach(s=>{const d=Math.abs(du(s.plantingDate));body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — ${d}d overdue\n`;});body+='\n';}
+  if(thisWeek.length){body+=`📅 THIS WEEK'S DISPATCHES (0–7 days)\n${'─'.repeat(36)}\n`;thisWeek.forEach(s=>{const d=du(s.plantingDate);body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — Planting ${fmtD(s.plantingDate)} (${d===0?'today':d===1?'tomorrow':d+'d'})\n  Contact: ${s.convenor} · ${s.contact}\n`;});body+='\n';}
+  else{body+=`✅  No planting dates this week.\n\n`;}
+  if(next7.length){body+=`🗓️  UPCOMING (8–14 days)\n${'─'.repeat(36)}\n`;next7.forEach(s=>{body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — ${fmtD(s.plantingDate)}\n`;});body+='\n';}
+  body+=`TOP 5 PENDING (by quantity)\n${'─'.repeat(36)}\n`;
+  top5.forEach((s,i)=>{body+=`${i+1}. ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants remaining\n`;});
+  body+=`\nPrepared by: ${state.settings.projectName||'Plantation Drive'} System`;
+  return body;
+}
+function pushDigestSnapshot(){
+  if(!fbReady())return;
+  const subject=`🌱 ${state.settings.projectName||'Plantation Drive'} Weekly Update — ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long'})}`;
+  const bodyText=fmtDigestEmail();
+  db.collection('meta').doc('digest').set({subject,body:bodyText,updatedAt:new Date().toISOString()},{merge:true}).catch(e=>console.warn('digest push failed:',e.message));
+}
+
+function showInAppNotif(msg){
+  const n=document.createElement('div');
+  n.className='alert ag';n.style.cssText='position:fixed;top:1rem;right:1rem;z-index:900;max-width:360px';
+  n.innerHTML=`<i class="ti ti-check"></i><div>${msg}</div>`;
+  document.body.appendChild(n);setTimeout(()=>n.remove(),4000);
+}
+
+// ─── 2025 INITIATIVE DATA ────────────────────────────────────────────────────
+const LAST_YEAR=[{"id":1,"n":"Sundas Fatima","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Subflower, Strawberry","lo":"Lahore","lt":31.49986,"ln":74.36516},{"id":2,"n":"Ayman Zahra","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Aloe vera, jamun, roses, jasmine","lo":"Lahore","lt":31.5465,"ln":74.29962},{"id":3,"n":"Ms. Ambreen Haye Mr.Yasir Mehmood","tp":"S","br":"B","rg":"N","cy":"Rawalpindi","tr":50,"sp":"1. Citrus limon plant; 2. Prunus persica plant","lo":"Rawalpindi","lt":33.5651,"ln":73.0169},{"id":4,"n":"Fatima Fahad","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"jasmine","lo":"Lahore","lt":31.48705,"ln":74.31692},{"id":5,"n":"Maheen Asif","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"mint, sunflower, grapes","lo":"Lahore","lt":31.50772,"ln":74.30221},{"id":6,"n":"Samreen Haseeb","tp":"S","br":"B","rg":"S","cy":"Karachi","tr":25,"sp":"none","lo":"Karachi","lt":24.8437,"ln":66.9911},{"id":7,"n":"Amra Salman","tp":"S","br":"B","rg":"C","cy":"Bahawalpur","tr":50,"sp":"Neem, Bakain, Palm, Sheesham","lo":"Bahawalpur","lt":29.38948,"ln":71.67839},{"id":8,"n":"azal zahir","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":800,"sp":"kikar, bakain, jaaman","lo":"Lahore","lt":31.03014,"ln":74.11379},{"id":9,"n":"Faiz Ahmed","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":45,"sp":"","lo":"Lahore","lt":31.5417,"ln":74.3426},{"id":10,"n":"Ayesha Bilal","tp":"S","br":"B","rg":"N","cy":"Gujrat","tr":600,"sp":"Neem, Shisham, Kikar, Ber, Jand","lo":"Gujrat","lt":32.5688,"ln":74.0852},{"id":11,"n":"Sobia Malik","tp":"S","br":"B","rg":"N","cy":"Islamabad","tr":6,"sp":"Cane palm, Hoop Pine, Punica","lo":"Islamabad","lt":33.56181,"ln":73.12556},{"id":12,"n":"Isra Mashhadi","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":850,"sp":"Jaman, Arjun, Sukh Chain (Beech tree), Amaltas (Golden tree), Amrood (guava)","lo":"Lahore","lt":31.52755,"ln":74.34466},{"id":13,"n":"Rabia Faiz","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Ficus banjamina and Conocarpus","lo":"Lahore","lt":31.5537,"ln":74.3546},{"id":14,"n":"Madiha Khan","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Orange tree, kikar","lo":"Lahore","lt":31.5567,"ln":74.3576},{"id":15,"n":"Sumita Munir","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":6,"sp":"Bakin.Kikar etc","lo":"Lahore","lt":31.5597,"ln":74.3606},{"id":16,"n":"Shehla Zaib","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Guava, neem, jamun, moringa, lemon","lo":"Lahore","lt":31.5627,"ln":74.3636},{"id":17,"n":"Shumaila Bhatti","tp":"S","br":"B","rg":"N","cy":"Islamabad","tr":2500,"sp":"neem, Amal Tas, mulberry, ber, apple","lo":"Islamabad","lt":33.71752,"ln":73.06617},{"id":18,"n":"Rahat AAMIR","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":6,"sp":"Capsicum, jasomine, Curry keaves  lemon","lo":"Lahore","lt":31.5687,"ln":74.3696},{"id":19,"n":"Rubina Nazir","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Alastonia","lo":"Lahore","lt":31.5717,"ln":74.3156},{"id":20,"n":"Isbah Adnaan","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Golden Ficus, plain Ficus, guava, Marwa, Ashoka","lo":"Lahore","lt":31.5747,"ln":74.3186},{"id":21,"n":"Hira Anwar","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Aquilaria, Leucaena, Umbellularia, Cinnamomum verum","lo":"Lahore","lt":31.5777,"ln":74.3216},{"id":22,"n":"Sadaf Iqbal","tp":"I","br":"B","rg":"C","cy":"Okara","tr":30,"sp":"Rose, jasmine, ferns, samborium, Locaat","lo":"Okara","lt":30.93633,"ln":73.45442},{"id":23,"n":"Nabeeha Uzair","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Mangifera, sweetsop, Indica, Kikar","lo":"Lahore","lt":31.5147,"ln":74.3276},{"id":24,"n":"Aisha Ijaz","tp":"I","br":"B","rg":"C","cy":"Okara","tr":5,"sp":"Araucaria, Petunia","lo":"Okara","lt":30.7818,"ln":73.4404},{"id":25,"n":"Imran Ahmed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Phonix palm","lo":"Okara","lt":30.7848,"ln":73.4434},{"id":26,"n":"Muhammad Rasool","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Araucaria","lo":"Okara","lt":30.7878,"ln":73.4464},{"id":27,"n":"Shahana Pervaiz","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Jamon, neem, mango, shetoot","lo":"Lahore","lt":31.5267,"ln":74.3396},{"id":28,"n":"Sheeba Noreen","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Alistonia, Acacia","lo":"Lahore","lt":31.5297,"ln":74.3426},{"id":29,"n":"Asma Imran","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Alistonia, Acacia","lo":"Lahore","lt":31.5327,"ln":74.3456},{"id":30,"n":"Shazia Khan","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Kikar","lo":"Lahore","lt":31.5357,"ln":74.3486},{"id":31,"n":"Aisha Kiran","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Sheesham, Bakain, Moringa","lo":"Lahore","lt":31.5387,"ln":74.3516},{"id":32,"n":"Wizma Ali","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Trees","lo":"Lahore","lt":31.5417,"ln":74.3546},{"id":33,"n":"Shabana Kousar","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Bakain, Sheesham, Moringa","lo":"Lahore","lt":31.5447,"ln":74.3576},{"id":34,"n":"Sadaf Iqbal","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"konu, marwa, guava","lo":"Lahore","lt":31.5477,"ln":74.3606},{"id":35,"n":"Mishal Anwar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Rosa (Queen Elizabeth)","lo":"Okara","lt":30.8148,"ln":73.4734},{"id":36,"n":"Urooba Bilal","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Jasminum","lo":"Okara","lt":30.8178,"ln":73.4764},{"id":37,"n":"Faryal Fazal","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Rose plant","lo":"Okara","lt":30.8208,"ln":73.4794},{"id":38,"n":"Fatima Naheed Akhtar","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":3,"sp":"Neem, Acacia and Jamun","lo":"Lahore","lt":31.5597,"ln":74.3156},{"id":39,"n":"Mahrukh Javaid","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Jamun, Mango, kikar","lo":"Lahore","lt":31.5627,"ln":74.3186},{"id":40,"n":"Muahmmad Arshad","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"wayfaring tree","lo":"Okara","lt":30.82733,"ln":73.44003},{"id":41,"n":"Momina Ahsan","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Kikar","lo":"Lahore","lt":31.5687,"ln":74.3246},{"id":42,"n":"Humaira Hussain","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Kikar, orange trees","lo":"Lahore","lt":31.5717,"ln":74.3276},{"id":43,"n":"Muhammad khalid Yousaf","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Palm, mulberry, jambolan, alstonia","lo":"Lahore","lt":31.5747,"ln":74.3306},{"id":44,"n":"Muhammad Ali","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":3,"sp":".","lo":"Lahore","lt":31.5777,"ln":74.3336},{"id":45,"n":"Urooj Zehra","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Kikar and gulab","lo":"Lahore","lt":31.5807,"ln":74.3366},{"id":46,"n":"Warda Mamoon","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Amrood, Marwa, Kono","lo":"Lahore","lt":31.4463,"ln":74.27564},{"id":47,"n":"Yussra Naeem","tp":"I","br":"B","rg":"C","cy":"Okara","tr":6,"sp":"Fig, Aloe vera, spurge, periwinkle, rose","lo":"Okara","lt":30.81464,"ln":73.43522},{"id":48,"n":"Madiha Tariq Madiha Tariq","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Mulberry, Papaya, Guava, Lemon, Konu plant","lo":"Lahore","lt":31.5207,"ln":74.3456},{"id":49,"n":"Anam Gill","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Money plant","lo":"Okara","lt":30.7878,"ln":73.4584},{"id":50,"n":"Nimra Anwar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"","lo":"Okara","lt":30.81886,"ln":73.44483},{"id":51,"n":"Taranum Sajjad","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Golden Pothos, Aloe vera","lo":"Okara","lt":30.7938,"ln":73.4644},{"id":52,"n":"Aqsa Hanif","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Aloe vera","lo":"Okara","lt":30.7968,"ln":73.4674},{"id":53,"n":"Sana Nafees","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Alovera, Neem","lo":"Okara","lt":30.7998,"ln":73.4704},{"id":54,"n":"Zuhaib Nawaz","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Arrowhead Plant","lo":"Okara","lt":30.8028,"ln":73.4734},{"id":55,"n":"Qasim Riaz","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":142,"sp":"Neem, Mango, Moringa, Palm, Rose","lo":"Lahore","lt":31.45355,"ln":74.27663},{"id":56,"n":"Sidrah Talib","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Guava Plant","lo":"Okara","lt":30.8088,"ln":73.4794},{"id":57,"n":"Shaista parveen","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Neem","lo":"Okara","lt":30.8118,"ln":73.4254},{"id":58,"n":"Omar Mansur","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Almond, Lemon","lo":"Okara","lt":30.76069,"ln":73.36157},{"id":59,"n":"Sajid Alam","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Arrow Head","lo":"Okara","lt":30.8178,"ln":73.4314},{"id":60,"n":"Qasim Riaz","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":150,"sp":"Cactus","lo":"Lahore","lt":31.45356,"ln":74.27664},{"id":61,"n":"Romaisa Saeed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":4,"sp":"Mellburry, Rosewood (sheesham)","lo":"Okara","lt":30.87818,"ln":73.59543},{"id":62,"n":"Romaisa Saeed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Lemon","lo":"Okara","lt":30.8,"ln":73.499},{"id":63,"n":"Romaisa Saeed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Mango and banyan","lo":"Okara","lt":30.81725,"ln":73.4609},{"id":64,"n":"Khurshid Anwar Shah","tp":"S","br":"H","rg":"C","cy":"Lahore","tr":100,"sp":"Guava, Kinow, Malta, Lemon, Jaman","lo":"Lahore","lt":31.5687,"ln":74.3366},{"id":65,"n":"Romaisa Saeed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Sago Palm","lo":"Okara","lt":30.8131,"ln":73.47474},{"id":66,"n":"Aqsa Khalid","tp":"S","br":"B","rg":"C","cy":"Multan","tr":73,"sp":"1.Gulmoher, 2.Amaltas, 3.Anjeer, 4.Rangoon Creeper, 5.Bougainvillea","lo":"Multan","lt":30.1825,"ln":71.5239},{"id":67,"n":"Shabana Mahfooz","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":50,"sp":"Neem, Plum","lo":"Lahore","lt":31.5214,"ln":74.37203},{"id":68,"n":"Fakhra Atif","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":21,"sp":"roses, pomegranates, terminalias, ficus, lemons","lo":"Lahore","lt":31.5807,"ln":74.3486},{"id":69,"n":"Omema Hassan","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":60,"sp":"catharanthus roseus","lo":"Lahore","lt":31.45553,"ln":74.25014},{"id":70,"n":"Shabana Mahfooz","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":1300,"sp":"Neem, Amaltas, Mulberry, Citrus","lo":"Lahore","lt":31.4976,"ln":74.36413},{"id":71,"n":"Ms Rumaisa Saeed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"rose, jasmine","lo":"Okara","lt":30.8218,"ln":73.44785},{"id":72,"n":"Asma Iqbal","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Syngonium","lo":"Okara","lt":30.7878,"ln":73.4704},{"id":73,"n":"saliha khan","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"plant","lo":"Okara","lt":30.7908,"ln":73.4734},{"id":74,"n":"Quratulain Shahid","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Araucaria","lo":"Okara","lt":30.7938,"ln":73.4764},{"id":75,"n":"Humaira Aslam","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Tomato, bakain, flower plant","lo":"Okara","lt":30.81346,"ln":73.43193},{"id":76,"n":"Sahar Ali","tp":"I","br":"B","rg":"C","cy":"Okara","tr":5,"sp":"Bougainvillea, Night Jasmine, Bleeding Heart Vine, Citrus Plant, Areca Palm","lo":"Okara","lt":30.80419,"ln":73.43119},{"id":77,"n":"Bisma Murtaza","tp":"S","br":"B","rg":"C","cy":"Okara","tr":100,"sp":"Bottlebrush, Neem, Peepal, Kikar","lo":"Okara","lt":30.8028,"ln":73.4284},{"id":78,"n":"Bisma Murtaza","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"kikar","lo":"Okara","lt":30.8058,"ln":73.4314},{"id":79,"n":"Madiha Ashfaq","tp":"I","br":"B","rg":"C","cy":"Okara","tr":4,"sp":"Elephant bush (Portulacaria afra), Crape jasmine, Common sunflower","lo":"Okara","lt":30.8,"ln":73.432},{"id":80,"n":"Anila Ghulam Nabi","tp":"I","br":"B","rg":"C","cy":"Okara","tr":4,"sp":"Rose, Sun flower, Alo vera, Dwarf umbrella tree","lo":"Okara","lt":30.80019,"ln":73.45996},{"id":81,"n":"Fouzia Mahmood","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Araucaria","lo":"Okara","lt":30.8148,"ln":73.4404},{"id":82,"n":"Shabana Mahfooz","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":400,"sp":"Neem, Mulberry, Citrus, moringa","lo":"Lahore","lt":31.2802,"ln":74.0716},{"id":83,"n":"Hira Mujeeb","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Flowering Shrubs, Flowering plants, Tagetes Erecta","lo":"Okara","lt":30.80207,"ln":73.44638},{"id":84,"n":"Amina Khawaja","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":20,"sp":"Neem, peepal, castor oil plant, ficus","lo":"Lahore","lt":31.5597,"ln":74.3396},{"id":85,"n":"Fariha Bibi","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Jasmine","lo":"Okara","lt":30.8268,"ln":73.4524},{"id":86,"n":"Sumaira Kashif","tp":"I","br":"B","rg":"C","cy":"Okara","tr":7,"sp":"","lo":"Okara","lt":30.8298,"ln":73.4554},{"id":87,"n":"Shawana Benazir","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Aleo vera","lo":"Okara","lt":30.8328,"ln":73.4584},{"id":88,"n":"Sohairah Manzoor","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Mangifera indica","lo":"Okara","lt":30.8358,"ln":73.4614},{"id":89,"n":"Mudassara Parveen","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Neem, hairy fruited eggplant","lo":"Okara","lt":30.8388,"ln":73.4644},{"id":90,"n":"Rukhsana Kosar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"","lo":"Okara","lt":30.8418,"ln":73.4674},{"id":91,"n":"Sabeeha Ashraf","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Neem","lo":"Okara","lt":30.8138,"ln":73.45338},{"id":92,"n":"Saba Asghar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Bougainvillea, Marigold, Olive Plant","lo":"Okara","lt":30.81826,"ln":73.44761},{"id":93,"n":"Rukhsana Shafiq","tp":"S","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Neeam, pilko","lo":"Okara","lt":30.7818,"ln":73.4764},{"id":94,"n":"Irum Waseem","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Neam, Guava & Jamun","lo":"Okara","lt":30.7848,"ln":73.4794},{"id":95,"n":"Farhat Parveen","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"3.0","lo":"Okara","lt":30.80477,"ln":73.43562},{"id":96,"n":"Irhama Ashique Irhama Ashique","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"mulberry","lo":"Okara","lt":30.81344,"ln":73.43181},{"id":97,"n":"Rukhsana Perveen","tp":"I","br":"B","rg":"C","cy":"Okara","tr":6,"sp":"1. Bakain Tree, 2. Willow Tree, 3.Banyan Tree, 4. Peeple Tree, 5. Cone Tree","lo":"Okara","lt":30.7938,"ln":73.4314},{"id":98,"n":"Fatima Fazal Elahi","tp":"I","br":"H","rg":"C","cy":"Okara","tr":1,"sp":"Vernonia amygdalina","lo":"Okara","lt":30.7968,"ln":73.4344},{"id":99,"n":"Saba Asgher","tp":"S","br":"B","rg":"C","cy":"Okara","tr":190,"sp":"Marigold, jasmine, night blooming jasmine, Guava, Shehtoot","lo":"Okara","lt":30.7998,"ln":73.4374},{"id":100,"n":"Naveed Iqbal","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Guava","lo":"Okara","lt":30.8028,"ln":73.4404},{"id":101,"n":"Javairia Imran","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":65,"sp":"Neem, Chinaberry, pomegranate, lemon, jamun","lo":"Lahore","lt":31.5417,"ln":74.3336},{"id":102,"n":"Kiran Jamil","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Japanese photinia, Alovera","lo":"Okara","lt":30.8088,"ln":73.4464},{"id":103,"n":"Amina Amin","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Maiden hair fern","lo":"Okara","lt":30.8118,"ln":73.4494},{"id":104,"n":"Romaisa Saeed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":7,"sp":"Neem, Mulbery, orange(fruiter, kinu), Mango","lo":"Okara","lt":30.82329,"ln":73.4607},{"id":105,"n":"Sehar Khalid","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Bakain","lo":"Okara","lt":30.8178,"ln":73.4554},{"id":106,"n":"Hina Ghias Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"safaida","lo":"Okara","lt":30.8208,"ln":73.4584},{"id":107,"n":"Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":5,"sp":"Pomegranate Tree, Japanese Plum Tree, Fig Tree","lo":"Okara","lt":30.8238,"ln":73.4614},{"id":108,"n":"Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Guava, Jade plant, dipterocarpus alatus","lo":"Okara","lt":30.8268,"ln":73.4644},{"id":109,"n":"Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Dipterocarpus Alatus, guava, jade plant","lo":"Okara","lt":30.8298,"ln":73.4674},{"id":110,"n":"Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Java plum (Syzygium cumini)","lo":"Okara","lt":30.8328,"ln":73.4704},{"id":111,"n":"Fatima Sheraz","tp":"S","br":"B","rg":"S","cy":"Karachi","tr":8,"sp":"Neem tree","lo":"Karachi","lt":24.92944,"ln":67.12981},{"id":112,"n":"ayaz asghar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"plamer amaranth","lo":"Okara","lt":30.8388,"ln":73.4764},{"id":113,"n":"ayaz asghar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"palmer amaranth","lo":"Okara","lt":30.8418,"ln":73.4794},{"id":114,"n":"Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Azadirachta indica, Psidium guajava","lo":"Okara","lt":30.8448,"ln":73.4254},{"id":115,"n":"Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Melbury","lo":"Okara","lt":30.7788,"ln":73.4284},{"id":116,"n":"Nida Rasheed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Movie fax","lo":"Okara","lt":30.7818,"ln":73.4314},{"id":117,"n":"Fatima Sheraz","tp":"S","br":"B","rg":"S","cy":"Karachi","tr":8,"sp":"neem","lo":"Karachi","lt":24.8317,"ln":66.9821},{"id":118,"n":"Maria Khalid","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"conocarpus","lo":"Okara","lt":30.7878,"ln":73.4374},{"id":119,"n":"Nabeela Ayub","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Sandalwood","lo":"Okara","lt":30.7908,"ln":73.4404},{"id":120,"n":"Tariq Shahzad","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Ficus plant","lo":"Okara","lt":30.7938,"ln":73.4434},{"id":121,"n":"Safiha Munir","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Mango 1 specie","lo":"Okara","lt":30.7968,"ln":73.4464},{"id":122,"n":"Sajida Yaqoob","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"lemon, fruiter","lo":"Okara","lt":30.7998,"ln":73.4494},{"id":123,"n":"Bushra Shahnaz","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":24,"sp":"","lo":"Lahore","lt":31.5387,"ln":74.3426},{"id":124,"n":"Ms Tehmina Kausar Ms Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"sandalwood","lo":"Okara","lt":30.8058,"ln":73.4554},{"id":125,"n":"Abida Zia","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Drumstick tree, Tea tree","lo":"Okara","lt":30.8088,"ln":73.4584},{"id":126,"n":"Tehmina Kausar Tehmina kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Weeping fig","lo":"Okara","lt":30.8118,"ln":73.4614},{"id":127,"n":"Tanzeela Masroor","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Clusia Rosea","lo":"Okara","lt":30.8148,"ln":73.4644},{"id":128,"n":"Nimra Hussain","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Euphorbia Milii","lo":"Okara","lt":30.8178,"ln":73.4674},{"id":129,"n":"Fatima Yousaf","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Golden Pothos","lo":"Okara","lt":30.8208,"ln":73.4704},{"id":130,"n":"Aleena Riaz","tp":"S","br":"B","rg":"C","cy":"Gujranwala","tr":140,"sp":"Citrus, Succulent","lo":"Gujranwala","lt":32.1977,"ln":74.2145},{"id":131,"n":"Sajid Maseeh","tp":"S","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Neem","lo":"Okara","lt":30.81028,"ln":73.43053},{"id":132,"n":"Mian ureed","tp":"I","br":"B","rg":"C","cy":"Gujranwala","tr":7,"sp":"Oak, pine, conifer","lo":"Gujranwala","lt":32.2037,"ln":74.2205},{"id":133,"n":"Zainab Fida","tp":"I","br":"B","rg":"C","cy":"Gujranwala","tr":4,"sp":"Lemon, mint, aloe vera, pomegranate","lo":"Gujranwala","lt":32.06399,"ln":74.1792},{"id":134,"n":"Ramsha Zafar","tp":"S","br":"B","rg":"S","cy":"Karachi","tr":20,"sp":"Plumeria and Neem","lo":"Karachi","lt":24.86344,"ln":67.0793},{"id":135,"n":"Farah Asad","tp":"S","br":"B","rg":"S","cy":"Karachi","tr":10,"sp":"Sugar apple tree and Neem","lo":"Karachi","lt":24.86344,"ln":67.0793},{"id":136,"n":"Mr. Sultan","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1600,"sp":"","lo":"Jallo Park","lt":31.5777,"ln":74.3246},{"id":137,"n":"Mr. Majid Nawaz","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1050,"sp":"","lo":"Jallo Park","lt":31.5807,"ln":74.3276},{"id":138,"n":"Mr. Majid Nawaz","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":850,"sp":"","lo":"Jallo Park","lt":31.5147,"ln":74.3306},{"id":139,"n":"Mr. Hassan Ms. Iqra - Principal","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1550,"sp":"","lo":"Jallo Park","lt":31.5177,"ln":74.3336},{"id":140,"n":"Mr. Shabir Mr. Tauqeet Butter-","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":900,"sp":"","lo":"Sharaqpur","lt":31.5207,"ln":74.3366},{"id":141,"n":"Mr. Shabir Mr. Tauqeet Butter-","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1250,"sp":"","lo":"Sharaqpur","lt":31.5237,"ln":74.3396},{"id":142,"n":"Ms. Amna Khan Mr. Zou Dar - NW","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1950,"sp":"","lo":"Sharaqpur","lt":31.5267,"ln":74.3426},{"id":143,"n":"Ms. Amna Khan Mr. Zou Dar - NW","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1350,"sp":"","lo":"Sharaqpur","lt":31.5297,"ln":74.3456},{"id":144,"n":"Ms. Amna Khan Mr. Zou Dar - NW","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1500,"sp":"","lo":"Sharaqpur","lt":31.5327,"ln":74.3486},{"id":145,"n":"Ms. Asma Ms.Mumtaz - Principal","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":700,"sp":"","lo":"Kasuri Farm","lt":31.5357,"ln":74.3516},{"id":146,"n":"Mr. Ijaz ul Hassan Mr. Ijaz ul","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":600,"sp":"","lo":"Kasuri Farm","lt":31.5387,"ln":74.3546},{"id":147,"n":"Ms.Zahida Ms.Zahida- Prinicipal","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":550,"sp":"","lo":"Kasuri Farm","lt":31.5417,"ln":74.3576},{"id":148,"n":"Siraj Gujjar","tp":"S","br":"E","rg":"R","cy":"Basti Malook","tr":700,"sp":"Terminalia, Bakain, Moringa, Sukh chain","lo":"Mirpur Forest Multan","lt":30.195,"ln":72.917},{"id":149,"n":"Muhammad Amjad","tp":"S","br":"E","rg":"R","cy":"Khanewal","tr":1500,"sp":"Terminalia, Bakain, Moringa, Sukh chain, Amaltas","lo":"Canal Road","lt":30.2997,"ln":71.9521},{"id":150,"n":"Sheikh Tanveer","tp":"S","br":"E","rg":"R","cy":"Arifwala","tr":2000,"sp":"Banyan, Peepal, Sandal, Oak, Pine","lo":"Pakpattan Road","lt":30.2927,"ln":72.983},{"id":151,"n":"Sarfraz Ahmed","tp":"S","br":"E","rg":"R","cy":"Rahimyarkhan","tr":45,"sp":"Neem, Indian Rosewood, moringa, sunflower","lo":"Abbasia Town","lt":28.4212,"ln":70.2989},{"id":152,"n":"Rana Babar","tp":"S","br":"E","rg":"R","cy":"Jalalpur","tr":100,"sp":"Neem, Indian Rosewood, Orchid Tree, Acacia   *Flowering Plants  Rose, Marigold","lo":"Zaher Pir Morr Lodhran Road Jalal Pur Pi","lt":32.6488,"ln":74.1616},{"id":153,"n":"Halima Sadia","tp":"S","br":"E","rg":"R","cy":"Burewala","tr":100,"sp":"Lemon plant, Persimmon tree, Rose, Sunflower, Mango tree","lo":"College Road","lt":30.1697,"ln":72.6254},{"id":154,"n":"Arona Shabbir","tp":"S","br":"E","rg":"R","cy":"Multan","tr":50,"sp":"Amaltas . Terminalia, Bakain, Moringa","lo":"Shamsabad colony","lt":30.1705,"ln":71.5029},{"id":155,"n":"Rana / Uzma Sohail / Ghauri","tp":"S","br":"E","rg":"R","cy":"Sahiwal","tr":400,"sp":"Amaltas, Gulmohar, Kachnar, Champa, Gulab","lo":"Pak avenue","lt":30.6842,"ln":73.0879},{"id":156,"n":"Rana / Uzma Sohail / Ghauri","tp":"S","br":"E","rg":"R","cy":"Sahiwal","tr":400,"sp":"Neem, Banyan, Amaltas, Gulmohar, Kachnar","lo":"College Road","lt":30.6872,"ln":73.0909},{"id":157,"n":"Usman Shafiq","tp":"S","br":"E","rg":"R","cy":"Kacha Khuh","tr":100,"sp":"Neem, Banyan, Peepal, Sheesham, Babul","lo":"Gulshan Iqbal - GT road","lt":32.15,"ln":74.19},{"id":158,"n":"Ms. Surriya Mohiyuddin Ms. Sur","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Nariyal Park","lt":24.92408,"ln":67.10877},{"id":159,"n":"Ms. Mahera Suleman Ms. Mahera","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Aziz Bhatti Park Near Gulshan Campus III","lt":24.91942,"ln":67.09168},{"id":160,"n":"Mr. Amir Quershi Ms. Sana","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Near School - Green Belt Area","lt":24.95669,"ln":67.1262},{"id":161,"n":"Mr. Amir Quershi Ms. Ayesha","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Boy Scouts Association Facility","lt":24.95669,"ln":67.1262},{"id":162,"n":"Mr. Amir Quershi Ms. Arooba","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Boy Scouts Association Facility","lt":24.95669,"ln":67.1262},{"id":163,"n":"Mr. Rana Rehan Ms. Nadia","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Future Park Near Gulshan Campus IV","lt":24.90665,"ln":67.08062},{"id":164,"n":"Mr. (Major) Haroon Ms. Mamona","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":300,"sp":"Moringa","lo":"Jauhar Park","lt":24.91341,"ln":67.12804},{"id":165,"n":"Mr. (Major) Haroon Ms. Mamona","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":200,"sp":"Moringa","lo":"Jauhar Park","lt":24.91341,"ln":67.12804},{"id":166,"n":"Ms. Sumaira Zeeshan Ms. Sumair","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Khawateen Park","lt":24.89619,"ln":67.065},{"id":167,"n":"Dr. Anjum Afrdi Ms. Kashifa","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"North Nazimabad Park","lt":24.94804,"ln":67.05281},{"id":168,"n":"Mrs. Nazia & Mr Omer Mrs. Marr","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Jama Islamia Fatta Uloom","lt":24.99851,"ln":67.04263},{"id":169,"n":"Mr. Naveed Siddiqui Ms. Qurat","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Near School - Green Belt Area","lt":24.86959,"ln":67.34969},{"id":170,"n":"Mr. Naveed Siddiqui Ms. Qurat","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Near School - Green Belt Area","lt":24.91172,"ln":67.18478},{"id":171,"n":"Mr. Naveed Siddiqui Ms. Qurat","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":200,"sp":"Moringa","lo":"Near School - Green Belt Area","lt":24.88504,"ln":67.14737},{"id":172,"n":"Mr. Shahzaib Behan Ms. Erum","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Jamal Park","lt":24.89773,"ln":67.11045},{"id":173,"n":"Mr. Imran Kazi Ms. Kulsoom","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Near School - Green Belt Area","lt":24.93899,"ln":66.96025},{"id":174,"n":"Mr. Imran Kazi Ms. Kulsoom","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":1000,"sp":"Moringa","lo":"Orangi Park","lt":24.93887,"ln":66.96025},{"id":175,"n":"Mr. Sohail Musa Ms. Tahira","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":1500,"sp":"Moringa, Nan Sukh, Neem","lo":"Sir Syed Park","lt":24.93676,"ln":67.06711},{"id":176,"n":"Mr. Mustafa Ghufran Ms. Qurat","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":600,"sp":"Gul Mohar, Naeem & Moringa","lo":"Public Park Nearest to the Campus","lt":24.8707,"ln":66.9881},{"id":177,"n":"Mr. Khurram Shehzad Ms. Ambree","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Gul Mohar, Naeem & Moringa","lo":"Public Park Nearest to the Campus","lt":24.8737,"ln":66.9911},{"id":178,"n":"Mr.Khawaja Farooq Ahmad -","tp":"I","br":"E","rg":"F","cy":"Jarranwala","tr":200,"sp":"Shehtoot (Mulberry), Pilkhan Tree (White Fig), Terminalia, Bakain, Ulta Ashok","lo":"Faisalabad Road, Govt. Post Graduate Col","lt":31.32282,"ln":73.40309},{"id":179,"n":"Mr.Zulifiqar Haider","tp":"I","br":"E","rg":"F","cy":"Okara","tr":500,"sp":"Ulta, Ashok, Neem, Terminalia, Sheesham","lo":"Canal Road, Okara","lt":30.83129,"ln":73.45702},{"id":180,"n":"Qazi Afzal -","tp":"I","br":"E","rg":"F","cy":"Hafizabad","tr":300,"sp":"Mango, Kikar, Shehtoot","lo":"The Educators Hafizabad Campus","lt":32.07279,"ln":73.69115},{"id":181,"n":"Fozia Rehan -","tp":"I","br":"E","rg":"F","cy":"Mianwali","tr":1,"sp":"Neem, Crazia(Budha), Borh, Pine Black, Ashok","lo":"Behind The Educators Iskandarabad Campus","lt":32.89301,"ln":71.59269}];
+
+function get2025Data(){return LAST_YEAR;}
+
+function render2025Summary(){
+  const data=get2025Data();
+  const total=data.reduce((a,d)=>a+d.tr,0);
+  const cities=[...new Set(data.map(d=>d.cy))].length;
+  const bss=data.filter(d=>d.br==='B');const edu=data.filter(d=>d.br==='E');const ho=data.filter(d=>d.br==='H');
+  const bssTrees=bss.reduce((a,d)=>a+d.tr,0);const eduTrees=edu.reduce((a,d)=>a+d.tr,0);const hoTrees=ho.reduce((a,d)=>a+d.tr,0);
+  const currentTotal=state.schools.reduce((a,s)=>a+s.required,0);
+  document.getElementById('yr-summary').innerHTML=`
+    <div class="yr-card"><div class="yr-val" style="color:var(--gr)">${total.toLocaleString()}</div><div class="yr-lbl">Total trees planted in 2025</div></div>
+    <div class="yr-card"><div class="yr-val" style="color:var(--bl)">${currentTotal.toLocaleString()}</div><div class="yr-lbl">Trees to be provided in 2026</div></div>
+    <div class="yr-card"><div class="yr-val" style="color:var(--am)">${(total+currentTotal).toLocaleString()}</div><div class="yr-lbl">Combined impact (2025+2026)</div></div>
+    <div class="yr-card" style="border-left:3px solid #1D9E75">
+      <div class="yr-val" style="color:#1D9E75">${bssTrees.toLocaleString()}</div>
+      <div style="font-size:13px;font-weight:600;margin:2px 0">Beaconhouse School</div>
+      <div class="yr-lbl">${bss.length} responses · ${cities} cities</div>
+    </div>
+    <div class="yr-card" style="border-left:3px solid #9B59B6">
+      <div class="yr-val" style="color:#9B59B6">${eduTrees.toLocaleString()}</div>
+      <div style="font-size:13px;font-weight:600;margin:2px 0">The Educators</div>
+      <div class="yr-lbl">${edu.length} responses</div>
+    </div>
+    <div class="yr-card" style="border-left:3px solid #378ADD">
+      <div class="yr-val" style="color:#378ADD">${hoTrees.toLocaleString()}</div>
+      <div style="font-size:13px;font-weight:600;margin:2px 0">HO / RON / ROS</div>
+      <div class="yr-lbl">${ho.length} responses · ${data.length} total</div>
+    </div>
+  `;}
+
+let _map=null, _markers=[];
+function renderMap(){
+  const rfilter=(document.getElementById('map-region-filter')||{}).value||'';
+  const bfilter=(document.getElementById('map-brand-filter')||{}).value||'';
+  const data=get2025Data().filter(d=>d.lt&&d.ln&&(!rfilter||d.rg===rfilter||d.rg.startsWith(rfilter))&&(!bfilter||d.br===bfilter));
+  if(!_map){
+    _map=L.map('plantation-map',{zoomControl:true}).setView([30.3753,69.3451],5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',maxZoom:19}).addTo(_map);
+  }
+  _markers.forEach(m=>_map.removeLayer(m));_markers=[];
+  data.forEach(d=>{
+    const col=d.br==='E'?'#9B59B6':d.br==='H'?'#378ADD':'#1D9E75';
+    const m=L.circleMarker([d.lt,d.ln],{radius:5,fillColor:col,color:'#fff',weight:1,fillOpacity:0.85})
+      .bindPopup(`<strong>${d.n}</strong><br>${d.tp==='S'?'🏫 School':'👤 Individual'} · ${d.cy}<br>🌱 <strong>${d.tr.toLocaleString()} trees</strong><br>${d.sp?'Species: '+d.sp+'<br>':''}${d.lo&&d.lo!==d.cy?'📍 '+d.lo:''}`,{maxWidth:200});
+    m.on('mouseover',function(){this.openPopup();});m.on('mouseout',function(){this.closePopup();});
+    _markers.push(m.addTo(_map));
+  });
+}
+function show2025Tab(t){
+  document.getElementById('yr-map-section').classList.toggle('hidden',t!=='map');
+  document.getElementById('yr-table-section').classList.toggle('hidden',t!=='table');
+  document.getElementById('tb-map').classList.toggle('on',t==='map');
+  document.getElementById('tb-table').classList.toggle('on',t!=='map');
+  if(t==='map'&&_map)setTimeout(()=>_map.invalidateSize(),100);
+}
+function render2025Table(){
+  const q=(document.getElementById('yr-search')||{}).value?.toLowerCase()||'';
+  const tf=(document.getElementById('yr-type-filter')||{}).value||'';
+  const bf=(document.getElementById('yr-brand-filter')||{}).value||'';
+  const data=get2025Data().filter(d=>{
+    const mq=!q||(d.n+d.cy+d.sp+d.lo).toLowerCase().includes(q);
+    return mq&&(!tf||d.tp===tf)&&(!bf||d.br===bf);
+  });
+  document.getElementById('yr-tbody').innerHTML=data.map(d=>`
+    <tr>
+      <td style="font-size:11px;color:var(--tx3)">${d.id}</td>
+      <td style="font-size:13px"><strong>${d.n||'—'}</strong></td>
+      <td><span class="badge" style="background:${d.br==='E'?'#F0E6FF':d.br==='H'?'var(--bl-l)':'var(--gr-l)'};color:${d.br==='E'?'#6C3483':d.br==='H'?'var(--bl-d)':'var(--gr-d)'}">${d.br==='E'?'Educators':d.br==='H'?'HO/RON/ROS':'BSS'}</span></td>
+      <td><span class="badge ${d.tp==='S'?'b-c':'b-n'}">${d.tp==='S'?'School':'Individual'}</span></td>
+      <td style="font-size:12px">${d.cy}</td>
+      <td style="font-size:13px;font-weight:600;color:var(--gr)">${d.tr.toLocaleString()}</td>
+      <td style="font-size:11px;color:var(--tx2);max-width:160px">${d.sp||'—'}</td>
+    </tr>`).join('');
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+async function boot(){
+  const raw=document.getElementById('sk').value.trim();
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  rDash();updateBadge();
+  if(raw){
+    state.settings.fbConfigRaw=raw;save();
+    await initFirebaseFromConfig(raw);
+  } else if(state.settings.fbConfigRaw){
+    await initFirebaseFromConfig(state.settings.fbConfigRaw);
+  } else {
+    updateSyncBadge('local');
+  }
+}
+
+loadState();
+if(state.settings.fbConfigRaw){
+  document.getElementById('sk').value=state.settings.fbConfigRaw;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "bss-plantation-drive-weekly-digest",
+  "private": true,
+  "type": "module",
+  "description": "Scheduled GitHub Actions job that emails the weekly plantation drive digest.",
+  "dependencies": {
+    "nodemailer": "^6.9.14"
+  }
+}

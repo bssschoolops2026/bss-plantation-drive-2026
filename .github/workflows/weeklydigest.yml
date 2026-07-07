@@ -1,0 +1,27 @@
+name: Weekly Plantation Drive Digest
+
+on:
+  schedule:
+    # 05:00 UTC every Monday (~10:00 Pakistan time). Adjust to your preferred day/time.
+    - cron: '0 5 * * 1'
+  workflow_dispatch: {}
+
+jobs:
+  send-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        working-directory: scripts
+        run: npm install
+      - name: Send digest email
+        working-directory: scripts
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          DIGEST_RECIPIENTS: ${{ vars.DIGEST_RECIPIENTS }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: node send-weekly-digest.mjs
