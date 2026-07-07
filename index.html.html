@@ -1,0 +1,2294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌱 BSS Plantation Drive — 2026</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/tabler-icons.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
+<style>
+:root{--gr:#1D9E75;--gr-l:#E1F5EE;--gr-d:#0F6E56;--am:#BA7517;--am-l:#FAEEDA;--am-d:#854F0B;--re:#E24B4A;--re-l:#FCEBEB;--re-d:#A32D2D;--bl:#378ADD;--bl-l:#E6F1FB;--bl-d:#185FA5;--bg:#fff;--bg2:#f8f8f6;--bg3:#f1efe8;--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--bd:rgba(0,0,0,.12);--bd2:rgba(0,0,0,.2);--r:8px;--rl:12px}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--bd:rgba(255,255,255,.1);--bd2:rgba(255,255,255,.18)}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--tx);font-size:14px;min-height:100vh}
+.app{display:flex;min-height:100vh}
+.sb{width:226px;background:var(--bg);border-right:.5px solid var(--bd);padding:1.5rem 0;flex-shrink:0;position:fixed;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+.main{margin-left:226px;padding:2rem;flex:1;max-width:1140px}
+.sb-logo{padding:0 1.25rem 1.25rem;border-bottom:.5px solid var(--bd);margin-bottom:.75rem}
+.sb-logo h1{font-size:15px;font-weight:600}.sb-logo p{font-size:11px;color:var(--tx3);margin-top:2px}
+.sb-section-label{padding:.5rem 1.25rem .15rem;font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
+.nav{display:flex;align-items:center;gap:10px;padding:9px 1.25rem;cursor:pointer;color:var(--tx2);font-size:13px;font-weight:400;transition:all .15s;border-left:2px solid transparent}
+.nav:hover{background:var(--bg2);color:var(--tx)}.nav.active{color:var(--gr-d);background:var(--gr-l);border-left-color:var(--gr);font-weight:500}
+.nav i{font-size:17px}.bc{background:var(--re);color:#fff;font-size:10px;padding:1px 5px;border-radius:8px;margin-left:auto}
+.sb-bottom{margin-top:auto;padding:1.25rem;border-top:.5px solid var(--bd)}
+.sb-backdrop{display:none}
+#setup{position:fixed;inset:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;z-index:1000}
+.sc{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:2rem;width:460px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.sc h2{font-size:18px;font-weight:600;margin-bottom:.5rem}.sc p{font-size:13px;color:var(--tx2);margin-bottom:1.5rem;line-height:1.6}
+.pane{display:none}.pane.active{display:block}
+.ph{margin-bottom:1.5rem}.ph h2{font-size:20px;font-weight:600}.ph p{font-size:13px;color:var(--tx2);margin-top:3px}
+.ph-row{display:flex;align-items:flex-start;justify-content:space-between}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.metric{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:1.1rem 1.25rem}
+.mlabel{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.mval{font-size:26px;font-weight:600}.msub{font-size:11px;color:var(--tx3);margin-top:3px}
+.card{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:1.25rem;margin-bottom:1rem}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}.ch h3{font-size:14px;font-weight:600}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--bg);color:var(--tx);font-size:13px;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn:hover{background:var(--bg2)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-p{background:var(--gr);color:#fff;border-color:var(--gr-d)}.btn-p:hover{background:var(--gr-d)}
+.btn-b{background:var(--bl-l);color:var(--bl-d);border-color:var(--bl)}.btn-b:hover{background:var(--bl);color:#fff}
+.btn-s{padding:4px 10px;font-size:12px}.btn-d{background:var(--re-l);color:var(--re-d);border-color:var(--re)}
+input,select,textarea{width:100%;padding:8px 12px;border:.5px solid var(--bd2);border-radius:var(--r);background:var(--bg);color:var(--tx);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--gr);box-shadow:0 0 0 3px rgba(29,158,117,.1)}
+textarea{resize:vertical;min-height:72px}
+label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px;font-weight:500}
+.fr{margin-bottom:12px}.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:8px 12px;font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;border-bottom:.5px solid var(--bd);white-space:nowrap}
+td{padding:9px 12px;border-bottom:.5px solid var(--bd);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;white-space:nowrap}
+.b-n{background:var(--bl-l);color:var(--bl-d)}.b-c{background:var(--gr-l);color:var(--gr-d)}.b-s{background:var(--am-l);color:var(--am-d)}
+.b-north{background:var(--bl-l);color:var(--bl-d)}.b-center{background:var(--gr-l);color:var(--gr-d)}.b-south{background:var(--am-l);color:var(--am-d)}
+.b-done{background:var(--gr-l);color:var(--gr-d)}.b-partial{background:var(--am-l);color:var(--am-d)}.b-pending{background:var(--re-l);color:var(--re-d)}.b-imp{background:var(--bl-l);color:var(--bl-d)}
+.prog{background:var(--bg3);border-radius:4px;height:6px;overflow:hidden}
+.pf{height:100%;border-radius:4px;background:var(--gr)}.pf.w{background:var(--am)}.pf.d{background:var(--re)}
+.alert{padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px}
+.aw{background:var(--am-l);color:var(--am-d);border:.5px solid #EF9F27}.ai{background:var(--bl-l);color:var(--bl-d);border:.5px solid #85B7EB}.ag{background:var(--gr-l);color:var(--gr-d);border:.5px solid #5DCAA5}
+.alert i{font-size:16px;flex-shrink:0;margin-top:1px}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:500}
+.md{background:var(--bg);border-radius:var(--rl);border:.5px solid var(--bd);padding:1.75rem;width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.md h3{font-size:16px;font-weight:600;margin-bottom:1.25rem}
+.ma{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:.5px solid var(--bd)}
+.cw{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);overflow:hidden}
+.cm{padding:1.25rem;height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.msg{padding:10px 14px;border-radius:var(--r);font-size:13px;line-height:1.6;max-width:84%}
+.msg.ai{background:var(--bg2);color:var(--tx);align-self:flex-start}.msg.user{background:var(--gr);color:#fff;align-self:flex-end}
+.qr{display:flex;flex-wrap:wrap;gap:6px;padding:10px 1.25rem;border-top:.5px solid var(--bd);border-bottom:.5px solid var(--bd)}
+.qb{font-size:12px;padding:5px 10px;border:.5px solid var(--bd2);border-radius:var(--r);background:var(--bg2);cursor:pointer;color:var(--tx2);font-family:inherit;transition:all .15s}
+.qb:hover{color:var(--tx);border-color:var(--gr)}.ci{display:flex;gap:8px;padding:12px 1.25rem}.ci input{flex:1}
+.sec-t{font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem;margin-top:1.5rem}.sec-t:first-child{margin-top:0}
+.info-box{background:var(--bl-l);border:.5px solid #85B7EB;border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--bl-d);line-height:1.6;margin-bottom:12px}
+.info-box code{background:rgba(0,0,0,.08);padding:1px 4px;border-radius:3px;font-size:11px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:.5px solid var(--bd);font-size:13px}.stat-row:last-child{border-bottom:none}
+.filters{display:flex;gap:8px;margin-bottom:1rem;align-items:center;flex-wrap:wrap}
+.filters input[type=text]{width:220px}.filters select{width:140px}
+.empty{text-align:center;padding:2.5rem;color:var(--tx3);font-size:13px}.empty i{font-size:32px;margin-bottom:8px;display:block}
+.hidden{display:none!important}
+.spin{animation:sp 1s linear infinite;display:inline-block}
+@keyframes sp{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.map-wrap{border-radius:var(--rl);overflow:hidden;border:.5px solid var(--bd)}
+#plantation-map{height:480px;width:100%;background:var(--bg3)}
+.yr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem}
+.yr-card{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:1rem}
+.yr-card .yr-val{font-size:28px;font-weight:600}.yr-card .yr-lbl{font-size:12px;color:var(--tx3);margin-top:2px}
+.tab-btns{display:flex;gap:8px;margin-bottom:1rem}
+.tab-btn{padding:6px 16px;border-radius:var(--r);border:.5px solid var(--bd2);font-size:13px;cursor:pointer;background:var(--bg);color:var(--tx2);font-family:inherit}
+.tab-btn.on{background:var(--gr);color:#fff;border-color:var(--gr-d)}
+.map-legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:12px;color:var(--tx2);padding:.75rem 0}
+.legend-dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cc{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:1rem}
+.cc h4{font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.stags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.stag{font-size:11px;padding:3px 8px;background:var(--bg3);border-radius:4px;color:var(--tx2)}
+.tbl-edit td input,.tbl-edit td select{padding:3px 6px;font-size:12px;width:100%;border:none;background:transparent;color:var(--tx)}
+.tbl-edit tr.editing td{background:var(--bl-l)}
+#sync-badge{font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:6px;cursor:pointer}
+#diag-output{font-family:monospace}
+.mobile-bar{display:none}.sb-backdrop{display:none}
+@media(max-width:768px){
+  .mobile-bar{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:var(--bg);border-bottom:.5px solid var(--bd);position:sticky;top:0;z-index:300}
+  .mobile-bar h1{font-size:15px;font-weight:600}
+  .mobile-bar button{background:none;border:none;font-size:22px;color:var(--tx);cursor:pointer;padding:4px 8px}
+  .sb{display:none;position:fixed;top:0;left:0;height:100vh;width:78vw;max-width:280px;z-index:500;box-shadow:2px 0 16px rgba(0,0,0,.2)}
+  .sb.open{display:flex}.sb-backdrop.open{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:400}
+  .main{margin-left:0;padding:1rem}.metrics{grid-template-columns:1fr 1fr}
+  .cg{grid-template-columns:1fr}.fg2{grid-template-columns:1fr}
+  .yr-grid{grid-template-columns:1fr 1fr}#plantation-map{height:320px}
+}
+</style>
+</head>
+<body>
+
+<div id="setup">
+<div class="sc">
+  <div style="font-size:32px;margin-bottom:.75rem">🌱</div>
+  <h2>BSS Plantation Drive</h2>
+  <p>Beaconhouse School System · 2026 · Pre-loaded with all tracking data.</p>
+  <div class="fr"><label>Anthropic API Key <span style="font-weight:400;color:var(--tx3)">(optional — for AI assistant)</span></label><input type="password" id="sk" placeholder="sk-ant-..."></div>
+  <div style="font-size:11px;color:var(--tx3);margin-bottom:1.25rem">Key stored only in your browser · <a href="https://console.anthropic.com" target="_blank" style="color:var(--gr)">console.anthropic.com</a></div>
+  <div style="display:flex;gap:8px"><button class="btn btn-p" onclick="boot()" style="flex:1;justify-content:center">Open dashboard</button></div>
+</div>
+</div>
+
+<div class="app hidden" id="app">
+<div class="mobile-bar">
+  <button onclick="toggleSidebar()" aria-label="Open menu"><i class="ti ti-menu-2"></i></button>
+  <h1 id="mobile-title">🌱 BSS Plantation Drive</h1>
+  <span style="width:30px"></span>
+</div>
+<div class="sb-backdrop" id="sb-backdrop" onclick="closeSidebar()"></div>
+<nav class="sb" id="sidebar">
+  <div class="sb-logo">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:22px">🌱</div>
+      <div><h1 id="sb-title">BSS Plantation Drive</h1><p id="sb-sub">2026 Dispatch Tracker</p></div>
+    </div>
+  </div>
+  <div class="sb-section-label">Overview</div>
+  <div class="nav active" onclick="go('dashboard');closeSidebar()" id="nav-dashboard"><i class="ti ti-dashboard" aria-hidden="true"></i><span class="nl">Dashboard</span></div>
+  <div class="sb-section-label">Operations</div>
+  <div class="nav" onclick="go('clusters');closeSidebar()" id="nav-clusters"><i class="ti ti-building-school" aria-hidden="true"></i><span class="nl">All Clusters</span></div>
+  <div class="nav" onclick="go('dispatch');closeSidebar()" id="nav-dispatch"><i class="ti ti-truck-delivery" aria-hidden="true"></i><span class="nl">Dispatch Log</span></div>
+  <div class="nav" onclick="go('nearby');closeSidebar()" id="nav-nearby"><i class="ti ti-map-pins" aria-hidden="true"></i><span class="nl">Nearby Clusters</span></div>
+  <div class="nav" onclick="go('alerts');closeSidebar()" id="nav-alerts"><i class="ti ti-bell" aria-hidden="true"></i><span class="nl">Alerts</span><span class="bc hidden" id="abc">0</span></div>
+  <div class="nav" onclick="go('plan');closeSidebar()" id="nav-plan"><i class="ti ti-route" aria-hidden="true"></i><span class="nl">Dispatch Plan</span></div>
+  <div class="sb-section-label">Data</div>
+  <div class="nav" onclick="go('lastyear');closeSidebar()" id="nav-lastyear"><i class="ti ti-plant-2" aria-hidden="true"></i><span class="nl">2025 Initiative</span></div>
+  <div class="sb-section-label">Configure</div>
+  <div class="nav" onclick="go('assistant');closeSidebar()" id="nav-assistant"><i class="ti ti-robot" aria-hidden="true"></i><span class="nl">AI Assistant</span></div>
+  <div class="nav" onclick="go('settings');closeSidebar()" id="nav-settings"><i class="ti ti-settings" aria-hidden="true"></i><span class="nl">Settings</span></div>
+  <div class="sb-bottom">
+    <button class="btn btn-p" onclick="openDM(null);closeSidebar()" style="width:100%;justify-content:center;margin-bottom:8px"><i class="ti ti-plus"></i>Log Dispatch</button>
+    <button class="btn" onclick="exportCSV()" style="width:100%;justify-content:center"><i class="ti ti-download"></i>Export CSV</button>
+  </div>
+</nav>
+
+<main class="main">
+<!-- DASHBOARD -->
+<div class="pane active" id="pane-dashboard">
+  <div class="ph-row ph">
+    <div><h2>Dashboard</h2><p>Live overview · BSS 2026 Plantation Drive</p></div>
+    <div id="sync-badge" style="font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:6px;cursor:pointer" onclick="forceSync()">
+      <i class="ti ti-cloud-off" id="sync-icon"></i><span id="sync-text">Local only — not shared</span>
+    </div>
+  </div>
+  <div class="alert ai" style="margin-bottom:1rem;cursor:pointer" onclick="go('lastyear')">
+    <i class="ti ti-plant-2"></i>
+    <div><strong>2025 Initiative (BSS + Educators):</strong> 39,192 trees self-planted — BSS: 8,045 · Educators: 31,046 · <a href="#" onclick="go('lastyear');return false" style="color:var(--bl-d)">View map & data →</a></div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="mlabel">Total ordered</div><div class="mval" id="m1">—</div><div class="msub">across all clusters</div></div>
+    <div class="metric"><div class="mlabel">Dispatched</div><div class="mval" id="m2" style="color:var(--gr)">—</div><div class="msub" id="m2s">0%</div></div>
+    <div class="metric"><div class="mlabel">Remaining</div><div class="mval" id="m3" style="color:var(--am)">—</div><div class="msub" id="m3s">to be sent</div></div>
+    <div class="metric"><div class="mlabel">Project completion</div><div class="mval" id="m4" style="color:var(--gr)">—</div><div class="msub" id="m4s">dispatched vs required</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+    <div class="card"><div class="ch"><h3><i class="ti ti-alert-triangle" style="color:var(--re)"></i> Prepare immediately</h3></div><div id="d-urgent"></div></div>
+    <div class="card"><div class="ch"><h3><i class="ti ti-chart-bar" style="color:var(--gr)"></i> Progress by region</h3></div><div id="d-regions"></div></div>
+  </div>
+  <div class="card"><div class="ch"><h3><i class="ti ti-calendar" style="color:var(--bl)"></i> Upcoming dispatches (next 30 days)</h3><button class="btn btn-s" onclick="go('alerts')">See all alerts</button></div><div id="d-upcoming"></div></div>
+</div>
+
+<!-- CLUSTERS -->
+<div class="pane" id="pane-clusters">
+  <div class="ph-row ph">
+    <div><h2>All Clusters</h2><p id="clusters-count">Loading...</p></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="openClusterModal(null)"><i class="ti ti-plus"></i>Add new cluster</button>
+      <button class="btn btn-p" onclick="openDM(null)"><i class="ti ti-truck-delivery"></i>Log dispatch</button>
+    </div>
+  </div>
+  <div class="filters">
+    <input type="text" id="fs" placeholder="Search cluster, city, convenor..." oninput="rClusters()">
+    <select id="fr" onchange="rClusters()"><option value="">All regions</option><option value="N">North</option><option value="C">Center</option><option value="S">South</option></select>
+    <select id="fst" onchange="rClusters()"><option value="">All statuses</option><option value="pending">Pending</option><option value="partial">Partial</option><option value="done">Done</option></select>
+  </div>
+  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Cluster</th><th>Convenor</th><th>City</th><th>Rgn</th><th>Required</th><th>Dispatched</th><th>Progress</th><th>Planting date</th><th>Status</th><th></th></tr></thead><tbody id="ct"></tbody></table></div></div>
+</div>
+
+<!-- DISPATCH LOG -->
+<div class="pane" id="pane-dispatch">
+  <div class="ph-row ph">
+    <div><h2>Dispatch Log</h2><p>Full history · syncs live to Google Sheet when connected</p></div>
+    <button class="btn btn-p" onclick="openDM(null)"><i class="ti ti-plus"></i>Log dispatch</button>
+  </div>
+  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Date</th><th>Cluster</th><th>City</th><th>Qty sent</th><th>Species / notes</th><th>Logged by</th><th>Source</th><th></th></tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"><i class="ti ti-truck-delivery"></i>No dispatches logged yet</div></div></div>
+</div>
+
+<!-- NEARBY -->
+<div class="pane" id="pane-nearby">
+  <div class="ph"><h2>Nearby Clusters</h2><p>Clusters in the same city — coordinate deliveries to reduce trips and cost</p></div>
+  <div class="cg" id="ng"></div>
+</div>
+
+<!-- ALERTS -->
+<div class="pane" id="pane-alerts">
+  <div class="ph-row ph">
+    <div><h2>Preparation Alerts</h2><p>Clusters whose planting date requires dispatch preparation soon</p></div>
+    <button class="btn btn-b" onclick="sendWeeklyDigest()"><i class="ti ti-mail"></i>Send weekly digest</button>
+  </div>
+  <div id="al"></div>
+</div>
+
+<!-- DISPATCH PLAN -->
+<div class="pane" id="pane-plan">
+  <div class="ph-row ph">
+    <div><h2>Suggested Dispatch Plan</h2><p>Container loads of 12,000–15,000 saplings · Grouped by proximity</p></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="renderPlan()"><i class="ti ti-refresh"></i>Refresh</button>
+      <button class="btn btn-p" onclick="exportPlan()"><i class="ti ti-download"></i>Export plan</button>
+    </div>
+  </div>
+  <div id="plan-summary"></div>
+  <div id="plan-zones"></div>
+</div>
+
+<!-- 2025 INITIATIVE -->
+<div class="pane" id="pane-lastyear">
+  <div class="ph-row ph">
+    <div><h2>2025 Tree Plantation Initiative</h2><p>Self-planted by schools &amp; individuals — no saplings provided</p></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="render2025Table()"><i class="ti ti-refresh"></i>Refresh</button>
+      <button class="btn btn-p" onclick="add2025Entry()"><i class="ti ti-plus"></i>Add entry</button>
+      <button class="btn" onclick="export2025CSV()"><i class="ti ti-download"></i>Export</button>
+    </div>
+  </div>
+  <div class="yr-grid" id="yr-summary"></div>
+  <div class="tab-btns">
+    <button class="tab-btn on" id="tb-map" onclick="show2025Tab('map')"><i class="ti ti-map"></i> Map view</button>
+    <button class="tab-btn" id="tb-table" onclick="show2025Tab('table')"><i class="ti ti-table"></i> Table view</button>
+  </div>
+  <div id="yr-map-section">
+    <div class="card" style="padding:.75rem 1.25rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+        <div class="map-legend">
+          <span><span class="legend-dot" style="background:#1D9E75"></span>Beaconhouse School</span>
+          <span><span class="legend-dot" style="background:#9B59B6"></span>The Educators</span>
+          <span><span class="legend-dot" style="background:#378ADD"></span>HO/RON/ROS</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <select id="map-brand-filter" onchange="renderMap()" style="font-size:12px;padding:4px 8px;width:auto"><option value="">All brands</option><option value="B">BSS</option><option value="E">Educators</option><option value="H">HO/RON/ROS</option></select>
+          <select id="map-region-filter" onchange="renderMap()" style="font-size:12px;padding:4px 8px;width:auto"><option value="">All regions</option><option value="N">North</option><option value="C">Centre</option><option value="S">South</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="map-wrap" style="margin-top:.5rem"><div id="plantation-map"></div></div>
+  </div>
+  <div id="yr-table-section" class="hidden">
+    <div class="filters" style="margin-bottom:.75rem">
+      <input type="text" id="yr-search" placeholder="Search name, city, species..." oninput="render2025Table()">
+      <select id="yr-type-filter" onchange="render2025Table()"><option value="">All types</option><option value="S">School</option><option value="I">Individual</option></select>
+      <select id="yr-brand-filter" onchange="render2025Table()" style="width:auto"><option value="">All brands</option><option value="B">BSS</option><option value="E">Educators</option><option value="H">HO/RON/ROS</option></select>
+    </div>
+    <div class="card" style="padding:0"><div class="tw">
+      <table class="tbl-edit" id="yr-table">
+        <thead><tr><th>#</th><th>Name</th><th>Brand</th><th>Type</th><th>City</th><th>Trees</th><th>Species</th><th></th></tr></thead>
+        <tbody id="yr-tbody"></tbody>
+      </table>
+    </div></div>
+  </div>
+</div>
+
+<!-- ASSISTANT -->
+<div class="pane" id="pane-assistant">
+  <div class="ph"><h2>AI Assistant</h2><p>Ask anything — logistics, truck rates, species, status, drafting emails. Web search enabled.</p></div>
+  <div id="nokey-warn" class="alert ai hidden" style="margin-bottom:1rem"><i class="ti ti-info-circle"></i><div>No API key set. <a href="#" onclick="go('settings');return false" style="color:inherit;font-weight:600">Add your key in Settings</a> to enable the AI assistant.</div></div>
+  <div class="cw">
+    <div class="cm" id="cm">
+      <div class="msg ai">Hello! I'm your plantation drive assistant with live data on all 51 clusters and web search enabled.<br><br>Ask me things like:<br>
+      • <strong>Logistics:</strong> "What's the Mazda truck rate from Pattoki to Karachi?"<br>
+      • <strong>Status:</strong> "Which clusters in Lahore need dispatch this week?"<br>
+      • <strong>Planning:</strong> "Draft an alert email for N-07's upcoming dispatch"<br>
+      • <strong>Research:</strong> "What's the best planting season for Neem in Multan?"</div>
+    </div>
+    <div class="qr">
+      <button class="qb" onclick="qa('What is the current Mazda truck rate from Lahore to Karachi for plants?')">Truck rate LHR→KHI</button>
+      <button class="qb" onclick="qa('Which clusters are due for dispatch in the next 7 days?')">Due this week</button>
+      <button class="qb" onclick="qa('Club together all Karachi clusters and tell me how many trucks are needed')">Karachi logistics</button>
+      <button class="qb" onclick="qa('Give me a full progress summary of the plantation drive')">Drive summary</button>
+      <button class="qb" onclick="qa('Draft a dispatch notification email for the Lahore clusters due this week')">Draft dispatch email</button>
+    </div>
+    <div class="ci"><input type="text" id="ci" placeholder="Ask about logistics, plant rates, dispatch planning, drafting emails..." onkeydown="if(event.key==='Enter')sendChat()"><button class="btn btn-p" onclick="sendChat()"><i class="ti ti-send"></i></button></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="pane" id="pane-settings">
+  <div class="ph"><h2>Settings</h2><p>Connect shared database · configure alerts · manage school heads</p></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+  <div>
+    <div class="sec-t">School heads / convenors</div>
+    <div class="info-box">School head data loads <strong>live from your Google Sheet</strong> — any changes there appear on the dashboard automatically (click the 👥 icon on any cluster). Below you can set manual overrides for the cluster-level convenor name shown in alerts and the dispatch plan.</div>
+    <div class="card">
+      <div class="fr"><input type="text" id="sh-search" placeholder="Search cluster or city..." oninput="renderShTable()"></div>
+      <div style="max-height:300px;overflow-y:auto;margin-top:8px;border:.5px solid var(--bd);border-radius:var(--r)">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th style="padding:7px 10px;font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;border-bottom:.5px solid var(--bd)">Cluster</th>
+            <th style="padding:7px 10px;font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;border-bottom:.5px solid var(--bd)">City</th>
+            <th style="padding:7px 10px;font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;border-bottom:.5px solid var(--bd)">School head</th>
+          </tr></thead>
+          <tbody id="sh-tbody"></tbody>
+        </table>
+      </div>
+      <div class="fr" style="margin-top:12px">
+        <label>2025 response count <span style="font-weight:400;color:var(--tx3)">(correct the number on 2025 tab)</span></label>
+        <input type="number" id="s-ly-count" placeholder="e.g. 135">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-p" onclick="saveSchoolHeads()"><i class="ti ti-check"></i>Save changes</button>
+        <button class="btn" onclick="resetSchoolHeads()"><i class="ti ti-refresh"></i>Reset to defaults</button>
+      </div>
+    </div>
+    <div class="sec-t">Navigation labels</div>
+    <div class="info-box">Rename sidebar tabs here. Or edit <code>bhs-config.js</code> (same folder) for persistent changes.</div>
+    <div class="card">
+      <div class="fg2">
+        <div class="fr"><label>Dashboard</label><input type="text" id="l-dash" placeholder="Dashboard"></div>
+        <div class="fr"><label>All Clusters</label><input type="text" id="l-clust" placeholder="All Clusters"></div>
+        <div class="fr"><label>Dispatch Log</label><input type="text" id="l-disp" placeholder="Dispatch Log"></div>
+        <div class="fr"><label>Nearby Clusters</label><input type="text" id="l-near" placeholder="Nearby Clusters"></div>
+        <div class="fr"><label>Alerts</label><input type="text" id="l-alert" placeholder="Alerts"></div>
+        <div class="fr"><label>Dispatch Plan</label><input type="text" id="l-plan" placeholder="Dispatch Plan"></div>
+        <div class="fr"><label>AI Assistant</label><input type="text" id="l-assist" placeholder="AI Assistant"></div>
+        <div class="fr"><label>Settings</label><input type="text" id="l-sett" placeholder="Settings"></div>
+      </div>
+      <button class="btn btn-p" onclick="saveSettings()"><i class="ti ti-check"></i>Save labels</button>
+    </div>
+  </div>
+  <div>
+    <div class="sec-t">Shared database + Gmail</div>
+    <div class="info-box" style="font-size:12px">
+      <strong>One-time setup (~5 min):</strong><br>
+      1. Go to <a href="https://script.google.com" target="_blank" style="color:var(--bl-d)">script.google.com</a> → New project<br>
+      2. Delete all code → paste the script below → save (Ctrl+S)<br>
+      3. Deploy → New deployment → Web app → Execute as: <em>Me</em> → Access: <em>Anyone</em> → Deploy<br>
+      4. Copy the URL → paste below with a secret key → Connect<br>
+      A new Google Sheet "BSS Plantation Drive — Dispatch Log" is created automatically in your Drive.
+    </div>
+    <div class="card">
+      <div class="fr">
+        <label>Apps Script code — copy this into script.google.com</label>
+        <textarea id="gas-snippet" readonly rows="9" style="font-family:monospace;font-size:11px;background:var(--bg3);color:var(--tx2);border-color:var(--bd)">// ─── BSS Plantation Drive — Dispatch Log Script ───────────────────────────────
+// Paste this into script.google.com → Save → Deploy → Web app
+// Execute as: Me | Who has access: Anyone
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SECRET = 'YOUR_SECRET_KEY'; // ← change this to anything you like
+
+// Automatically creates a "BSS Dispatch Log" spreadsheet in your Google Drive
+function getLog() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('DISPATCH_LOG_ID');
+  if (id) {
+    try { return SpreadsheetApp.openById(id); } catch(e) { props.deleteProperty('DISPATCH_LOG_ID'); }
+  }
+  var ss = SpreadsheetApp.create('BSS Plantation Drive — Dispatch Log');
+  props.setProperty('DISPATCH_LOG_ID', ss.getId());
+  var sh = ss.getSheets()[0];
+  sh.setName('Dispatches');
+  sh.appendRow(['ID','Cluster','City','Date','Plants','Species','Notes','Logged By','Timestamp']);
+  sh.setFrozenRows(1);
+  var fmt = sh.getRange(1,1,1,9);
+  fmt.setFontWeight('bold');
+  fmt.setBackground('#1D9E75');
+  fmt.setFontColor('#ffffff');
+  ss.insertSheet('Settings').appendRow(['Key','Value']);
+  return ss;
+}
+
+function doGet(e) {
+  var p = e.parameter || {};
+  var action = p.action || 'read';
+  try {
+    // Ping — just test the connection works
+    if (action === 'ping') return ok({connected: true});
+
+    // Read dispatches + settings — no key needed
+    if (action === 'read') {
+      var ss = getLog();
+      var dsh = ss.getSheetByName('Dispatches');
+      var rows = dsh.getDataRange().getValues();
+      var headers = rows.shift();
+      var dispatches = rows.filter(function(r){ return r[0]; }).map(function(r){
+        var o = {}; headers.forEach(function(h,i){ o[String(h).toLowerCase().replace(/ /g,'_')] = r[i]; }); return o;
+      });
+      var ssh = ss.getSheetByName('Settings');
+      var srows = ssh ? ssh.getDataRange().getValues() : []; if(srows.length) srows.shift();
+      var settings = {}; srows.forEach(function(r){ if(r[0]){ try{ settings[r[0]]=JSON.parse(r[1]); }catch(x){ settings[r[0]]=r[1]; } } });
+      return ok({dispatches: dispatches, settings: settings, sheetUrl: ss.getUrl()});
+    }
+
+    // All writes require the secret key
+    if (p.key !== SECRET) return ok({error: 'Wrong secret key — check it matches SECRET in the script'});
+
+    if (action === 'addDispatch') {
+      var d = JSON.parse(p.data);
+      var sh = getLog().getSheetByName('Dispatches');
+      sh.appendRow([d.id||'', d.cluster||'', d.city||'', d.date||'', d.qty||0, d.species||'', d.notes||'', d.by||'', new Date().toLocaleString()]);
+      return ok({added: true});
+    }
+
+    if (action === 'deleteDispatch') {
+      var sh = getLog().getSheetByName('Dispatches');
+      var rows = sh.getDataRange().getValues();
+      for (var i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]) === String(p.id)) { sh.deleteRow(i+1); break; }
+      }
+      return ok({deleted: true});
+    }
+
+    if (action === 'saveSettings') {
+      var data = JSON.parse(p.data);
+      var ss = getLog();
+      var ssh = ss.getSheetByName('Settings') || ss.insertSheet('Settings');
+      if (ssh.getLastRow() === 0) ssh.appendRow(['Key','Value']);
+      var rows = ssh.getDataRange().getValues();
+      Object.keys(data).forEach(function(k){
+        var found = false;
+        for (var i = 1; i < rows.length; i++) { if (rows[i][0]===k){ ssh.getRange(i+1,2).setValue(JSON.stringify(data[k])); found=true; break; } }
+        if (!found) ssh.appendRow([k, JSON.stringify(data[k])]);
+      });
+      return ok({saved: true});
+    }
+
+    if (action === 'sendEmail') {
+      var recipients = p.to.split(',');
+      recipients.forEach(function(r){ MailApp.sendEmail(r.trim(), p.subject, decodeURIComponent(p.body||'')); });
+      return ok({sent: true, count: recipients.length});
+    }
+
+    return ok({error: 'Unknown action: ' + action});
+  } catch(err) {
+    return ok({error: err.message});
+  }
+}
+
+function ok(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}</textarea>
+        <button class="btn btn-s" style="margin-top:6px" onclick="navigator.clipboard.writeText(document.getElementById('gas-snippet').value).then(()=>this.textContent='Copied ✓')"><i class="ti ti-copy"></i> Copy script</button>
+      </div>
+      <div class="fr" style="margin-top:8px"><label>Apps Script URL <span style="font-weight:400;color:var(--tx3)">(from step 4 above — ends in /exec)</span></label><input type="text" id="s-gas-url" placeholder="https://script.google.com/macros/s/.../exec"></div>
+      <div class="fr"><label>Secret key <span style="font-weight:400;color:var(--tx3)">(must match SECRET in the script)</span></label><input type="password" id="s-gas-key" placeholder="e.g. bss2026"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        <button class="btn btn-p" onclick="connectSharedDB()"><i class="ti ti-plug"></i>Connect</button>
+        <button class="btn" onclick="forceSync()"><i class="ti ti-refresh"></i>Sync now</button>
+        <button class="btn btn-d" onclick="clearConnection()" style="font-size:12px"><i class="ti ti-unlink"></i>Disconnect</button>
+        <button class="btn" onclick="diagnoseConnection()" style="border-color:var(--am);color:var(--am-d);font-size:12px"><i class="ti ti-stethoscope"></i>Diagnose</button>
+        <span id="gmail-status" style="font-size:12px;align-self:center;color:var(--tx3)"></span>
+      </div>
+      <div id="diag-output" style="display:none;margin-top:10px;background:var(--bg3);border-radius:var(--r);padding:10px;font-size:12px;font-family:monospace;white-space:pre-wrap;color:var(--tx2);max-height:200px;overflow-y:auto;border:.5px solid var(--bd)"></div>
+      </div>
+      <div class="sec-t">Email alerts</div>
+      <div class="card">
+        <div class="fg2">
+          <div class="fr"><label>Alert days before planting</label><input type="number" id="s-days" value="5" min="1" max="30"></div>
+          <div class="fr"><label>Weekly digest day</label><select id="s-dday"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select></div>
+        </div>
+        <div class="fg2">
+          <div class="fr"><label>Project name</label><input type="text" id="s-pname" placeholder="e.g. BHS Plantation Drive"></div>
+          <div class="fr"><label>Year</label><input type="text" id="s-pyear" placeholder="e.g. 2026"></div>
+        </div>
+        <div class="fr"><label>Your name (shown in emails)</label><input type="text" id="s-name" placeholder="e.g. Ahmad Ali"></div>
+        <button class="btn btn-p" onclick="saveSettings()"><i class="ti ti-check"></i>Save settings</button>
+      </div>
+
+
+
+      <div class="sec-t">School heads / convenors</div>
+      <div class="info-box">School head data loads <strong>live from your Google Sheet</strong> — any changes there appear on the dashboard automatically (click the 👥 icon on any cluster). Below you can set manual overrides for the cluster-level convenor name shown in alerts and the dispatch plan.</div>
+      <div class="card">
+        <div class="fr"><input type="text" id="sh-search" placeholder="Search cluster or city..." oninput="renderShTable()"></div>
+        <div style="max-height:340px;overflow-y:auto;margin-top:8px;border:.5px solid var(--bd);border-radius:var(--r)">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="padding:7px 10px;font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;border-bottom:.5px solid var(--bd);text-align:left">Cluster</th>
+              <th style="padding:7px 10px;font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;border-bottom:.5px solid var(--bd);text-align:left">City</th>
+              <th style="padding:7px 10px;font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;border-bottom:.5px solid var(--bd);text-align:left">Current school head</th>
+            </tr></thead>
+            <tbody id="sh-tbody"></tbody>
+          </table>
+        </div>
+        <div class="fr" style="margin-top:12px">
+          <label>2025 form response count <span style="font-weight:400;color:var(--tx3)">(correct the number shown on the 2025 Initiative tab)</span></label>
+          <input type="number" id="s-ly-count" placeholder="e.g. 135">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-p" onclick="saveSchoolHeads()"><i class="ti ti-check"></i>Save changes</button>
+          <button class="btn" onclick="resetSchoolHeads()"><i class="ti ti-refresh"></i>Reset to defaults</button>
+        </div>
+      </div>
+
+      <div class="sec-t">Navigation labels</div>
+      <div class="info-box">Rename sidebar tabs here. Or edit <code>bhs-config.js</code> (same folder as the HTML file) — changes there apply automatically on refresh, no Settings needed.</div>
+      <div class="card">
+        <div class="fg2">
+          <div class="fr"><label>Dashboard</label><input type="text" id="l-dash" placeholder="Dashboard"></div>
+          <div class="fr"><label>All Clusters</label><input type="text" id="l-clust" placeholder="All Clusters"></div>
+          <div class="fr"><label>Dispatch Log</label><input type="text" id="l-disp" placeholder="Dispatch Log"></div>
+          <div class="fr"><label>Nearby Clusters</label><input type="text" id="l-near" placeholder="Nearby Clusters"></div>
+          <div class="fr"><label>Alerts</label><input type="text" id="l-alert" placeholder="Alerts"></div>
+          <div class="fr"><label>Dispatch Plan</label><input type="text" id="l-plan" placeholder="Dispatch Plan"></div>
+          <div class="fr"><label>AI Assistant</label><input type="text" id="l-assist" placeholder="AI Assistant"></div>
+          <div class="fr"><label>Settings</label><input type="text" id="l-sett" placeholder="Settings"></div>
+        </div>
+        <button class="btn btn-p" onclick="saveSettings()"><i class="ti ti-check"></i>Save labels</button>
+      </div>
+
+      <div class="sec-t">Manual actions</div>
+      <div class="card">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-b" onclick="sendWeeklyDigest()"><i class="ti ti-mail"></i>Send weekly digest now</button>
+          <button class="btn btn-b" onclick="checkAndAlert(true)"><i class="ti ti-bell"></i>Check & send dispatch alerts now</button>
+          <button class="btn" onclick="exportCSV()"><i class="ti ti-download"></i>Export data as CSV</button>
+          <button class="btn btn-d" onclick="confirmReset()"><i class="ti ti-trash"></i>Reset all data (keep imports)</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+
+      <div class="sec-t">Alternative: EmailJS</div>
+ <span style="font-size:10px;font-weight:400;color:var(--tx3)">(free · 200 emails/month)</span></div>
+      <div class="info-box">
+        <strong>Setup in 3 steps:</strong><br>
+        1. Sign up free at <a href="https://www.emailjs.com" target="_blank" style="color:var(--bl-d)">emailjs.com</a><br>
+        2. Add your Gmail/Outlook as an email service<br>
+        3. Create a template with variables: <code>{{subject}}</code> and <code>{{message}}</code> and <code>{{to_email}}</code><br>
+        Then paste your IDs below. If no key is set, alerts will open your email client instead.
+      </div>
+      <div class="card">
+        <div class="fr"><label>EmailJS Public Key</label><input type="password" id="s-ejk" placeholder="user_xxxxxxxxxxxx"></div>
+        <div class="fr"><label>EmailJS Service ID</label><input type="text" id="s-ejs" placeholder="service_xxxxxxx"></div>
+        <div class="fr"><label>EmailJS Template ID</label><input type="text" id="s-ejt" placeholder="template_xxxxxxx"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-p" onclick="saveSettings()"><i class="ti ti-check"></i>Save</button>
+          <button class="btn" onclick="testEmail()"><i class="ti ti-send"></i>Send test email</button>
+        </div>
+      </div>
+
+      <div class="sec-t">AI assistant key</div>
+      <div class="card">
+        <div class="fr"><label>Anthropic API Key</label><input type="password" id="s-api" placeholder="sk-ant-..."></div>
+        <div style="font-size:11px;color:var(--tx3);margin-bottom:12px">Stored only in your browser's localStorage.</div>
+        <button class="btn btn-p" onclick="saveSettings()"><i class="ti ti-check"></i>Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- Add/Edit Cluster Modal -->
+<div class="mo hidden" id="cm-modal">
+<div class="md" style="width:580px">
+  <h3 id="cm-title"><i class="ti ti-building-school" style="color:var(--gr)"></i> Add new cluster</h3>
+  <div class="fg2">
+    <div class="fr"><label>Cluster code / name *</label><input type="text" id="cm-cluster" placeholder="e.g. N-13 or C-Lahore-New"></div>
+    <div class="fr"><label>Region *</label>
+      <select id="cm-region"><option value="N">North</option><option value="C">Center</option><option value="S">South</option></select>
+    </div>
+  </div>
+  <div class="fg2">
+    <div class="fr"><label>City *</label><input type="text" id="cm-city" placeholder="e.g. Sialkot"></div>
+    <div class="fr"><label>Plants required *</label><input type="number" id="cm-req" placeholder="e.g. 2000" min="1"></div>
+  </div>
+  <div class="fg2">
+    <div class="fr"><label>Convenor / school head *</label><input type="text" id="cm-conv" placeholder="e.g. Ahmad Ali"></div>
+    <div class="fr"><label>Contact number</label><input type="text" id="cm-contact" placeholder="e.g. 03001234567"></div>
+  </div>
+  <div class="fg2">
+    <div class="fr"><label>Planting date</label><input type="date" id="cm-date"></div>
+    <div class="fr"><label>Plants already dispatched</label><input type="number" id="cm-disp" placeholder="0" min="0" value="0"></div>
+  </div>
+  <div class="fr"><label>Species requested (optional)</label><input type="text" id="cm-sp" placeholder="e.g. Kachnar, Neem, Lemon, Moringa"></div>
+  <div class="fr"><label>Notes</label><input type="text" id="cm-notes" placeholder="Any extra info about this cluster"></div>
+  <div id="cm-error" style="color:var(--re-d);font-size:12px;margin-top:4px;display:none"></div>
+  <div class="ma">
+    <button class="btn" onclick="closeMo()">Cancel</button>
+    <button class="btn btn-p" onclick="saveCluster()"><i class="ti ti-check"></i>Save cluster</button>
+  </div>
+</div>
+</div>
+
+<!-- School Heads Modal -->
+<div class="mo hidden" id="heads-modal">
+<div class="md" style="width:680px">
+  <h3 id="heads-modal-title"><i class="ti ti-building-school" style="color:var(--gr)"></i> Campuses & School Heads</h3>
+  <div id="heads-modal-body" style="max-height:460px;overflow-y:auto">
+    <div class="empty"><i class="ti ti-reload spin"></i>Loading live data...</div>
+  </div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
+</div>
+</div>
+
+<!-- Dispatch modal -->
+<div class="mo hidden" id="dm">
+<div class="md">
+  <h3><i class="ti ti-truck-delivery" style="color:var(--gr)"></i> Log a dispatch</h3>
+  <div class="fr"><label>Cluster *</label><select id="d-cluster"></select></div>
+  <div class="fg2">
+    <div class="fr"><label>Dispatch date *</label><input type="date" id="d-date"></div>
+    <div class="fr"><label>Plants dispatched *</label><input type="number" id="d-qty" min="1" placeholder="e.g. 500"></div>
+  </div>
+  <div class="fr"><label>Logged by</label><input type="text" id="d-by" placeholder="Your name"></div>
+  <div class="fr"><label>Species breakdown (optional)</label><textarea id="d-sp" placeholder="Kachnar: 100, Neem: 200..."></textarea></div>
+  <div class="fr"><label>Notes (vehicle, driver, delivery point)</label><textarea id="d-notes" placeholder="e.g. Mazda truck LHR-1234, driver Ali, to school gate"></textarea></div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-p" onclick="saveDispatch()"><i class="ti ti-check"></i>Save</button></div>
+</div>
+</div>
+
+<!-- Delete modal -->
+<div class="mo hidden" id="delm">
+<div class="md" style="width:380px">
+  <h3>Delete this dispatch?</h3>
+  <p style="color:var(--tx2);font-size:13px;margin-bottom:1.25rem">This will subtract the quantity from the cluster's dispatched total. Cannot be undone.</p>
+  <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-d" onclick="doDelete()"><i class="ti ti-trash"></i>Delete</button></div>
+</div>
+</div>
+
+<!-- Email preview modal -->
+<div class="mo hidden" id="epm">
+<div class="md" style="width:600px">
+  <h3 id="ep-title">Email preview</h3>
+  <textarea id="ep-body" style="min-height:320px;font-family:monospace;font-size:12px;margin-bottom:1rem"></textarea>
+  <div class="ma">
+    <button class="btn" onclick="closeMo()">Close</button>
+    <button class="btn" onclick="copyEmail()"><i class="ti ti-copy"></i>Copy</button>
+    <button class="btn btn-p" onclick="sendEmailFromPreview()"><i class="ti ti-mail"></i>Send via EmailJS</button>
+    <a id="mailto-link" class="btn btn-b" href="#"><i class="ti ti-mail"></i>Open in email client</a>
+  </div>
+</div>
+</div>
+
+<script>
+// ─── SCHOOL DATA ──────────────────────────────────────────────────────────────
+// [id, cluster, city, region(N/C/S), required, dispatched_init, plantingDate, convenor, contact, dispInitDate]
+const SD=[
+[1,"N-02","Islamabad","N",234,0,null,"Ayesha Sohail","03008501614",null],
+[2,"N-03","Islamabad","N",7000,4033,"2026-04-08","Ayesha Shams","03204097661","2026-03-28"],
+[3,"N-04","Rawalpindi/Attock/Wah","N",9800,0,null,"Nabila Khalid","03068752180",null],
+[4,"N-06 (Bahria)","Islamabad","N",2400,0,null,"Nighat Javed","03215566630",null],
+[5,"N-06 (PWD)","Islamabad","N",1200,0,null,"Nighat Javed","03215566630",null],
+[6,"N-07 (multi-city)","Chakwal/ISL/Pindi","N",31000,4000,null,"Ayesha Ansar","03008589945","2026-03-28"],
+[7,"N-07 (Chakwal only)","Chakwal","N",3200,0,"2026-04-29","Ayesha Ansar","03335554706",null],
+[8,"N-08","Gujrat","N",4000,0,"2026-05-23","Kashif Hussain","03009510657",null],
+[9,"N-09","Peshawar","N",3000,0,"2026-05-12","Sadia Yousaf","03005980595",null],
+[10,"N-11","Abbottabad","N",1000,0,"2026-06-01","Zainab Jamil","03335202397",null],
+[11,"N-12","Mandi Bahauddin","N",6000,0,"2026-05-21","Saima Bhatti","03006269061",null],
+[12,"RON-HO (Swabi Uni)","Islamabad","N",16500,8000,null,"Iffat Ashhad","03075122223","2026-03-21"],
+[13,"RON-HO (QAU)","Islamabad","N",16000,0,null,"Iffat Ashhad","03075122223",null],
+[14,"RON-HO (Mardan Women Uni)","Islamabad","N",17000,8000,null,"Iffat Ashhad","03075122223","2026-03-21"],
+[15,"RON-HO (F-9/ISB Greenbelts)","Islamabad","N",4000,2730,null,"Iffat Ashhad","03075122223","2026-03-17"],
+[16,"C-02","Lahore","C",3000,3000,"2026-04-04","Naila Khalid","03334379599","2026-04-01"],
+[17,"C-03","Lahore","C",10000,3000,"2026-04-04","Tehmina Naeem","03008409856","2026-04-01"],
+[18,"C-04","Lahore","C",5000,5000,"2026-04-05","Fariha Najam","03164480006","2026-04-03"],
+[19,"C-05","Lahore","C",5000,5000,"2026-04-10","M. Irshad Barkat","03004164491","2026-04-03"],
+[20,"C-06","Lahore","C",200,200,null,"—","—","2026-04-06"],
+[21,"C-07","Lahore","C",3000,0,null,"Nayyer Naveed Qureshi","03334066095",null],
+[22,"C-08 (Lahore/Bahria)","Lahore","C",2400,0,null,"Syeda Aniqa Shafique","03004839188",null],
+[23,"C-08 (Okara)","Okara","C",700,0,null,"Syeda Aniqa Shafique","03004839188",null],
+[24,"C-08 (Sahiwal)","Sahiwal","C",1400,0,null,"Syeda Aniqa Shafique","03004839188",null],
+[25,"C-10 (Faisalabad)","Faisalabad","C",3000,0,null,"Sabahet Malik","03026020050",null],
+[26,"C-10 (Jhang)","Jhang","C",5000,0,"2026-05-20","Nazish Arfa","03026020050",null],
+[27,"C-11 (Gojra/TTS)","Gojra","C",4260,0,"2026-04-23","Nousheen Haider","03009664983",null],
+[28,"C-11 (Faisalabad)","Faisalabad","C",4000,0,null,"Nousheen Haider","03009664983",null],
+[29,"C-13 (Campus)","Multan","C",450,0,null,"Asifa Tareen","03464811148",null],
+[30,"C-13 (Ext. Sites)","Multan","C",17905,12705,"2026-05-20","Asifa Tareen","03464811148","2026-04-08"],
+[31,"C-14","Bahawalpur","C",5000,0,"2026-05-05","Anjum Kaiwan","03008673833",null],
+[32,"Univ. of Sargodha","Sargodha","C",5000,0,null,"—","—",null],
+[33,"Univ. of Agriculture (Okara)","Okara","C",2200,2200,null,"—","—","2026-03-27"],
+[34,"District Offices (Okara)","Okara","C",115000,21000,null,"—","—","2026-03-27"],
+[35,"District Offices (Sahiwal)","Sahiwal","C",135000,0,null,"—","—",null],
+[36,"Beaconhouse Estate","Lahore","C",2650,0,null,"—","—",null],
+[37,"S-03","Karachi","S",3500,0,"2026-05-06","Tabinda Raza","03034442913",null],
+[38,"S-04","Karachi","S",3200,0,null,"—","—",null],
+[39,"S-05","Karachi","S",5200,0,"2026-06-04","Maliha Noman","03223508046",null],
+[40,"S-06","Karachi","S",3000,0,"2026-06-16","Nausheen Bashir","03323416446",null],
+[41,"S-07","Karachi","S",300,0,"2026-05-27","Sadia Aamir","03009256638",null],
+[42,"S-08","Karachi","S",6200,0,"2026-05-26","Nausheen Ubaid","03333453753",null],
+[43,"S-10","Karachi","S",1000,0,"2026-06-04","—","—",null],
+[44,"S-11 (Hyderabad)","Hyderabad","S",3300,0,"2026-05-15","Shifa Farhan","03123841292",null],
+[45,"S-11 (Nawabshah)","Nawabshah","S",1400,0,"2026-04-26","Shifa Farhan","03123841292",null],
+[46,"S-11 (Thatta)","Thatta","S",700,0,"2026-08-21","Shifa Farhan","03123841292",null],
+[47,"S-11 (Sukkur)","Sukkur","S",1150,0,null,"Shifa Farhan","03123841292",null],
+[48,"S-12 (Quetta)","Quetta","S",4000,4000,null,"Quratulain Khalid","03218150573","2026-04-14"],
+[49,"S-13 (Malir etc)","Karachi","S",1000,0,"2026-05-28","Rawaha Azfar","03332084219",null],
+[50,"S-13 (Tipu Sultan)","Karachi","S",700,0,null,"Rawaha Azfar","03332084219",null],
+[51,"S-14 (Hyderabad)","Hyderabad","S",3250,0,"2026-05-29","Anjuman Rashdi","03332646379",null]
+];
+
+const RN={N:"North",C:"Center",S:"South"};
+const TODAY=new Date();
+let state={schools:[],dispatches:[],settings:{recipients:"",alertDays:5,digestDay:1,ejk:"",ejs:"",ejt:"",name:"",apiKey:"",lastAlertDate:"",lastDigestDate:"",projectName:"BHS Plantation Drive",projectYear:"2026",gasUrl:"",gasKey:"",gasDay:1,jbKey:"",jbBinId:""}};
+let delTarget=null, emailPayload=null;
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+function loadState(){
+  const saved=localStorage.getItem('bhs_v3');
+  if(saved){
+    const p=JSON.parse(saved);
+    state.schools=p.schools||[];
+    state.dispatches=p.dispatches||[];
+    state.settings={...state.settings,...(p.settings||{})};
+    // Add any new clusters not in saved state
+    SD.forEach(sd=>{if(!state.schools.find(s=>s.id===sd[0]))state.schools.push(mkSchool(sd));});
+    // Restore custom clusters from settings (for GAS sync compatibility)
+    if(state.settings.customClusters){
+      state.settings.customClusters.forEach(cc=>{if(!state.schools.find(s=>s.id===cc.id))state.schools.push(cc);});
+    }
+  } else {
+    // Fresh install — import from tracking sheet
+    const imports=[];
+    state.schools=SD.map(sd=>{
+      if(sd[5]>0 && sd[9]){
+        imports.push({id:`imp_${sd[0]}`,schoolId:sd[0],cluster:sd[1],city:sd[2],date:sd[9],qty:sd[5],species:"",notes:"Imported from BHS Delivery Tracking Sheet (Sheet 1)",by:"System Import",imported:true});
+      }
+      return mkSchool(sd);
+    });
+    state.dispatches=imports;
+  }
+  recomputeDispatched();
+}
+
+function mkSchool(sd){
+  return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:sd[5],plantingDate:sd[6],convenor:sd[7],contact:sd[8]};
+}
+
+function save(){
+  state.settings.customClusters=state.schools.filter(s=>s._custom).map(s=>({...s}));
+  localStorage.setItem('bhs_v3',JSON.stringify(state));
+}
+
+
+// ─── SCHOOL HEADS ────────────────────────────────────────────────────────────
+function getConvenor(s){
+  return (state.settings.convenorOverrides&&state.settings.convenorOverrides[s.id])||s.convenor;
+}
+function getContact(s){
+  return (state.settings.contactOverrides&&state.settings.contactOverrides[s.id])||s.contact;
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function fmt(n){return Math.round(n).toLocaleString();}
+function fmtD(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+function du(d){if(!d)return null;return Math.floor((new Date(d)-TODAY)/86400000);}
+function gst(s){if(s.dispatched>=s.required)return'done';if(s.dispatched>0)return'partial';return'pending';}
+function stLbl(s){const st=gst(s);return st==='done'?'Done':st==='partial'?'Partial':'Pending';}
+function pct(s){return s.required>0?Math.min(100,Math.round(s.dispatched/s.required*100)):0;}
+function progBar(p){return`<div class="prog" style="margin-bottom:2px"><div class="pf ${p<30?'d':p<70?'w':''}" style="width:${p}%"></div></div><span style="font-size:10px;color:var(--tx3)">${p}%</span>`;}
+function rgBadge(r){return`<span class="badge b-${r.toLowerCase()}">${RN[r]||r}</span>`;}
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+function go(p){
+  document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));
+  document.getElementById('pane-'+p).classList.add('active');
+  document.getElementById('nav-'+p).classList.add('active');
+  if(p==='dashboard')rDash();
+  if(p==='clusters')rClusters();
+  if(p==='dispatch')rDispatch();
+  if(p==='nearby')rNearby();
+  if(p==='alerts')rAlerts();
+  if(p==='settings'){loadSettingsForm();setTimeout(renderShTable,50);}
+  if(p==='plan')renderPlan();
+  if(p==='lastyear'){render2025Summary();renderMap();render2025Table();}
+  if(p==='assistant')document.getElementById('nokey-warn').classList.toggle('hidden',!!state.settings.apiKey);
+}
+
+// ─── MOBILE SIDEBAR ───────────────────────────────────────────────────────────
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sb-backdrop').classList.toggle('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-backdrop').classList.remove('open');
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function rDash(){
+  const tot=state.schools.reduce((a,s)=>a+s.required,0);
+  const dis=state.schools.reduce((a,s)=>a+s.dispatched,0);
+  const rem=tot-dis;
+  const p=tot>0?Math.round(dis/tot*100):0;
+  document.getElementById('m1').textContent=fmt(tot);
+  document.getElementById('m2').textContent=fmt(dis);
+  document.getElementById('m2s').textContent=p+'% complete';
+  document.getElementById('m3').textContent=fmt(rem);
+  document.getElementById('m3s').textContent='plants to send';
+  const compPct=tot>0?Math.round(dis/tot*100):0;
+  document.getElementById('m4').textContent=compPct+'%';
+  document.getElementById('m4s').textContent=fmt(dis)+' of '+fmt(tot)+' dispatched';
+
+  // Prepare immediately: all overdue + due within 7 days (OTIF-critical)
+  const urgent=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=7&&gst(s)!=='done';})
+    .sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate)).slice(0,8);
+  document.getElementById('d-urgent').innerHTML=urgent.length===0?`<div style="color:var(--tx3);font-size:13px;padding:.5rem 0">No overdue or imminent dispatches — <a href="#" onclick="go('alerts')" style="color:var(--bl-d)">check Alerts tab</a> for full picture.</div>`:
+    urgent.map(s=>{const d=du(s.plantingDate);
+      const msg=d<0?`Overdue ${Math.abs(d)}d`:d===0?'Today!':d===1?'Tomorrow':`In ${d}d`;
+      const cls=d<0?'b-pending':d<=2?'b-pending':'b-partial';
+      return`<div class="stat-row"><div><strong>${s.cluster}</strong> <span style="font-size:11px;color:var(--tx3)">${s.city}</span><br><span style="font-size:11px;color:var(--tx3)">${getConvenor(s)} · ${fmt(s.required-s.dispatched)} plants pending</span></div><span class="badge ${cls}">${msg}</span></div>`;}).join('');
+
+  const regs=['N','C','S'];
+  document.getElementById('d-regions').innerHTML=regs.map(r=>{
+    const rs=state.schools.filter(s=>s.region===r);const rt=rs.reduce((a,s)=>a+s.required,0);const rd=rs.reduce((a,s)=>a+s.dispatched,0);const rp=rt>0?Math.round(rd/rt*100):0;
+    return`<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>${rgBadge(r)} <span style="color:var(--tx3)">${rs.length} clusters</span></span><span style="color:var(--tx2)">${fmt(rd)}/${fmt(rt)} (${rp}%)</span></div><div class="prog"><div class="pf ${rp<30?'d':rp<70?'w':''}" style="width:${rp}%"></div></div></div>`;}).join('');
+
+  // Upcoming: next 30 days (broader window so something always shows)
+  const up=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>0&&d<=30&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
+  // Also show top overdue items if upcoming is empty
+  const overdue=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=0&&gst(s)!=='done';}).sort((a,b)=>new Date(b.plantingDate)-new Date(a.plantingDate));
+  const upShow=up.length>0?up:overdue.slice(0,5);
+  const upLabel=up.length>0?`Upcoming ${up.length} dispatch${up.length>1?'es':''} in next 30 days`:`No upcoming dates — showing ${Math.min(overdue.length,5)} most recently overdue`;
+  document.getElementById('d-upcoming').innerHTML=upShow.length===0?'<p style="color:var(--tx3);font-size:13px">No dates set. Assign planting dates in the cluster data to see scheduling.</p>':
+    upShow.map(s=>{const d=du(s.plantingDate);const past=d!==null&&d<=0;
+    return`<div class="stat-row"><div><strong>${s.cluster}</strong> — ${s.city}<br><span style="font-size:11px;color:${past?'var(--re-d)':'var(--tx3)'}">${getConvenor(s)} · Planting ${fmtD(s.plantingDate)}${past?` <strong>(overdue ${Math.abs(d)}d)</strong>`:''} · ${fmt(s.required-s.dispatched)} needed</span></div><button class="btn btn-s" onclick="openDM(${s.id})">Log</button></div>`;}).join('')+
+    `<div style="font-size:11px;color:var(--tx3);margin-top:8px;padding-top:8px;border-top:.5px solid var(--bd)">${upLabel} · <a href="#" onclick="go(\'alerts\')" style="color:var(--bl-d)">View all alerts →</a></div>`;
+}
+
+// ─── CLUSTERS TABLE ───────────────────────────────────────────────────────────
+function rClusters(){
+  const q=(document.getElementById('fs').value||'').toLowerCase();
+  const rf=document.getElementById('fr').value;
+  const sf=document.getElementById('fst').value;
+  const filtered=state.schools.filter(s=>{
+    const mq=!q||s.cluster.toLowerCase().includes(q)||s.convenor.toLowerCase().includes(q)||s.city.toLowerCase().includes(q);
+    return mq&&(!rf||s.region===rf)&&(!sf||gst(s)===sf);
+  });
+  const p=pct;
+  const cEl=document.getElementById('clusters-count');
+  if(cEl)cEl.textContent=`${state.schools.length} clusters (${state.schools.filter(s=>s._custom).length} added by team) · Click 👥 to see live school heads`;
+  document.getElementById('ct').innerHTML=filtered.map(s=>{
+    const st=gst(s);const pc=p(s);const d=du(s.plantingDate);
+    const ds=s.plantingDate?fmtD(s.plantingDate)+(d!==null&&d<=7&&st!=='done'?` <span style="color:var(--re);font-size:10px">(${d<0?'overdue':d+'d'})</span>`:''):'—';
+    const customBadge=s._custom?`<span class="badge" style="background:var(--am-l);color:var(--am-d);font-size:10px;margin-left:4px">New</span>`:'';
+    const editBtns=s._custom?`<button class="btn btn-s" onclick="openClusterModal(${s.id})" title="Edit" style="margin-left:3px"><i class="ti ti-pencil"></i></button><button class="btn btn-s btn-d" onclick="deleteCluster(${s.id})" title="Delete" style="margin-left:3px"><i class="ti ti-trash"></i></button>`:'';
+    return`<tr><td><strong>${s.cluster}</strong>${customBadge}<button class="btn btn-s" onclick="event.stopPropagation();showHeads('${s.cluster}')" title="View campuses & school heads" style="margin-left:6px;padding:2px 6px;font-size:11px"><i class="ti ti-users"></i></button></td><td style="font-size:12px;color:var(--tx2)">${getConvenor(s)}</td><td style="font-size:12px">${s.city}</td><td>${rgBadge(s.region)}</td><td style="font-weight:500">${fmt(s.required)}</td><td>${fmt(s.dispatched)}</td><td style="min-width:90px">${progBar(pc)}</td><td style="font-size:12px">${ds}</td><td><span class="badge b-${st}">${stLbl(s)}</span></td><td style="white-space:nowrap"><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-truck-delivery"></i></button>${editBtns}</td></tr>`;}).join('');
+}
+
+// ─── DISPATCH LOG ─────────────────────────────────────────────────────────────
+function rDispatch(){
+  const has=state.dispatches.length>0;
+  document.getElementById('de').classList.toggle('hidden',has);
+  document.getElementById('dt').innerHTML=state.dispatches.slice().reverse().map((d,ri)=>{
+    const i=state.dispatches.length-1-ri;
+    const src=d.imported?'<span class="badge b-imp">Imported</span>':'<span class="badge b-done">Manual</span>';
+    const del=d.imported?'':` <button class="btn btn-s btn-d" onclick="askDel(${i})" title="Delete"><i class="ti ti-trash"></i></button>`;
+    return`<tr><td style="font-size:12px;white-space:nowrap">${fmtD(d.date)}</td><td><strong>${d.cluster}</strong></td><td style="font-size:12px;color:var(--tx2)">${d.city}</td><td style="font-weight:600;color:var(--gr)">${fmt(d.qty)}</td><td style="font-size:11px;color:var(--tx2);max-width:200px">${d.species||d.notes||'—'}</td><td style="font-size:12px">${d.by||'—'}</td><td>${src}</td><td>${del}</td></tr>`;}).join('');
+}
+
+// ─── NEARBY CLUSTERS ──────────────────────────────────────────────────────────
+function rNearby(){
+  const cm={};
+  state.schools.forEach(s=>{s.city.split('/').map(c=>c.trim()).forEach(c=>{if(!cm[c])cm[c]=[];cm[c].push(s);});});
+  const groups=Object.entries(cm).filter(([,ss])=>ss.length>1).sort((a,b)=>b[1].length-a[1].length);
+  document.getElementById('ng').innerHTML=groups.map(([city,ss])=>{
+    const tot=ss.reduce((a,s)=>a+s.required,0);const dis=ss.reduce((a,s)=>a+s.dispatched,0);const p=Math.round(dis/tot*100);
+    return`<div class="cc"><h4><i class="ti ti-map-pin" style="color:var(--gr)"></i>${city} <span style="font-weight:400;font-size:12px;color:var(--tx3)">${ss.length} clusters · ${fmt(tot)} plants</span></h4><div class="prog" style="margin:4px 0 2px"><div class="pf ${p<30?'d':p<70?'w':''}" style="width:${p}%"></div></div><div style="font-size:11px;color:var(--tx3);margin-bottom:6px">${p}% dispatched · ${fmt(tot-dis)} remaining</div><div class="stags">${ss.map(s=>`<span class="stag">${s.cluster} · ${fmt(s.required-s.dispatched)} rem</span>`).join('')}</div></div>`;}).join('');
+}
+
+// ─── ALERTS ───────────────────────────────────────────────────────────────────
+function rAlerts(){
+  const days=parseInt(state.settings.alertDays)||5;
+  const due=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=days&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
+  updateBadge(due.length);
+  document.getElementById('al').innerHTML=due.length===0?`<div class="alert ag"><i class="ti ti-circle-check"></i><div>No clusters with planting dates within the next ${days} days need dispatch preparation.</div></div>`:
+    due.map(s=>{const d=du(s.plantingDate);const msg=d<0?`Overdue ${Math.abs(d)} days`:d===0?'Today!':d===1?'Tomorrow':`In ${d} days`;const cls=d<=2?'aw':'ai';
+    return`<div class="alert ${cls}"><i class="ti ti-bell"></i><div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong>${s.cluster}</strong> — ${s.convenor} (${s.city})</div><span class="badge b-pending">${msg}</span></div><div style="font-size:12px;margin-top:4px">Planting: ${fmtD(s.plantingDate)} · Still needed: <strong>${fmt(s.required-s.dispatched)} plants</strong></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-plus"></i>Log dispatch</button><a href="tel:${s.contact}" class="btn btn-s"><i class="ti ti-phone"></i>${s.contact}</a></div></div></div>`;}).join('');
+}
+
+function updateBadge(n){
+  if(n===undefined){const days=parseInt(state.settings.alertDays)||5;n=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=days&&gst(s)!=='done';}).length;}
+  const el=document.getElementById('abc');el.textContent=n;el.classList.toggle('hidden',n===0);
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function loadSettingsForm(){
+  const s=state.settings;
+  document.getElementById('s-recipients').value=s.recipients||'';
+  document.getElementById('s-days').value=s.alertDays||5;
+  document.getElementById('s-dday').value=s.digestDay||1;
+  document.getElementById('s-name').value=s.name||'';
+  document.getElementById('s-ejk').value=s.ejk||'';
+  document.getElementById('s-ejs').value=s.ejs||'';
+  document.getElementById('s-ejt').value=s.ejt||'';
+  document.getElementById('s-api').value=s.apiKey||'';
+  document.getElementById('s-gas-url').value=s.gasUrl||'';
+  const _jbk=document.getElementById('s-jbk');if(_jbk)_jbk.value=s.jbKey||'';
+  const _jbid=document.getElementById('s-jbid');if(_jbid)_jbid.value=s.jbBinId||'';
+  const _lyc=document.getElementById('s-ly-count');if(_lyc)_lyc.value=s.ly2025count||'';
+  document.getElementById('s-gas-key').value=s.gasKey||'';
+  const gasDay=document.getElementById('s-gas-day');if(gasDay)gasDay.value=s.gasDay||1;
+  document.getElementById('s-pname').value=s.projectName||'BHS Plantation Drive';
+  document.getElementById('s-pyear').value=s.projectYear||'2026';
+  const L=s.labels||{};
+  document.getElementById('l-dash').value=L.dashboard||'';
+  document.getElementById('l-clust').value=L.clusters||'';
+  document.getElementById('l-disp').value=L.dispatch||'';
+  document.getElementById('l-near').value=L.nearby||'';
+  document.getElementById('l-alert').value=L.alerts||'';
+  document.getElementById('l-plan').value=L.plan||'';
+  document.getElementById('l-assist').value=L.assistant||'';
+  document.getElementById('l-sett').value=L.settings||'';
+}
+
+async function saveSettings(){
+  state.settings.recipients=document.getElementById('s-recipients').value.trim();
+  state.settings.alertDays=parseInt(document.getElementById('s-days').value)||5;
+  state.settings.digestDay=parseInt(document.getElementById('s-dday').value)||1;
+  state.settings.name=document.getElementById('s-name').value.trim();
+  state.settings.gasUrl=document.getElementById('s-gas-url').value.trim();
+  const _sjbk=document.getElementById('s-jbk');if(_sjbk)state.settings.jbKey=_sjbk.value.trim();
+  const _sjbid=document.getElementById('s-jbid');if(_sjbid&&_sjbid.value.trim())state.settings.jbBinId=_sjbid.value.trim();
+  state.settings.gasKey=document.getElementById('s-gas-key').value.trim();
+  const _gd=document.getElementById('s-gas-day');if(_gd)state.settings.gasDay=parseInt(_gd.value)||1;
+  updateGmailStatus();
+  state.settings.projectName=document.getElementById('s-pname').value.trim()||'BHS Plantation Drive';
+  state.settings.projectYear=document.getElementById('s-pyear').value.trim()||'2026';
+  state.settings.labels={
+    dashboard:document.getElementById('l-dash').value.trim()||'Dashboard',
+    clusters:document.getElementById('l-clust').value.trim()||'All Clusters',
+    dispatch:document.getElementById('l-disp').value.trim()||'Dispatch Log',
+    nearby:document.getElementById('l-near').value.trim()||'Nearby Clusters',
+    alerts:document.getElementById('l-alert').value.trim()||'Alerts',
+    plan:document.getElementById('l-plan').value.trim()||'Dispatch Plan',
+    assistant:document.getElementById('l-assist').value.trim()||'AI Assistant',
+    settings:document.getElementById('l-sett').value.trim()||'Settings'
+  };
+  applyBranding();applyLabels();
+  state.settings.ejk=document.getElementById('s-ejk').value.trim();
+  state.settings.ejs=document.getElementById('s-ejs').value.trim();
+  state.settings.ejt=document.getElementById('s-ejt').value.trim();
+  state.settings.apiKey=document.getElementById('s-api').value.trim();
+  if(state.settings.ejk && typeof emailjs!=="undefined") emailjs.init({publicKey:state.settings.ejk});
+  save();
+  updateSyncBadge('saving');
+  if(state.settings.gasUrl&&state.settings.gasKey){
+    const ok=await gasPushSettings();
+    updateSyncBadge(ok?'connected':'error');
+    alert(ok?'Settings saved and synced to your team!':'Saved locally, but could not reach the shared database. Check your Apps Script URL/key.');
+  } else {
+    updateSyncBadge('local');
+    alert('Settings saved (local only — connect a shared database to sync with your team).');
+  }
+  updateBadge();
+}
+
+
+
+async function forceSync(){
+  if(!state.settings.gasUrl||!state.settings.gasKey){alert('Connect a shared database first (see below).');return;}
+  updateSyncBadge('saving');
+  const ok=await fullSync();
+  updateSyncBadge(ok?'connected':'error');
+  if(ok)showInAppNotif('Synced with shared database');
+}
+
+async function fullSync(){
+  const remote=await gasFetchData();
+  if(!remote)return false;
+  if(remote.dispatches && remote.dispatches.length){
+    state.dispatches=remote.dispatches.map(d=>({...d,qty:parseInt(d.qty)||0,imported:d.imported===true||d.imported==='TRUE'||d.imported==='true'}));
+  }
+  if(remote.settings){
+    const SHARED_KEYS=['recipients','alertDays','digestDay','projectName','projectYear','labels','gasDay','convenorOverrides','customClusters','ly2025count'];
+    SHARED_KEYS.forEach(k=>{if(remote.settings[k]!==undefined)state.settings[k]=remote.settings[k];});
+  }
+  // Restore custom clusters from remote settings
+  if(state.settings.customClusters){
+    state.settings.customClusters.forEach(cc=>{if(!state.schools.find(s=>s.id===cc.id)){state.schools.push(cc);}else{const existing=state.schools.find(s=>s.id===cc.id);if(existing&&existing._custom)Object.assign(existing,cc);}});
+  }
+  recomputeDispatched();save();
+  applyBranding();try{applyLabels();}catch(e){}
+  rDash();updateBadge();
+  if(document.getElementById('pane-clusters')?.classList.contains('active'))rClusters();
+  if(document.getElementById('pane-dispatch')?.classList.contains('active'))rDispatch();
+  if(document.getElementById('pane-alerts')?.classList.contains('active'))rAlerts();
+  if(document.getElementById('pane-plan')?.classList.contains('active'))renderPlan();
+  return true;
+}
+
+function recomputeDispatched(){
+  state.schools.forEach(s=>{
+    const total=state.dispatches.filter(d=>String(d.schoolId)===String(s.id)).reduce((a,d)=>a+(parseInt(d.qty)||0),0);
+    s.dispatched=Math.min(total,s.required);
+  });
+}
+
+function updateSyncBadge(status){
+  const icon=document.getElementById('sync-icon');const text=document.getElementById('sync-text');
+  if(!icon||!text)return;
+  if(status==='connected'){icon.className='ti ti-cloud-check';icon.style.color='var(--gr)';text.textContent='Synced — shared with team';text.style.color='var(--gr-d)';}
+  else if(status==='saving'){icon.className='ti ti-cloud-upload spin';icon.style.color='var(--am)';text.textContent='Syncing...';text.style.color='var(--am-d)';}
+  else if(status==='error'){icon.className='ti ti-cloud-x';icon.style.color='var(--re)';text.textContent='Sync failed — click to retry';text.style.color='var(--re-d)';}
+  else{icon.className='ti ti-cloud-off';icon.style.color='var(--tx3)';text.textContent='Local only — not shared';text.style.color='var(--tx3)';}
+}
+
+function confirmReset(){
+  if(!confirm('This will remove all manually logged dispatches (imported data stays). Continue?')) return;
+  state.dispatches=state.dispatches.filter(d=>d.imported);
+  recomputeDispatched();
+  save();go('dashboard');
+}
+
+
+
+// ─── CONNECTION DIAGNOSTICS ───────────────────────────────────────────────────
+function clearConnection(){
+  if(!confirm('Disconnect from the shared database? (Your local data stays safe)'))return;
+  state.settings.gasUrl=''; state.settings.gasKey=''; save();
+  document.getElementById('s-gas-url').value='';
+  document.getElementById('s-gas-key').value='';
+  updateSyncBadge('local');
+  showInAppNotif('Disconnected — working in local mode');
+}
+
+async function diagnoseConnection(){
+  const out=document.getElementById('diag-output');
+  out.style.display='block'; out.textContent='Running diagnostics...\n';
+  const url=document.getElementById('s-gas-url').value.trim()||state.settings.gasUrl;
+  const key=document.getElementById('s-gas-key').value.trim()||state.settings.gasKey;
+
+  if(!url){out.textContent+='✗ No URL entered. Paste the Apps Script URL in the field above.\n';return;}
+  if(!url.includes('script.google.com')){out.textContent+='✗ URL does not look right. It should start with https://script.google.com/macros/s/\n';return;}
+  if(!url.endsWith('/exec')){out.textContent+='✗ URL must end with /exec\n   Your URL: '+url+'\n   Fix: add /exec at the end\n';return;}
+  out.textContent+='✓ URL format looks correct\n';
+  out.textContent+='  '+url.substring(0,60)+'...\n\n';
+
+  out.textContent+='Testing connection (this may take 5-10 seconds)...\n';
+  try{
+    const testUrl=url+'?action=ping&t='+Date.now();
+    const resp=await fetch(testUrl);
+    out.textContent+='✓ Server responded (HTTP '+resp.status+')\n';
+    const txt=await resp.text();
+    out.textContent+='  Raw response: '+txt.substring(0,200)+'\n\n';
+    try{
+      const data=JSON.parse(txt);
+      if(data.ok){
+        out.textContent+='✓ Script is working correctly!\n';
+        if(!key){out.textContent+='\n⚠ Now enter your secret key and click Connect\n';}
+        else{
+          out.textContent+='✓ Key entered. Clicking Connect should work now.\n';
+          out.textContent+='\nIf Connect still fails, make sure the KEY in your\nApps Script matches exactly: "'+key+'"\n(check for extra spaces or different capitalisation)\n';
+        }
+      } else if(data.error){
+        out.textContent+='✗ Script returned an error:\n  "'+data.error+'"\n\nThis means the script has a code error.\nGo to script.google.com, copy the latest script\nfrom Settings, replace the old code, and redeploy.\n';
+      } else {
+        out.textContent+='⚠ Unexpected response from script.\nMake sure you copied the FULL script from Settings\nand redeployed after saving.\n';
+      }
+    }catch(e){
+      out.textContent+='✗ Response is not valid JSON: '+txt.substring(0,100)+'\n\nThe script is reachable but returning wrong data.\nMake sure you replaced ALL the code in Apps Script\nwith the new version from Settings, then redeployed.\n';
+    }
+  }catch(e){
+    out.textContent+='✗ Could not reach the URL at all.\n  Error: '+e.message+'\n\n';
+    if(e.message.includes('Failed to fetch')||e.message.includes('NetworkError')){
+      out.textContent+='This is usually a CORS/access error.\nIn Apps Script, make sure:\n- "Who has access" = Anyone (not "Anyone with Google account")\n- You clicked Deploy (not just Save)\n- Use the Web App URL, not the Deployment ID\n';
+    }
+  }
+}
+
+
+
+async function getSheetUrl(){
+  try{
+    const data=await gasFetchData();
+    return data&&data.sheetUrl?data.sheetUrl:null;
+  }catch(e){return null;}
+}
+
+// ─── JSONBIN SHARED DATABASE ──────────────────────────────────────────────────
+// Replaces Google Apps Script for data sync — no CORS, no deployment, 1 key setup
+
+const JB_BASE = 'https://api.jsonbin.io/v3';
+
+async function jbFetch(){
+  const key=state.settings.jbKey, bid=state.settings.jbBinId;
+  if(!key||!bid)return null;
+  try{
+    const r=await fetch(`${JB_BASE}/b/${bid}/latest`,{headers:{'X-Master-Key':key,'X-Bin-Meta':'false'}});
+    if(!r.ok){console.warn('jbFetch HTTP',r.status);return null;}
+    return await r.json(); // returns the record directly (no wrapper with X-Bin-Meta:false)
+  }catch(e){console.warn('jbFetch failed:',e.message);return null;}
+}
+
+async function jbSave(data){
+  const key=state.settings.jbKey, bid=state.settings.jbBinId;
+  if(!key||!bid)return false;
+  try{
+    const r=await fetch(`${JB_BASE}/b/${bid}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':key},body:JSON.stringify(data)});
+    return r.ok;
+  }catch(e){console.warn('jbSave failed:',e.message);return false;}
+}
+
+async function jbCreate(key){
+  try{
+    const r=await fetch(`${JB_BASE}/b`,{method:'POST',headers:{'Content-Type':'application/json','X-Master-Key':key,'X-Bin-Name':'BSS Plantation Drive','X-Bin-Private':'false'},body:JSON.stringify({dispatches:[],settings:{}})});
+    if(!r.ok){const t=await r.text();console.warn('jbCreate failed:',t);return null;}
+    const d=await r.json();
+    return d.metadata?.id||null;
+  }catch(e){console.warn('jbCreate failed:',e.message);return null;}
+}
+
+async function jbFullSync(){
+  const data=await jbFetch();
+  if(!data)return false;
+  // Merge dispatches
+  if(Array.isArray(data.dispatches)&&data.dispatches.length){
+    state.dispatches=data.dispatches.map(d=>({...d,qty:parseInt(d.qty)||0,imported:d.imported===true||d.imported==='true'||d.imported==='TRUE'}));
+  }
+  // Merge shared settings
+  if(data.settings){
+    const KEYS=['recipients','alertDays','digestDay','projectName','projectYear','labels','convenorOverrides','customClusters','ly2025count'];
+    KEYS.forEach(k=>{if(data.settings[k]!==undefined)state.settings[k]=data.settings[k];});
+  }
+  // Restore custom clusters
+  if(state.settings.customClusters){
+    state.settings.customClusters.forEach(cc=>{
+      if(!state.schools.find(s=>s.id===cc.id))state.schools.push(cc);
+      else{const e=state.schools.find(s=>s.id===cc.id);if(e&&e._custom)Object.assign(e,cc);}
+    });
+  }
+  recomputeDispatched();save();
+  applyBranding();try{applyLabels();}catch(x){}
+  rDash();updateBadge();
+  ['clusters','dispatch','alerts','plan'].forEach(p=>{const el=document.getElementById('pane-'+p);if(el&&el.classList.contains('active')){if(p==='clusters')rClusters();else if(p==='dispatch')rDispatch();else if(p==='alerts')rAlerts();else if(p==='plan')renderPlan();}});
+  return true;
+}
+
+async function jbPushAll(){
+  const KEYS=['recipients','alertDays','digestDay','projectName','projectYear','labels','convenorOverrides','customClusters','ly2025count'];
+  const shared={};KEYS.forEach(k=>{if(state.settings[k]!==undefined)shared[k]=state.settings[k];});
+  return jbSave({dispatches:state.dispatches,settings:shared});
+}
+
+// Replace fullSync with JSONBin version
+async function fullSync(){const d=await gasFetchData();if(!d)return false;if(Array.isArray(d.dispatches)&&d.dispatches.length)state.dispatches=d.dispatches.map(x=>({...x,qty:parseInt(x.qty||x.plants)||0,imported:x.imported===true||x.imported==="true"||x.imported==="TRUE"}));if(d.settings){const K=["recipients","alertDays","digestDay","projectName","projectYear","labels","convenorOverrides","customClusters","ly2025count"];K.forEach(k=>{if(d.settings[k]!==undefined)state.settings[k]=d.settings[k];});}if(state.settings.customClusters)state.settings.customClusters.forEach(cc=>{if(!state.schools.find(s=>s.id===cc.id))state.schools.push(cc);});recomputeDispatched();save();applyBranding();try{applyLabels();}catch(x){}rDash();updateBadge();return true;}
+async function gasPushSettings(){if(!state.settings.gasUrl||!state.settings.gasKey)return false;const K=["recipients","alertDays","digestDay","projectName","projectYear","labels","convenorOverrides","customClusters","ly2025count"];const sh={};K.forEach(k=>{if(state.settings[k]!==undefined)sh[k]=state.settings[k];});try{const url=state.settings.gasUrl+"?action=saveSettings&key="+encodeURIComponent(state.settings.gasKey)+"&data="+encodeURIComponent(JSON.stringify(sh))+"&t="+Date.now();const r=await fetch(url);const d=await r.json();return d.ok||d.saved;}catch(e){return false;}}
+async function gasAddDispatch(d){if(!state.settings.gasUrl||!state.settings.gasKey)return false;try{const url=state.settings.gasUrl+"?action=addDispatch&key="+encodeURIComponent(state.settings.gasKey)+"&data="+encodeURIComponent(JSON.stringify(d))+"&t="+Date.now();const r=await fetch(url);const data=await r.json();return data.added||data.ok;}catch(e){return false;}}
+async function gasDeleteDispatch(id){if(!state.settings.gasUrl||!state.settings.gasKey)return false;try{const url=state.settings.gasUrl+"?action=deleteDispatch&key="+encodeURIComponent(state.settings.gasKey)+"&id="+encodeURIComponent(id)+"&t="+Date.now();const r=await fetch(url);const data=await r.json();return data.deleted||data.ok;}catch(e){return false;}}
+
+async function connectSharedDB(){
+  const urlEl=document.getElementById('s-gas-url');
+  const keyEl=document.getElementById('s-gas-key');
+  const gasUrl=(urlEl?urlEl.value.trim():'')||state.settings.gasUrl||'';
+  const gasKey=(keyEl?keyEl.value.trim():'')||state.settings.gasKey||'';
+  if(!gasUrl){alert('Paste the Apps Script URL first (the one ending in /exec).');return;}
+  if(!gasKey){alert('Enter your secret key — it must match SECRET in the script.');return;}
+  if(!gasUrl.endsWith('/exec')){alert('The URL must end in /exec\n\nGo to Apps Script → Deploy → Manage deployments → copy the Web app URL again.');return;}
+  state.settings.gasUrl=gasUrl;state.settings.gasKey=gasKey;save();
+  updateSyncBadge('saving');
+  // Test with ping first (no key needed)
+  try{
+    const pingResp=await fetch(gasUrl+'?action=ping&t='+Date.now());
+    if(!pingResp.ok){updateSyncBadge('error');alert('Could not reach the script (HTTP '+pingResp.status+').\n\nMake sure:\n1. URL ends in /exec\n2. "Who has access" = Anyone (not "Anyone with Google Account")\n3. You clicked Deploy → not just Save');return;}
+    const pingTxt=await pingResp.text();
+    if(pingTxt.trim().startsWith('<')){updateSyncBadge('error');alert('The script has an error.\n\nGo to script.google.com → Executions tab — you will see the exact error message there.');return;}
+  }catch(pingErr){updateSyncBadge('error');alert('Cannot reach the script.\n\nError: '+pingErr.message+'\n\nCheck the URL is correct and ends in /exec.');return;}
+  const ok=await fullSync();
+  updateSyncBadge(ok?'connected':'error');
+  if(ok){
+    if(state.dispatches.filter(d=>d.imported).length>0){
+      if(confirm('Connected! The dispatch log Google Sheet has been created in your Drive.\n\nImport the '+state.dispatches.filter(d=>d.imported).length+' existing dispatches from the tracking sheet into it?')){
+        await gasPushSettings();
+        for(const d of state.dispatches){await gasAddDispatch(d);}
+        showInAppNotif('Dispatches imported to Google Sheet');
+      }
+    }
+    const sheetUrl=await getSheetUrl();
+    const msg='✅ Connected!\n\nYour dispatch log Google Sheet has been created in your Drive.\n\n'+(sheetUrl?'Open it here:\n'+sheetUrl+'\n\n':'')+'Share your Apps Script URL + secret key with your team — they paste both into Settings → Connect.';
+    alert(msg);
+  } else {
+    alert('Sync failed. Check that your secret key matches the SECRET in the Apps Script.');
+  }
+}
+
+async function forceSync(){
+  if(!state.settings.jbKey||!state.settings.jbBinId){alert('Connect a shared database first in Settings.');return;}
+  updateSyncBadge('saving');
+  const ok=await jbFullSync();
+  updateSyncBadge(ok?'connected':'error');
+  if(ok)showInAppNotif('Synced with shared database');
+}
+
+
+// ─── LIVE SCHOOL HEADS (Google Sheet) ────────────────────────────────────────
+const SCHOOL_HEADS_URL = 'https://docs.google.com/spreadsheets/d/1-RNYLZARZHWgPw6siRJJfK27FbHAfd1OjtTwuIC1xCY/export?format=csv';
+let _liveHeads = null; // cache: {cluster_code: [{campus, city, head, contact, email}]}
+let _headsLoaded = false;
+let _headsLoading = false;
+
+async function fetchLiveHeads(){
+  if(_liveHeads||_headsLoading)return;
+  // Check cache (1 hour TTL)
+  const cached=localStorage.getItem('bhs_live_heads');
+  const cachedTime=parseInt(localStorage.getItem('bhs_live_heads_time')||'0');
+  if(cached&&(Date.now()-cachedTime)<3600000){_liveHeads=JSON.parse(cached);_headsLoaded=true;return;}
+  _headsLoading=true;
+  try{
+    const resp=await fetch(SCHOOL_HEADS_URL+'&t='+Date.now());
+    if(!resp.ok){_headsLoading=false;return;}
+    const csv=await resp.text();
+    _liveHeads=parseHeadsCSV(csv);
+    localStorage.setItem('bhs_live_heads',JSON.stringify(_liveHeads));
+    localStorage.setItem('bhs_live_heads_time',String(Date.now()));
+    _headsLoaded=true;
+  }catch(e){console.warn('Could not load live school heads:',e.message);}
+  _headsLoading=false;
+}
+
+function parseHeadsCSV(csv){
+  const lines=csv.split('\n');
+  // Find header row
+  const headerLine=lines[0].split(',');
+  const colIdx=(name)=>headerLine.findIndex(h=>h.toLowerCase().includes(name.toLowerCase()));
+  const iRegion=colIdx('region'),iCluster=colIdx('cluster'),iCampus=colIdx('campus'),
+        iCity=colIdx('city'),iHead=colIdx('school head'),iContact=colIdx('contact'),
+        iEmail=colIdx('email');
+  const result={};
+  lines.slice(1).forEach(line=>{
+    const cols=splitCSVLine(line);
+    const cluster=(cols[iCluster]||'').trim().toUpperCase();
+    if(!cluster||cluster==='.'||!cluster.match(/^[A-Z]+-\d+/))return;
+    const entry={
+      campus:(cols[iCampus]||'').trim(),
+      city:(cols[iCity]||'').trim(),
+      head:(cols[iHead]||'').trim(),
+      contact:(cols[iContact]||'').trim(),
+      email:(cols[iEmail]||'').trim(),
+      region:(cols[iRegion]||'').trim()
+    };
+    if(!entry.campus||entry.campus==='.')return;
+    if(!result[cluster])result[cluster]=[];
+    result[cluster].push(entry);
+  });
+  return result;
+}
+
+function splitCSVLine(line){
+  const result=[]; let cur=''; let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===','&&!inQ){result.push(cur.trim().replace(/^"|"$/g,''));cur='';}
+    else{cur+=c;}
+  }
+  result.push(cur.trim().replace(/^"|"$/g,''));
+  return result;
+}
+
+function showHeads(clusterCode){
+  const modal=document.getElementById('heads-modal');
+  const title=document.getElementById('heads-modal-title');
+  const body=document.getElementById('heads-modal-body');
+  title.innerHTML=`<i class="ti ti-building-school" style="color:var(--gr)"></i> ${clusterCode} — Campuses & School Heads`;
+  modal.classList.remove('hidden');
+  if(!_liveHeads){
+    body.innerHTML='<div class="empty"><i class="ti ti-reload spin"></i>Loading from Google Sheet...</div>';
+    fetchLiveHeads().then(()=>renderHeadsModal(clusterCode));
+    return;
+  }
+  renderHeadsModal(clusterCode);
+}
+
+function renderHeadsModal(clusterCode){
+  const body=document.getElementById('heads-modal-body');
+  const campuses=(_liveHeads&&_liveHeads[clusterCode.toUpperCase()])||[];
+  if(!campuses.length){
+    body.innerHTML=`<div class="empty"><i class="ti ti-info-circle"></i>No campus data found for ${clusterCode} in the live sheet.<br><small style="color:var(--tx3)">Data refreshes from Google Sheet every hour.</small></div>`;
+    return;
+  }
+  const rows=campuses.map(c=>`
+    <tr>
+      <td style="font-size:13px;font-weight:500">${c.campus||'—'}</td>
+      <td style="font-size:12px;color:var(--tx2)">${c.city||'—'}</td>
+      <td style="font-size:13px">${c.head||'<span style="color:var(--tx3)">Vacant</span>'}</td>
+      <td><a href="tel:${c.contact}" class="btn btn-s" style="font-size:11px">
+        <i class="ti ti-phone"></i>${c.contact||'—'}</a></td>
+      <td><a href="mailto:${c.email}" class="btn btn-s" style="font-size:11px">
+        <i class="ti ti-mail"></i>Email</a></td>
+    </tr>`).join('');
+  body.innerHTML=`
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:.75rem;display:flex;justify-content:space-between">
+      <span>Live data · ${campuses.length} campus${campuses.length>1?'es':''} · Updates from Google Sheet automatically</span>
+      <button class="btn btn-s" onclick="refreshHeads('${clusterCode}')"><i class="ti ti-refresh"></i>Refresh</button>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Campus / Branch</th><th>City</th><th>School Head</th><th>Contact</th><th>Email</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+async function refreshHeads(clusterCode){
+  localStorage.removeItem('bhs_live_heads');
+  localStorage.removeItem('bhs_live_heads_time');
+  _liveHeads=null;_headsLoaded=false;_headsLoading=false;
+  document.getElementById('heads-modal-body').innerHTML='<div class="empty"><i class="ti ti-reload spin"></i>Refreshing from Google Sheet...</div>';
+  await fetchLiveHeads();
+  renderHeadsModal(clusterCode);
+}
+
+// ─── CLUSTER CRUD ─────────────────────────────────────────────────────────────
+let _editingClusterId = null;
+
+function openClusterModal(id){
+  _editingClusterId = id;
+  const title = document.getElementById('cm-title');
+  const err = document.getElementById('cm-error');
+  if(err) err.style.display='none';
+  if(id){
+    const s = state.schools.find(x=>x.id===id);
+    if(!s) return;
+    if(title) title.innerHTML='<i class="ti ti-pencil" style="color:var(--gr)"></i> Edit cluster';
+    document.getElementById('cm-cluster').value = s.cluster||'';
+    document.getElementById('cm-region').value = s.region||'C';
+    document.getElementById('cm-city').value = s.city||'';
+    document.getElementById('cm-req').value = s.required||'';
+    document.getElementById('cm-conv').value = getConvenor(s)||'';
+    document.getElementById('cm-contact').value = s.contact||'';
+    document.getElementById('cm-date').value = s.plantingDate||'';
+    document.getElementById('cm-disp').value = s.dispatched||0;
+    document.getElementById('cm-sp').value = s._species||'';
+    document.getElementById('cm-notes').value = s._notes||'';
+  } else {
+    if(title) title.innerHTML='<i class="ti ti-building-school" style="color:var(--gr)"></i> Add new cluster';
+    ['cm-cluster','cm-city','cm-conv','cm-contact','cm-date','cm-sp','cm-notes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('cm-region').value='C';
+    document.getElementById('cm-req').value='';
+    document.getElementById('cm-disp').value='0';
+  }
+  document.getElementById('cm-modal').classList.remove('hidden');
+}
+
+async function saveCluster(){
+  const err=document.getElementById('cm-error');
+  const cluster=document.getElementById('cm-cluster').value.trim();
+  const city=document.getElementById('cm-city').value.trim();
+  const conv=document.getElementById('cm-conv').value.trim();
+  const req=parseInt(document.getElementById('cm-req').value)||0;
+  if(!cluster||!city||!conv||req<=0){
+    if(err){err.textContent='Please fill in cluster name, city, convenor, and required quantity.';err.style.display='block';}
+    return;
+  }
+  const region=document.getElementById('cm-region').value;
+  const contact=document.getElementById('cm-contact').value.trim();
+  const plantingDate=document.getElementById('cm-date').value||null;
+  const disp=parseInt(document.getElementById('cm-disp').value)||0;
+  const sp=document.getElementById('cm-sp').value.trim();
+  const notes=document.getElementById('cm-notes').value.trim();
+
+  if(_editingClusterId){
+    // Edit existing custom cluster
+    const s=state.schools.find(x=>x.id===_editingClusterId);
+    if(s){
+      s.cluster=cluster; s.city=city; s.region=region; s.required=req;
+      s.convenor=conv; s.contact=contact; s.plantingDate=plantingDate;
+      s.dispatched=disp; s._species=sp; s._notes=notes;
+      // Also update convenor override
+      if(!state.settings.convenorOverrides)state.settings.convenorOverrides={};
+      state.settings.convenorOverrides[s.id]=conv;
+    }
+  } else {
+    // Add new cluster
+    const newId=10000+Date.now()%1000000;
+    const newSchool={
+      id:newId,cluster,city,region,required:req,dispatched:disp,
+      plantingDate,convenor:conv,contact,_species:sp,_notes:notes,_custom:true
+    };
+    state.schools.push(newSchool);
+  }
+  recomputeDispatched();save();closeMo();
+  // Sync to Google Sheet if connected
+  if(state.settings.gasUrl&&state.settings.gasKey){
+    updateSyncBadge('saving');
+    const ok=await gasPushSettings();
+    updateSyncBadge(ok?'connected':'error');
+  }
+  rClusters();rDash();updateBadge();
+  showInAppNotif(_editingClusterId?'Cluster updated':'New cluster added — visible to your whole team');
+}
+
+async function deleteCluster(id){
+  const s=state.schools.find(x=>x.id===id);
+  if(!s||!s._custom){alert('Only custom (team-added) clusters can be deleted.');return;}
+  if(!confirm(`Delete "${s.cluster}" (${s.city})? This will also remove its dispatch history.`))return;
+  state.schools=state.schools.filter(x=>x.id!==id);
+  state.dispatches=state.dispatches.filter(d=>d.schoolId!==id);
+  recomputeDispatched();save();
+  if(state.settings.gasUrl&&state.settings.gasKey){updateSyncBadge('saving');const ok=await gasPushSettings();updateSyncBadge(ok?'connected':'error');}
+  rClusters();rDash();updateBadge();
+  showInAppNotif('Cluster deleted');
+}
+
+// ─── DISPATCH CRUD ────────────────────────────────────────────────────────────
+function openDM(id){
+  const sel=document.getElementById('d-cluster');
+  sel.innerHTML='<option value="">Select cluster...</option>'+state.schools.map(s=>`<option value="${s.id}"${s.id===id?' selected':''}>${s.cluster} — ${s.convenor} (${s.city})</option>`).join('');
+  document.getElementById('d-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('d-qty').value='';
+  document.getElementById('d-sp').value='';
+  document.getElementById('d-notes').value='';
+  document.getElementById('d-by').value=state.settings.name||localStorage.getItem('bhs_by')||'';
+  document.getElementById('dm').classList.remove('hidden');
+}
+
+async function saveDispatch(){
+  const sid=parseInt(document.getElementById('d-cluster').value);
+  const qty=parseInt(document.getElementById('d-qty').value)||0;
+  if(!sid||qty<=0){alert('Select a cluster and enter a quantity.');return;}
+  const s=state.schools.find(x=>x.id===sid);
+  const by=document.getElementById('d-by').value.trim();
+  if(by){localStorage.setItem('bhs_by',by);state.settings.name=state.settings.name||by;}
+  const newDispatch={id:'d_'+Date.now(),schoolId:sid,cluster:s.cluster,city:s.city,date:document.getElementById('d-date').value,qty,species:document.getElementById('d-sp').value.trim(),notes:document.getElementById('d-notes').value.trim(),by,imported:false};
+  state.dispatches.push(newDispatch);
+  recomputeDispatched();save();closeMo();rDash();rDispatch();rAlerts();updateBadge();
+  if(document.getElementById('pane-clusters').classList.contains('active'))rClusters();
+  if(document.getElementById('pane-plan')?.classList.contains('active'))renderPlan();
+  if(state.settings.gasUrl&&state.settings.gasKey){
+    updateSyncBadge('saving');
+    const ok=await gasAddDispatch(newDispatch);
+    updateSyncBadge(ok?'connected':'error');
+    if(!ok)showInAppNotif('⚠️ Saved locally — could not sync to shared database. Click the sync badge to retry.');
+  }
+}
+
+function askDel(i){delTarget=i;document.getElementById('delm').classList.remove('hidden');}
+async function doDelete(){
+  const d=state.dispatches[delTarget];
+  state.dispatches.splice(delTarget,1);
+  recomputeDispatched();save();closeMo();rDispatch();rDash();updateBadge();
+  if(state.settings.gasUrl&&state.settings.gasKey&&d){
+    updateSyncBadge('saving');
+    const ok=await gasDeleteDispatch(d.id);
+    updateSyncBadge(ok?'connected':'error');
+  }
+}
+function closeMo(){document.querySelectorAll('.mo').forEach(x=>x.classList.add('hidden'));}
+
+// ─── EMAIL ────────────────────────────────────────────────────────────────────
+function getRecipients(){
+  return (state.settings.recipients||'').split(/[\n,]/).map(e=>e.trim()).filter(e=>e.includes('@'));
+}
+
+function fmtAlertEmail(due){
+  const tot=state.schools.reduce((a,s)=>a+s.required,0);const dis=state.schools.reduce((a,s)=>a+s.dispatched,0);
+  let body=`🌱 BHS PLANTATION DRIVE — DISPATCH PREPARATION ALERT\n${'='.repeat(52)}\n\nDate: ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}\n\nThe following clusters require dispatch preparation:\n\n`;
+  due.forEach(s=>{const d=du(s.plantingDate);const msg=d<0?`OVERDUE by ${Math.abs(d)} days`:d===0?'TODAY':d===1?'TOMORROW':`In ${d} days`;
+    body+=`📍 ${s.cluster} — ${s.city}\n   Planting date: ${fmtD(s.plantingDate)} (${msg})\n   Remaining: ${fmt(s.required-s.dispatched)} plants\n   Convenor: ${s.convenor} · ${s.contact}\n\n`;});
+  body+=`\nOVERALL PROGRESS\n${'─'.repeat(20)}\nTotal ordered:   ${fmt(tot)}\nDispatched:      ${fmt(dis)} (${Math.round(dis/tot*100)}%)\nRemaining:       ${fmt(tot-dis)}\n\nPrepared by: ${state.settings.name||state.settings.projectName+' System'}`;
+  return body;
+}
+
+function fmtDigestEmail(){
+  const tot=state.schools.reduce((a,s)=>a+s.required,0);const dis=state.schools.reduce((a,s)=>a+s.dispatched,0);
+  const days=parseInt(state.settings.alertDays)||5;
+  const thisWeek=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>=0&&d<=7&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
+  const next7=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>7&&d<=14&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
+  const overdue=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<0&&gst(s)!=='done';});
+  const top5=state.schools.filter(s=>gst(s)!=='done').sort((a,b)=>(b.required-b.dispatched)-(a.required-a.dispatched)).slice(0,5);
+
+  let body=`🌱 WEEKLY PLANTATION DRIVE UPDATE\n${'='.repeat(36)}\nWeek of ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}\n\n`;
+  body+=`OVERALL PROGRESS\n${'─'.repeat(20)}\nTotal ordered:  ${fmt(tot)}\nDispatched:     ${fmt(dis)} (${Math.round(dis/tot*100)}%)\nRemaining:      ${fmt(tot-dis)}\nClusters done:  ${state.schools.filter(s=>gst(s)==='done').length} of ${state.schools.length}\n\n`;
+  if(overdue.length){body+=`⚠️  OVERDUE (missed planting date)\n${'─'.repeat(36)}\n`;overdue.forEach(s=>{const d=Math.abs(du(s.plantingDate));body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — ${d}d overdue\n`;});body+='\n';}
+  if(thisWeek.length){body+=`📅 THIS WEEK'S DISPATCHES (0–7 days)\n${'─'.repeat(36)}\n`;thisWeek.forEach(s=>{const d=du(s.plantingDate);body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — Planting ${fmtD(s.plantingDate)} (${d===0?'today':d===1?'tomorrow':d+'d'})\n  Contact: ${getConvenor(s)} · ${s.contact}\n`;});body+='\n';}
+  else{body+=`✅  No planting dates this week.\n\n`;}
+  if(next7.length){body+=`🗓️  UPCOMING (8–14 days)\n${'─'.repeat(36)}\n`;next7.forEach(s=>{body+=`• ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants — ${fmtD(s.plantingDate)}\n`;});body+='\n';}
+  body+=`TOP 5 PENDING (by quantity)\n${'─'.repeat(36)}\n`;
+  top5.forEach((s,i)=>{body+=`${i+1}. ${s.cluster} (${s.city}) — ${fmt(s.required-s.dispatched)} plants remaining\n`;});
+  body+=`\nPrepared by: ${state.settings.name||state.settings.projectName+' System'}`;
+  return body;
+}
+
+async function sendEmailTo(subject, body, recipients){
+  if(!recipients.length){alert('No email recipients configured. Go to Settings to add emails.');return false;}
+  // Gmail via Google Apps Script — primary
+  if(state.settings.gasUrl&&state.settings.gasKey){
+    const _ok=await callGAS(subject,body,recipients);
+    if(_ok)return true;
+  }
+  // EmailJS fallback
+  if(state.settings.ejk && state.settings.ejs && state.settings.ejt){
+    try{
+      if(typeof emailjs==="undefined"){console.warn("EmailJS not loaded");return false;}
+    emailjs.init({publicKey:state.settings.ejk});
+      for(const r of recipients){
+        await emailjs.send(state.settings.ejs,state.settings.ejt,{to_email:r,subject,message:body});
+      }
+      return true;
+    }catch(e){console.error('EmailJS error',e);return false;}
+  }
+  return false;
+}
+
+function showEmailPreview(title, subject, body){
+  emailPayload={subject,body,recipients:getRecipients()};
+  document.getElementById('ep-title').textContent=title;
+  document.getElementById('ep-body').value=body;
+  const ml=document.getElementById('mailto-link');
+  ml.href=`mailto:${emailPayload.recipients.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  document.getElementById('epm').classList.remove('hidden');
+}
+
+async function sendEmailFromPreview(){
+  if(!emailPayload)return;
+  const ok=await sendEmailTo(emailPayload.subject,emailPayload.body,emailPayload.recipients);
+  if(ok){alert('Email sent via EmailJS!');closeMo();}
+  else{alert('EmailJS not configured. Use "Open in email client" or configure EmailJS in Settings.');}
+}
+
+function copyEmail(){if(emailPayload){navigator.clipboard.writeText(emailPayload.body);alert('Copied to clipboard!');}}
+
+async function checkAndAlert(manual=false){
+  const today=new Date().toDateString();
+  if(!manual && state.settings.lastAlertDate===today)return;
+  const days=parseInt(state.settings.alertDays)||5;
+  const due=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=days&&gst(s)!=='done';});
+  if(!due.length)return;
+  const subject=`🌱 Dispatch Alert: ${due.length} cluster(s) need preparation`;
+  const body=fmtAlertEmail(due);
+  state.settings.lastAlertDate=today;save();
+  const recipients=getRecipients();
+  if(recipients.length && state.settings.ejk && state.settings.ejs && state.settings.ejt){
+    const ok=await sendEmailTo(subject,body,recipients);
+    if(ok && !manual){showInAppNotif(`Alert sent to ${recipients.length} recipient(s) for ${due.length} cluster(s)`);}
+  }
+  if(manual){showEmailPreview('Dispatch Alert Email',subject,body);}
+}
+
+function sendWeeklyDigest(){
+  const subject=`🌱 ${state.settings.projectName} Weekly Update — ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long'})}`;
+  const body=fmtDigestEmail();
+  state.settings.lastDigestDate=new Date().toDateString();save();
+  showEmailPreview('Weekly Digest Email',subject,body);
+}
+
+async function testEmail(){
+  saveSettings();
+  const r=getRecipients();
+  if(!r.length){alert('Add at least one recipient email in Settings.');return;}
+  const ok=await sendEmailTo(`🌱 Test email from ${state.settings.projectName}`,`This is a test email from the ${state.settings.projectName} Dispatch Tracker.\n\nIf you received this, your EmailJS setup is working correctly.\n\n— ${state.settings.projectName} System`,r);
+  alert(ok?`Test email sent to ${r.join(', ')}!`:'Failed to send. Check your EmailJS credentials.');
+}
+
+function showInAppNotif(msg){
+  const n=document.createElement('div');
+  n.className='alert ag';n.style.cssText='position:fixed;top:1rem;right:1rem;z-index:900;max-width:360px';
+  n.innerHTML=`<i class="ti ti-check"></i><div>${msg}</div>`;
+  document.body.appendChild(n);setTimeout(()=>n.remove(),5000);
+}
+
+// ─── AI ASSISTANT ─────────────────────────────────────────────────────────────
+function buildCtx(){
+  const tot=state.schools.reduce((a,s)=>a+s.required,0);const dis=state.schools.reduce((a,s)=>a+s.dispatched,0);
+  let ctx=`${state.settings.projectName} ${state.settings.projectYear}. Today: ${TODAY.toDateString()}.\nTotal ordered: ${fmt(tot)} | Dispatched: ${fmt(dis)} (${Math.round(dis/tot*100)}%) | Remaining: ${fmt(tot-dis)}\n\nClusters:\n`;
+  ctx+=state.schools.map(s=>`${s.cluster}|${s.city}|${RN[s.region]}|req:${s.required}|disp:${s.dispatched}|rem:${s.required-s.dispatched}|date:${s.plantingDate||'TBD'}|${getConvenor(s)}|${getContact(s)}`).join('\n');
+  if(state.dispatches.length){ctx+=`\n\nRecent dispatches:\n`+state.dispatches.slice(-10).map(d=>`${d.date}|${d.cluster}|${d.city}|${d.qty} plants`).join('\n');}
+  return ctx;
+}
+
+async function callClaude(msgs,sys,depth=0){
+  if(depth>5)return'Max iterations reached.';
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':state.settings.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,system:sys,tools:[{type:"web_search_20250305",name:"web_search"}],messages:msgs})});
+  const d=await r.json();
+  if(d.error)return`API Error: ${d.error.message}`;
+  if(d.stop_reason==='tool_use'){
+    const tus=d.content.filter(b=>b.type==='tool_use');
+    return callClaude([...msgs,{role:'assistant',content:d.content},{role:'user',content:tus.map(tu=>({type:'tool_result',tool_use_id:tu.id,content:'[search results fetched]'}))}],sys,depth+1);
+  }
+  return d.content?.filter(b=>b.type==='text').map(b=>b.text).join('\n')||'No response received.';
+}
+
+function addMsg(text,role){
+  const el=document.createElement('div');el.className=`msg ${role}`;el.innerHTML=text;
+  const cm=document.getElementById('cm');cm.appendChild(el);cm.scrollTop=cm.scrollHeight;return el;
+}
+
+async function sendChat(){
+  const inp=document.getElementById('ci');const msg=inp.value.trim();if(!msg)return;
+  if(!state.settings.apiKey){alert('Add your Anthropic API key in Settings to use the assistant.');return;}
+  inp.value='';addMsg(msg,'user');
+  const th=addMsg('<span class="spin">⟳</span> Searching and thinking...','ai');
+  const sys=`You are the AI assistant for ${state.settings.projectName} ${state.settings.projectYear}. You have access to live data on all clusters and dispatch status. You also have web search to look up real-time information.\n\nData:\n${buildCtx()}\n\nBe practical and helpful. For logistics questions (truck rates, distances), search the web for current rates. You can draft emails, calculate costs, suggest optimizations. Format numbers with commas. When discussing routes, mention cities along the way.`;
+  try{
+    const resp=await callClaude([{role:'user',content:msg}],sys);
+    th.innerHTML=resp.replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  }catch(e){th.innerHTML='Connection error. Check your API key and internet connection.';}
+}
+
+function qa(q){document.getElementById('ci').value=q;sendChat();}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function exportCSV(){
+  const rows=[['Cluster','City','Region','Required','Dispatched','Remaining','Status','Planting Date','Convenor','Contact']];
+  state.schools.forEach(s=>rows.push([s.cluster,s.city,RN[s.region],s.required,s.dispatched,s.required-s.dispatched,stLbl(s),s.plantingDate||'',s.convenor,s.contact]));
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));a.download=`bhs-plantation-${new Date().toISOString().split('T')[0]}.csv`;a.click();
+}
+
+// ─── AUTO-CHECK ON OPEN ───────────────────────────────────────────────────────
+function autoWeeklyCheck(){
+  const day=new Date().getDay();const target=parseInt(state.settings.digestDay)||1;
+  const today=new Date().toDateString();
+  if(day===target && state.settings.lastDigestDate!==today){
+    // Show a banner instead of auto-sending
+    const n=document.createElement('div');
+    n.className='alert ai';n.style.cssText='margin:0 0 1rem;cursor:pointer';
+    n.innerHTML=`<i class="ti ti-mail"></i><div>It's digest day! <strong>Click here to send your weekly update.</strong></div>`;
+    n.onclick=()=>{sendWeeklyDigest();n.remove();};
+    const main=document.querySelector('.main');if(main)main.prepend(n);
+  }
+}
+
+// ─── LABELS (config.js + Settings override) ───────────────────────────────
+const DEFAULT_LABELS={dashboard:'Dashboard',clusters:'All Clusters',dispatch:'Dispatch Log',nearby:'Nearby Clusters',alerts:'Alerts',plan:'Dispatch Plan',assistant:'AI Assistant',settings:'Settings'};
+
+function applyLabels(){
+  const cfg=(window.BHS_CONFIG&&window.BHS_CONFIG.labels)||{};
+  const L=Object.assign({},DEFAULT_LABELS,cfg,state.settings.labels||{});
+  const map={dashboard:'nav-dashboard',clusters:'nav-clusters',dispatch:'nav-dispatch',nearby:'nav-nearby',alerts:'nav-alerts',plan:'nav-plan',assistant:'nav-assistant',settings:'nav-settings'};
+  Object.entries(map).forEach(([key,nid])=>{
+    const el=document.getElementById(nid);
+    if(el){const sp=el.querySelector('.nl');if(sp)sp.textContent=L[key];}
+  });
+  if(window.BHS_CONFIG&&window.BHS_CONFIG.containerMin)CMIN=window.BHS_CONFIG.containerMin;
+  if(window.BHS_CONFIG&&window.BHS_CONFIG.containerMax)CMAX=window.BHS_CONFIG.containerMax;
+}
+
+// ─── SPECIES DATA PER CLUSTER ─────────────────────────────────────────────
+const CSP={
+  1:"Lemon, Gul-e-Nishter, Sukh Chayn, Alstonia",
+  2:"Kachnar, Lemon, Alstonia, Moringa, Citrus",
+  3:"Kachnar, Lemon, Jamun, Moringa, Guava, Sheesham",
+  4:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Guava, Sheesham, Semal, Poplar",
+  5:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Guava",
+  6:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Mulberry, Citrus, Arjun, Neem (Bakain), Guava, Sheesham",
+  7:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun",
+  8:"Kachnar, Amaltas, Lemon, Sukh Chayn, Jamun, Alstonia, Moringa, Mulberry, Neem (Bakain), Arjun, Poplar, Guava",
+  9:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Neem (Bakain)",
+  10:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Citrus",
+  11:"Kachnar, Sukh Chayn, Arjun, Neem (Bakain), Sheesham",
+  12:"Kachnar, Amaltas, Lemon, Sukh Chayn, Alstonia, Moringa, Citrus, Neem (Bakain)",
+  13:"Kachnar, Lemon, Gul-e-Nishter, Jamun, Moringa, Mulberry, Citrus, Arjun",
+  14:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Neem (Bakain)",
+  15:"Kachnar, Lemon, Sukh Chayn, Alstonia, Moringa, Citrus, Neem (Bakain)",
+  17:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Neem, Guava, Sheesham, Semal",
+  21:"Kachnar, Amaltas, Gul-e-Nishter, Sukh Chayn, Moringa, Mulberry, Arjun, Neem (Bakain), Semal",
+  22:"Kachnar, Amaltas, Lemon, Sukh Chayn, Jamun, Moringa, Mulberry, Citrus, Arjun, Neem, Guava, Sheesham, Semal",
+  23:"Kachnar, Amaltas, Lemon, Sukh Chayn, Jamun, Moringa, Mulberry, Citrus, Arjun, Neem, Guava, Sheesham, Semal",
+  24:"Kachnar, Amaltas, Lemon, Sukh Chayn, Jamun, Moringa, Mulberry, Citrus, Arjun, Neem, Guava, Sheesham, Semal",
+  25:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Neem, Guava, Sheesham, Poplar",
+  26:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Neem, Guava, Sheesham, Poplar",
+  27:"Kachnar, Amaltas, Sukh Chayn, Alstonia, Moringa, Neem (Bakain), Guava, Sheesham, Semal, Poplar",
+  28:"Kachnar, Amaltas, Sukh Chayn, Moringa, Mulberry, Neem (Bakain), Guava, Sheesham",
+  29:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Neem (Bakain)",
+  30:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Neem (Bakain)",
+  31:"Kachnar, Amaltas, Sukh Chayn, Jamun, Alstonia, Gum Arabic, Neem (Bakain)",
+  32:"Species to be confirmed with University of Sargodha",
+  33:"Species to be confirmed with University of Agriculture",
+  34:"Kachnar, Amaltas, Lemon, Sukh Chayn, Jamun, Moringa, Mulberry, Neem (Bakain), Arjun, Poplar, Alstonia, Gum Arabic, Sheesham, Semal, Guava",
+  35:"Sukh Chayn, Alstonia, Gum Arabic, Mulberry, Neem (Bakain), Sheesham, Semal, Poplar, Guava, Jamun",
+  36:"Species to be confirmed with Beaconhouse Estate",
+  37:"Kachnar, Amaltas, Gul-e-Nishter, Jamun, Moringa, Mulberry, Neem (Bakain)",
+  38:"Species to be confirmed with S-04 convenor",
+  39:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Citrus, Arjun, Neem (Bakain)",
+  40:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Gum Arabic, Mulberry, Arjun, Neem (Bakain), Guava, Sheesham, Semal",
+  41:"Sukh Chayn, Jamun, Mulberry, Neem (Bakain)",
+  42:"Jamun, Moringa, Gum Arabic, Neem (Bakain)",
+  43:"Lemon, Jamun, Moringa, Neem (Bakain), Guava",
+  44:"Kachnar, Amaltas, Lemon, Gul-e-Nishter, Sukh Chayn, Moringa, Mulberry, Neem (Bakain), Sheesham, Semal, Poplar",
+  45:"Amaltas, Gul-e-Nishter, Neem (Bakain)",
+  46:"Kachnar, Lemon, Sukh Chayn, Jamun, Moringa, Guava, Sheesham, Poplar",
+  47:"Lemon, Sukh Chayn, Moringa, Neem (Bakain), Poplar",
+  49:"Kachnar, Lemon, Gul-e-Nishter, Moringa, Neem (Bakain)",
+  50:"Kachnar, Lemon, Gul-e-Nishter, Moringa",
+  51:"Kachnar, Amaltas, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Mulberry, Arjun, Neem (Bakain), Guava, Semal"
+};
+
+// ─── GEOGRAPHIC ZONES ─────────────────────────────────────────────────────
+let CMIN=12000,CMAX=15000;
+const ZONES=[
+  {id:"NR-1",name:"Islamabad Core",region:"North",color:"b-n",
+   desc:"F-7/F-8/Margalla · Bahria Enclave · PWD · I-9/E-11/H-11 · F-9 Greenbelt",
+   note:"Via Jameel's Nursery, Rawalpindi. F-9 plants first, then Islamabad branches.",
+   cids:[15,1,2,4,5]},
+  {id:"NR-2",name:"Quaid-e-Azam University",region:"North",color:"b-n",
+   desc:"QAU campus, Islamabad — 16,000 plants (expect 2 full loads)",
+   note:"Direct delivery to campus. Coordinate with university admin 5 days in advance.",
+   cids:[13]},
+  {id:"NR-3",name:"Rawalpindi / Attock / Wah / Chakwal",region:"North",color:"b-n",
+   desc:"N-04 multi-site (Tipu Sultan, Wah Cantt, Attock, BEC G-15) · N-07 Chakwal",
+   note:"Club N-04 and N-07 Chakwal in same trip via Grand Trunk Road.",
+   cids:[3,7]},
+  {id:"NR-4",name:"N-07 Islamabad/Pindi (Potohar, Gulshan, Harley St, Gulraiz)",region:"North",color:"b-n",
+   desc:"Large multi-city cluster — 27,000 plants remaining (2–3 container loads)",
+   note:"Rawalpindi nursery pickup recommended. Deliver Rawalpindi campuses first.",
+   cids:[6]},
+  {id:"NR-5",name:"Swabi University + Mardan Women's University",region:"North",color:"b-n",
+   desc:"University of Swabi + Women's University Mardan — KPK corridor",
+   note:"Both on Peshawar–Mardan–Swabi road. Combine into one trip if capacity permits.",
+   cids:[12,14]},
+  {id:"NR-6",name:"Peshawar + Abbottabad + Gujrat + Mandi Bahauddin",region:"North",color:"b-n",
+   desc:"N-09 Peshawar campuses · N-11 Abbottabad/Mansehra · N-08 Gujrat/Jhelum/Kharian/MB · N-12 MB",
+   note:"Large route — consider splitting: Load A (Peshawar+Abbottabad), Load B (Gujrat+MB).",
+   cids:[9,10,8,11]},
+  {id:"CL-1",name:"Lahore (Liberty, LMA, Gulberg, Wapda Town, Bahria Town)",region:"Center",color:"b-c",
+   desc:"C-03 Liberty/LMA/Model Town · C-07 Wapda/Canal Side/Valencia · C-08 Bahria Town · Beaconhouse Estate",
+   note:"All within Lahore metro. One Mazda trip per container. Start from south (Bahria), work inward.",
+   cids:[17,21,22,36]},
+  {id:"CL-2",name:"Faisalabad + Gojra + TTS + Sahiwal + Okara",region:"Center",color:"b-c",
+   desc:"C-11 Faisalabad Civil Lines/Peoples Colony · C-11 Gojra/TTS · C-10 Faisalabad · C-08 Sahiwal · C-08 Okara",
+   note:"M3/M4 motorway corridor. Drop Sahiwal and Okara on return leg to save fuel.",
+   cids:[28,27,25,24,23]},
+  {id:"CL-3",name:"Jhang + University of Sargodha",region:"Center",color:"b-c",
+   desc:"C-10 Jhang campuses · University of Sargodha",
+   note:"Jhang and Sargodha are ~90 km apart. Confirm Sargodha species with university first.",
+   cids:[26,32]},
+  {id:"CL-4",name:"Multan + Bahawalpur",region:"Center",color:"b-c",
+   desc:"C-13 Multan campuses + ext. sites · C-14 Bahawalpur/RYK/Sadiqabad",
+   note:"C-13 pending 5,650 + C-14 5,000 = 10,650. Slightly under container capacity — consider adding nearby order.",
+   cids:[29,30,31]},
+  {id:"DO-1",name:"District Offices — Okara (LARGE: ~8 loads)",region:"Center",color:"b-c",
+   desc:"University of Agriculture Okara + District Office Okara — 96,200 plants total",
+   note:"Schedule 1 container/week over 8 weeks. Coordinate with District Administration for phased delivery.",
+   cids:[33,34]},
+  {id:"DO-2",name:"District Offices — Sahiwal (LARGE: ~10 loads)",region:"Center",color:"b-c",
+   desc:"District Office Sahiwal — 135,000 plants",
+   note:"Schedule 1-2 containers/week. Largest single order. Prioritize species mix with District Officer.",
+   cids:[35]},
+  {id:"SK-1",name:"Karachi North-East (Gulshan, Jauhar, Stadium)",region:"South",color:"b-s",
+   desc:"S-04 Gulshan · S-05 Gulshan/Stadium · S-08 Jauhar",
+   note:"Start Jauhar first (S-08 largest), then Gulshan. All within 15 km.",
+   cids:[38,39,42]},
+  {id:"SK-2",name:"Karachi Central + South (Clifton, PECHS, N.Nazimabad, Malir)",region:"South",color:"b-s",
+   desc:"S-03 Clifton/Jubilee · S-06 PECHS · S-07 Hill Park · S-10 North Nazimabad · S-13 Malir/Tipu Sultan",
+   note:"Hub-and-spoke from PECHS. S-13 Malir is furthest east — deliver last.",
+   cids:[37,40,41,43,49,50]},
+  {id:"SS-1",name:"Hyderabad + Sindh Interior",region:"South",color:"b-s",
+   desc:"S-11 Hyderabad · S-14 Hyderabad · S-11 Nawabshah · S-11 Thatta · S-11 Sukkur",
+   note:"Route via N-55 National Highway. Deliver Thatta first (closest), then Hyderabad, then Nawabshah, Sukkur last.",
+   cids:[44,51,45,46,47]}
+];
+
+// ─── CONTAINER PACKING ────────────────────────────────────────────────────
+function packContainers(zone){
+  const pending=zone.cids.map(id=>state.schools.find(s=>s.id===id))
+    .filter(s=>s&&(s.required-s.dispatched)>0)
+    .map(s=>({...s,rem:s.required-s.dispatched}));
+  if(!pending.length)return[];
+  const containers=[];
+  let cur={items:[],total:0};
+  for(const cl of pending){
+    let left=cl.rem;
+    while(left>0){
+      const space=CMAX-cur.total;
+      const take=Math.min(left,space);
+      cur.items.push({...cl,take,partial:take<cl.rem});
+      cur.total+=take;
+      left-=take;
+      if(cur.total>=CMIN){containers.push({...cur,belowMin:false});cur={items:[],total:0};}
+    }
+  }
+  if(cur.items.length&&cur.total>0)containers.push({...cur,belowMin:cur.total<CMIN});
+  // Mark all under-min containers
+  containers.forEach(c=>{c.belowMin=c.total<CMIN;});
+  return containers;
+}
+
+// ─── RENDER DISPATCH PLAN ─────────────────────────────────────────────────
+function renderPlan(){
+  const totalRem=state.schools.reduce((a,s)=>a+Math.max(0,s.required-s.dispatched),0);
+  const loads=Math.ceil(totalRem/13000);
+  document.getElementById('plan-summary').innerHTML=`
+    <div class="metrics" style="margin-bottom:1rem">
+      <div class="metric"><div class="mlabel">Total remaining</div><div class="mval" style="color:var(--am)">${fmt(totalRem)}</div><div class="msub">plants to dispatch</div></div>
+      <div class="metric"><div class="mlabel">Est. container loads</div><div class="mval">${loads}</div><div class="msub">at avg 13,000/load</div></div>
+      <div class="metric"><div class="mlabel">Active zones</div><div class="mval">${ZONES.filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(s.required-s.dispatched)>0;})).length}</div><div class="msub">with pending clusters</div></div>
+      <div class="metric"><div class="mlabel">Container range</div><div class="mval" style="font-size:16px">${fmt(CMIN)}–${fmt(CMAX)}</div><div class="msub">plants per load</div></div>
+    </div>`;
+
+  let html='';
+  const regionOrder=['North','Center','South'];
+  regionOrder.forEach(rgn=>{
+    const zones=ZONES.filter(z=>z.region===rgn);
+    const anyPending=zones.some(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(s.required-s.dispatched)>0;}));
+    if(!anyPending)return;
+    html+=`<div style="font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin:1.5rem 0 .75rem">${rgn} Region</div>`;
+    zones.forEach(zone=>{
+      const containers=packContainers(zone);
+      if(!containers.length)return;
+      const zoneTot=containers.reduce((a,c)=>a+c.total,0);
+      html+=`<div class="card" style="margin-bottom:.75rem;padding:1rem 1.25rem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div style="font-weight:600;font-size:14px">${zone.id} &nbsp;<span class="badge ${zone.color}">${zone.region}</span> &nbsp;${zone.name}</div>
+            <div style="font-size:12px;color:var(--tx3);margin-top:2px">${zone.desc}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-left:1rem">
+            <div style="font-size:18px;font-weight:600;color:var(--am)">${fmt(zoneTot)}</div>
+            <div style="font-size:11px;color:var(--tx3)">${containers.length} load${containers.length>1?'s':''}</div>
+          </div>
+        </div>`;
+      if(zone.note){html+=`<div style="font-size:12px;color:var(--bl-d);background:var(--bl-l);border-radius:var(--r);padding:6px 10px;margin-bottom:10px;border:.5px solid #85B7EB"><i class="ti ti-bulb" style="font-size:13px;margin-right:4px" aria-hidden="true"></i>${zone.note}</div>`;}
+      if(zoneTot<CMIN){html+=`<div class="alert aw" style="margin-bottom:10px;font-size:12px"><i class="ti ti-alert-triangle"></i><div><strong>Zone total (${fmt(zoneTot)} plants) is below the 12,000 minimum truck load.</strong><br>Club this zone with a nearby zone in the same trip to meet minimum load requirement for OTIF.</div></div>`;}
+      containers.forEach((c,ci)=>{
+        html+=`<div style="border:.5px solid var(--bd);border-radius:var(--r);margin-top:8px;overflow:hidden">
+          <div style="background:var(--bg2);padding:6px 12px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
+            <span><i class="ti ti-truck-delivery" style="font-size:13px;margin-right:5px;color:var(--gr)" aria-hidden="true"></i>Load ${ci+1} of ${containers.length}</span>
+            <span style="color:${c.total<CMIN?'var(--re-d)':'var(--gr)'}"><i class="ti ti-${c.total>=CMIN?'circle-check':'alert-triangle'}" style="font-size:12px;margin-right:3px"></i>${fmt(c.total)} plants${c.total<CMIN?' — BELOW 12,000 MIN: combine with another load':' (min load met ✓)'}</span>
+          </div>`;
+        c.items.forEach(item=>{
+          const sp=CSP[item.id]||'Species to be confirmed';
+          const pd=item.plantingDate?du(item.plantingDate):null;
+          const otifColor2=pd===null?'var(--tx3)':pd<=0?'var(--re-d)':pd<=7?'var(--am-d)':'var(--gr-d)';
+          const otifLbl=pd===null?'No date set':pd<0?`Planting overdue by ${Math.abs(pd)} days — URGENT`:pd===0?'Planting TODAY':pd<=7?`Planting in ${pd} days — prepare now`:`Planting ${fmtD(item.plantingDate)} (${pd}d)`;
+
+          html+=`<div style="padding:8px 12px;border-top:.5px solid var(--bd)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <strong style="font-size:13px">${item.cluster}</strong>
+                <span style="font-size:12px;color:var(--tx3);margin-left:8px">${item.city}</span>
+                ${item.partial?`<span class="badge" style="background:var(--am-l);color:var(--am-d);margin-left:6px;font-size:10px">Partial — ${fmt(item.rem-item.take)} to next load</span>`:''}
+                ${pd!==null&&pd<=0?`<span class="badge b-pending" style="margin-left:6px;font-size:10px">OVERDUE</span>`:''}
+              </div>
+              <strong style="font-size:14px;color:var(--tx);white-space:nowrap">${fmt(item.take)} plants</strong>
+            </div>
+            <div style="font-size:11px;color:${otifColor2};margin-top:3px"><i class="ti ti-clock" style="font-size:11px" aria-hidden="true"></i> OTIF: ${otifLbl}</div>
+            <div style="font-size:11px;color:var(--tx3);margin-top:1px"><i class="ti ti-leaf" style="font-size:11px" aria-hidden="true"></i> ${sp}</div>
+          </div>`;
+        });
+        html+='</div>';
+      });
+      html+='</div>';
+    });
+  });
+  document.getElementById('plan-zones').innerHTML=html||'<div class="empty"><i class="ti ti-check"></i>All clusters fully dispatched!</div>';
+}
+
+// ─── EXPORT PLAN ─────────────────────────────────────────────────────────
+function exportPlan(){
+  let txt=`PLANTATION DISPATCH PLAN\n${'='.repeat(50)}\nGenerated: ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}\n\n`;
+  ZONES.forEach(zone=>{
+    const c=packContainers(zone);
+    if(!c.length)return;
+    txt+=`\n${zone.id}: ${zone.name} (${zone.region})\n${'─'.repeat(50)}\n${zone.desc}\n`;
+    if(zone.note)txt+=`NOTE: ${zone.note}\n`;
+    c.forEach((load,i)=>{
+      txt+=`\n  Load ${i+1}: ${fmt(load.total)} plants\n`;
+      load.items.forEach(item=>{
+        const sp=CSP[item.id]||'TBD';
+        txt+=`    • ${item.cluster} (${item.city}): ${fmt(item.take)} plants${item.partial?' [PARTIAL]':''}\n      Species: ${sp}\n`;
+      });
+    });
+    txt+='\n';
+  });
+  const a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);
+  a.download=`dispatch-plan-${new Date().toISOString().split('T')[0]}.txt`;
+  a.click();
+}
+
+// ─── DYNAMIC CONFIG.JS LOADER (non-blocking) ─────────────────────────────
+// Tries to load bhs-config.js from the same folder after page is ready.
+// If not found, app runs on defaults. No errors, no blocking.
+window.addEventListener('load', function(){
+  var s = document.createElement('script');
+  s.src = 'bhs-config.js';
+  s.onload = function(){
+    // config.js loaded — apply any overrides
+    if(window.BHS_CONFIG){
+      if(window.BHS_CONFIG.project){
+        if(window.BHS_CONFIG.project.name) state.settings.projectName = window.BHS_CONFIG.project.name;
+        if(window.BHS_CONFIG.project.year) state.settings.projectYear = window.BHS_CONFIG.project.year;
+      }
+      if(window.BHS_CONFIG.containerMin) CMIN = window.BHS_CONFIG.containerMin;
+      if(window.BHS_CONFIG.containerMax) CMAX = window.BHS_CONFIG.containerMax;
+      applyBranding();
+      applyLabels();
+    }
+  };
+  s.onerror = function(){}; // file not found — silently ignore
+  document.head.appendChild(s);
+});
+
+
+
+// ─── SCHOOL HEADS SETTINGS ───────────────────────────────────────────────────
+function renderShTable(){
+  const q=(document.getElementById('sh-search')||{}).value?.toLowerCase()||'';
+  const rows=state.schools.filter(s=>!q||s.cluster.toLowerCase().includes(q)||s.city.toLowerCase().includes(q)||getConvenor(s).toLowerCase().includes(q));
+  document.getElementById('sh-tbody').innerHTML=rows.map(s=>`
+    <tr style="border-bottom:.5px solid var(--bd)">
+      <td style="padding:7px 10px;font-size:13px"><strong>${s.cluster}</strong></td>
+      <td style="padding:7px 10px;font-size:12px;color:var(--tx2)">${s.city}</td>
+      <td style="padding:5px 10px"><input id="sh-${s.id}" type="text" value="${getConvenor(s)}" placeholder="${s.convenor}" style="width:100%;padding:5px 8px;border:.5px solid var(--bd);border-radius:var(--r);background:var(--bg);color:var(--tx);font-size:13px;font-family:inherit"></td>
+    </tr>`).join('');
+}
+
+function saveSchoolHeads(){
+  if(!state.settings.convenorOverrides)state.settings.convenorOverrides={};
+  state.schools.forEach(s=>{
+    const el=document.getElementById('sh-'+s.id);
+    if(!el)return;
+    const val=el.value.trim();
+    if(val&&val!==s.convenor){state.settings.convenorOverrides[s.id]=val;}
+    else{delete state.settings.convenorOverrides[s.id];}
+  });
+  const cnt=document.getElementById('s-ly-count');
+  if(cnt&&cnt.value)state.settings.ly2025count=parseInt(cnt.value)||null;
+  save();
+  if(state.settings.gasUrl&&state.settings.gasKey)gasPushSettings();
+  showInAppNotif('School heads saved — changes reflect everywhere instantly');
+  // Refresh visible pane
+  ['clusters','alerts','dispatch','plan'].forEach(p=>{
+    const el=document.getElementById('pane-'+p);
+    if(el&&el.classList.contains('active')){
+      if(p==='clusters')rClusters();
+      if(p==='alerts')rAlerts();
+      if(p==='plan')renderPlan();
+    }
+  });
+  rDash();
+}
+
+function resetSchoolHeads(){
+  if(!confirm('Reset all school head names to defaults?'))return;
+  state.settings.convenorOverrides={};save();
+  renderShTable();showInAppNotif('Reset to defaults');
+}
+
+// ─── GMAIL VIA GOOGLE APPS SCRIPT ────────────────────────────────────────────
+// ─── SHARED DATABASE (Google Sheets via Apps Script) ─────────────────────────
+async function gasFetchData(){
+  if(!state.settings.gasUrl)return null;
+  try{
+    const resp=await fetch(state.settings.gasUrl+'?action=read&t='+Date.now());
+    if(!resp.ok){console.warn('GAS HTTP',resp.status,'— check deploy settings');return null;}
+    const txt=await resp.text();
+    if(txt.trim().startsWith('<')){console.warn('GAS returned HTML — script has an error. Check Apps Script logs.');return null;}
+    let data;
+    try{data=JSON.parse(txt);}catch(pe){console.warn('GAS bad JSON:',txt.substring(0,300));return null;}
+    if(data.error){console.warn('GAS error:',data.error);return null;}
+    return data;
+  }catch(e){console.warn('GAS fetch failed:',e.message);return null;}
+}
+
+async function gasAddDispatch(d){
+  if(!state.settings.gasUrl||!state.settings.gasKey)return false;
+  try{
+    const url=state.settings.gasUrl+'?action=addDispatch&key='+encodeURIComponent(state.settings.gasKey)+'&data='+encodeURIComponent(JSON.stringify(d))+'&t='+Date.now();
+    const resp=await fetch(url);const data=await resp.json();
+    return data.ok===true;
+  }catch(e){console.warn('gasAddDispatch failed:',e.message);return false;}
+}
+
+async function gasDeleteDispatch(id){
+  if(!state.settings.gasUrl||!state.settings.gasKey)return false;
+  try{
+    const url=state.settings.gasUrl+'?action=deleteDispatch&key='+encodeURIComponent(state.settings.gasKey)+'&id='+encodeURIComponent(id)+'&t='+Date.now();
+    const resp=await fetch(url);const data=await resp.json();
+    return data.ok===true;
+  }catch(e){console.warn('gasDeleteDispatch failed:',e.message);return false;}
+}
+
+async function gasPushSettings(){
+  if(!state.settings.gasUrl||!state.settings.gasKey)return false;
+  const SHARED_KEYS=['recipients','alertDays','digestDay','projectName','projectYear','labels','gasDay','convenorOverrides','customClusters','ly2025count'];
+  const shared={};SHARED_KEYS.forEach(k=>{if(state.settings[k]!==undefined)shared[k]=state.settings[k];});
+  try{
+    const url=state.settings.gasUrl+'?action=saveSettings&key='+encodeURIComponent(state.settings.gasKey)+'&data='+encodeURIComponent(JSON.stringify(shared))+'&t='+Date.now();
+    const resp=await fetch(url);const data=await resp.json();
+    return data.ok===true;
+  }catch(e){console.warn('gasPushSettings failed:',e.message);return false;}
+}
+
+function updateGmailStatus(){
+  const el=document.getElementById('gmail-status');
+  if(!el)return;
+  if(state.settings.gasUrl&&state.settings.gasKey){
+    el.textContent='✓ Gmail connected';el.style.color='var(--gr-d)';
+  } else {
+    el.textContent='Not connected';el.style.color='var(--tx3)';
+  }
+}
+
+async function callGAS(subject,body,recipients){
+  if(!state.settings.gasUrl||!state.settings.gasKey)return false;
+  try{
+    const url=state.settings.gasUrl+'?action=sendEmail&key='+encodeURIComponent(state.settings.gasKey)+'&to='+encodeURIComponent(recipients.join(','))+'&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body)+'&t='+Date.now();
+    const resp=await fetch(url);const data=await resp.json();
+    return data.ok===true;
+  }catch(e){console.warn('GAS email failed:',e.message);return false;}
+}
+
+async function testGmailSend(){
+  await saveSettings();
+  const r=getRecipients();
+  if(!r.length){alert('Add at least one recipient email in Alert settings first.');return;}
+  if(!state.settings.gasUrl){alert('Enter the Apps Script URL first.');return;}
+  if(!state.settings.gasKey){alert('Enter the secret key first.');return;}
+  const st=document.getElementById('gmail-status');
+  if(st){st.textContent='Testing...';st.style.color='var(--am-d)';}
+  // First test basic connection (read, no key needed)
+  const remote=await gasFetchData();
+  if(!remote){
+    if(st){st.textContent='✗ Cannot reach script URL';st.style.color='var(--re-d)';}
+    alert('Cannot reach the Apps Script URL.\n\nMake sure:\n1. The URL ends in /exec\n2. You deployed (not just saved) in Apps Script\n3. Access is set to "Anyone"');
+    return;
+  }
+  const ok=await callGAS(
+    '🌱 Test — BHS Plantation Drive',
+    'This is a test email from your Plantation Drive dashboard.\n\nIf you received this, your Gmail connection is working perfectly!\n\n— BHS Plantation Drive System',
+    r
+  );
+  if(st){st.textContent=ok?'✓ Test sent! Check your inbox.':'✗ Failed — check URL and key';st.style.color=ok?'var(--gr-d)':'var(--re-d)';}
+  if(!ok)alert('Test failed. Make sure:\n• The Apps Script URL is correct\n• Secret key matches the KEY in the script\n• You clicked "Deploy" (not just "Save") in Apps Script');
+}
+
+// ─── AUTO WEEKLY DIGEST (Gmail) ───────────────────────────────────────────────
+async function autoWeeklyDigest(){
+  if(!state.settings.gasUrl||!state.settings.gasKey)return;
+  const today=new Date();
+  const todayStr=today.toDateString();
+  const targetDay=parseInt(state.settings.gasDay)||1;
+  if(today.getDay()!==targetDay)return;
+  if(state.settings.lastDigestDate===todayStr)return;
+  const subject=`🌱 ${state.settings.projectName||'Plantation Drive'} — Weekly Update ${today.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`;
+  const body=fmtDigestEmail();
+  const r=getRecipients();
+  if(!r.length)return;
+  const ok=await callGAS(subject,body,r);
+  if(ok){
+    state.settings.lastDigestDate=todayStr;
+    save();
+    showInAppNotif('Weekly digest sent to '+r.length+' recipient(s) via Gmail');
+  }
+}
+
+
+// ─── 2025 INITIATIVE DATA ────────────────────────────────────────────────────
+const LAST_YEAR=[{"id":1,"n":"Sundas Fatima","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Subflower, Strawberry","lo":"Lahore","lt":31.49986,"ln":74.36516},{"id":2,"n":"Ayman Zahra","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Aloe vera, jamun, roses, jasmine","lo":"Lahore","lt":31.5465,"ln":74.29962},{"id":3,"n":"Ms. Ambreen Haye Mr.Yasir Mehm","tp":"S","br":"B","rg":"N","cy":"Rawalpindi","tr":50,"sp":"1. Citrus limon plant, 2. Prunus persica plant","lo":"Rawalpindi","lt":33.5747,"ln":73.0489},{"id":4,"n":"Fatima Fahad","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"jasmine","lo":"Lahore","lt":31.48705,"ln":74.31692},{"id":5,"n":"Maheen Asif","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"mint, sunflower, grapes","lo":"Lahore","lt":31.50772,"ln":74.30221},{"id":6,"n":"Samreen Haseeb","tp":"S","br":"B","rg":"S","cy":"Karachi","tr":25,"sp":"none","lo":"Karachi","lt":24.8437,"ln":66.9911},{"id":7,"n":"Amra Salman","tp":"S","br":"B","rg":"C","cy":"Bahawalpur","tr":50,"sp":"Neem, Bakain, Palm, Sheesham","lo":"Bahawalpur","lt":29.38948,"ln":71.67839},{"id":8,"n":"azal zahir","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":800,"sp":"kikar, bakain, jaaman","lo":"Lahore","lt":31.03014,"ln":74.11379},{"id":9,"n":"Faiz Ahmed","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":45,"sp":"","lo":"Lahore","lt":31.5417,"ln":74.3426},{"id":10,"n":"Ayesha Bilal","tp":"S","br":"B","rg":"N","cy":"Gujrat","tr":600,"sp":"Neem, Shisham, Kikar, Ber, Jand","lo":"Gujrat","lt":32.5688,"ln":74.0852},{"id":11,"n":"Sobia Malik","tp":"S","br":"B","rg":"N","cy":"Islamabad","tr":6,"sp":"Cane palm, Hoop Pine, Punica","lo":"Islamabad","lt":33.56181,"ln":73.12556},{"id":12,"n":"Isra Mashhadi","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":850,"sp":"Jaman, Arjun, Sukh Chain (Beech tree), Amaltas (Golden tree), Amrood (guava)","lo":"Lahore","lt":31.52755,"ln":74.34466},{"id":13,"n":"Rabia Faiz","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Ficus banjamina and Conocarpus","lo":"Lahore","lt":31.5537,"ln":74.3546},{"id":14,"n":"Madiha Khan","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Orange tree, kikar","lo":"Lahore","lt":31.5567,"ln":74.3576},{"id":15,"n":"Sumita Munir","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":6,"sp":"Bakin.Kikar etc","lo":"Lahore","lt":31.5597,"ln":74.3606},{"id":16,"n":"Shehla Zaib","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Guava, neem, jamun, moringa, lemon","lo":"Lahore","lt":31.5627,"ln":74.3636},{"id":17,"n":"Shumaila Bhatti","tp":"S","br":"B","rg":"N","cy":"Islamabad","tr":2500,"sp":"neem, Amal Tas, mulberry, ber, apple","lo":"Islamabad","lt":33.71752,"ln":73.06617},{"id":18,"n":"Rahat AAMIR","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":6,"sp":"Capsicum, jasomine, Curry keaves  lemon","lo":"Lahore","lt":31.5687,"ln":74.3696},{"id":19,"n":"Rubina Nazir","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Alastonia","lo":"Lahore","lt":31.5717,"ln":74.3156},{"id":20,"n":"Isbah Adnaan","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Golden Ficus, plain Ficus, guava, Marwa, Ashoka","lo":"Lahore","lt":31.5747,"ln":74.3186},{"id":21,"n":"Hira Anwar","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Aquilaria, Leucaena, Umbellularia, Cinnamomum verum","lo":"Lahore","lt":31.5777,"ln":74.3216},{"id":22,"n":"Sadaf Iqbal","tp":"I","br":"B","rg":"C","cy":"Okara","tr":30,"sp":"Rose, jasmine, ferns, samborium, Locaat","lo":"Okara","lt":30.93633,"ln":73.45442},{"id":23,"n":"Nabeeha Uzair","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Mangifera, sweetsop, Indica, Kikar","lo":"Lahore","lt":31.5147,"ln":74.3276},{"id":24,"n":"Aisha Ijaz","tp":"I","br":"B","rg":"C","cy":"Okara","tr":5,"sp":"Araucaria, Petunia","lo":"Okara","lt":30.7818,"ln":73.4404},{"id":25,"n":"Imran Ahmed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Phonix palm","lo":"Okara","lt":30.7848,"ln":73.4434},{"id":26,"n":"Muhammad Rasool","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Araucaria","lo":"Okara","lt":30.7878,"ln":73.4464},{"id":27,"n":"Shahana Pervaiz","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Jamon, neem, mango, shetoot","lo":"Lahore","lt":31.5267,"ln":74.3396},{"id":28,"n":"Sheeba Noreen","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Alistonia, Acacia","lo":"Lahore","lt":31.5297,"ln":74.3426},{"id":29,"n":"Asma Imran","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Alistonia, Acacia","lo":"Lahore","lt":31.5327,"ln":74.3456},{"id":30,"n":"Shazia Khan","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Kikar","lo":"Lahore","lt":31.5357,"ln":74.3486},{"id":31,"n":"Aisha Kiran","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Sheesham, Bakain, Moringa","lo":"Lahore","lt":31.5387,"ln":74.3516},{"id":32,"n":"Wizma Ali","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Trees","lo":"Lahore","lt":31.5417,"ln":74.3546},{"id":33,"n":"Shabana Kousar","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Bakain, Sheesham, Moringa","lo":"Lahore","lt":31.5447,"ln":74.3576},{"id":34,"n":"Sadaf Iqbal","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"konu, marwa, guava","lo":"Lahore","lt":31.5477,"ln":74.3606},{"id":35,"n":"Mishal Anwar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Rosa (Queen Elizabeth)","lo":"Okara","lt":30.8148,"ln":73.4734},{"id":36,"n":"Urooba Bilal","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Jasminum","lo":"Okara","lt":30.8178,"ln":73.4764},{"id":37,"n":"Faryal Fazal","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Rose plant","lo":"Okara","lt":30.8208,"ln":73.4794},{"id":38,"n":"Fatima Naheed Akhtar","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":3,"sp":"Neem, Acacia and Jamun","lo":"Lahore","lt":31.5597,"ln":74.3156},{"id":39,"n":"Mahrukh Javaid","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Jamun, Mango, kikar","lo":"Lahore","lt":31.5627,"ln":74.3186},{"id":40,"n":"Muahmmad Arshad","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"wayfaring tree","lo":"Okara","lt":30.82733,"ln":73.44003},{"id":41,"n":"Momina Ahsan","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Kikar","lo":"Lahore","lt":31.5687,"ln":74.3246},{"id":42,"n":"Humaira Hussain","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Kikar, orange trees","lo":"Lahore","lt":31.5717,"ln":74.3276},{"id":43,"n":"Muhammad khalid Yousaf","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Palm, mulberry, jambolan, alstonia","lo":"Lahore","lt":31.5747,"ln":74.3306},{"id":44,"n":"Muhammad Ali","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":3,"sp":".","lo":"Lahore","lt":31.5777,"ln":74.3336},{"id":45,"n":"Urooj Zehra","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Kikar and gulab","lo":"Lahore","lt":31.5807,"ln":74.3366},{"id":46,"n":"Warda Mamoon","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Amrood, Marwa, Kono","lo":"Lahore","lt":31.4463,"ln":74.27564},{"id":47,"n":"Yussra Naeem","tp":"I","br":"B","rg":"C","cy":"Okara","tr":6,"sp":"Fig, Aloe vera, spurge, periwinkle, rose","lo":"Okara","lt":30.81464,"ln":73.43522},{"id":48,"n":"Madiha Tariq Madiha Tariq","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":5,"sp":"Mulberry, Papaya, Guava, Lemon, Konu plant","lo":"Lahore","lt":31.5207,"ln":74.3456},{"id":49,"n":"Anam Gill","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Money plant","lo":"Okara","lt":30.7878,"ln":73.4584},{"id":50,"n":"Nimra Anwar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"","lo":"Okara","lt":30.81886,"ln":73.44483},{"id":51,"n":"Taranum Sajjad","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Golden Pothos, Aloe vera","lo":"Okara","lt":30.7938,"ln":73.4644},{"id":52,"n":"Aqsa Hanif","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Aloe vera","lo":"Okara","lt":30.7968,"ln":73.4674},{"id":53,"n":"Sana Nafees","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Alovera, Neem","lo":"Okara","lt":30.7998,"ln":73.4704},{"id":54,"n":"Zuhaib Nawaz","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Arrowhead Plant","lo":"Okara","lt":30.8028,"ln":73.4734},{"id":55,"n":"Qasim Riaz","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":142,"sp":"Neem, Mango, Moringa, Palm, Rose","lo":"Lahore","lt":31.45355,"ln":74.27663},{"id":56,"n":"Sidrah Talib","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Guava Plant","lo":"Okara","lt":30.8088,"ln":73.4794},{"id":57,"n":"Shaista parveen","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Neem","lo":"Okara","lt":30.8118,"ln":73.4254},{"id":58,"n":"Omar Mansur","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Almond, Lemon","lo":"Okara","lt":30.76069,"ln":73.36157},{"id":59,"n":"Sajid Alam","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Arrow Head","lo":"Okara","lt":30.8178,"ln":73.4314},{"id":60,"n":"Qasim Riaz","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":150,"sp":"Cactus","lo":"Lahore","lt":31.45356,"ln":74.27664},{"id":61,"n":"Romaisa Saeed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":4,"sp":"Mellburry, Rosewood (sheesham)","lo":"Okara","lt":30.87818,"ln":73.59543},{"id":62,"n":"Romaisa Saeed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Lemon","lo":"Okara","lt":30.8,"ln":73.499},{"id":63,"n":"Romaisa Saeed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Mango and banyan","lo":"Okara","lt":30.81725,"ln":73.4609},{"id":64,"n":"Khurshid Anwar Shah","tp":"S","br":"H","rg":"C","cy":"Lahore","tr":100,"sp":"Guava, Kinow, Malta, Lemon, Jaman","lo":"Lahore","lt":31.5687,"ln":74.3366},{"id":65,"n":"Romaisa Saeed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Sago Palm","lo":"Okara","lt":30.8131,"ln":73.47474},{"id":66,"n":"Aqsa Khalid","tp":"S","br":"B","rg":"C","cy":"Multan","tr":73,"sp":"1.Gulmoher, 2.Amaltas, 3.Anjeer, 4.Rangoon Creeper, 5.Bougainvillea","lo":"Multan","lt":30.1825,"ln":71.5239},{"id":67,"n":"Shabana Mahfooz","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":50,"sp":"Neem, Plum","lo":"Lahore","lt":31.5214,"ln":74.37203},{"id":68,"n":"Fakhra Atif","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":21,"sp":"roses, pomegranates, terminalias, ficus, lemons","lo":"Lahore","lt":31.5807,"ln":74.3486},{"id":69,"n":"Omema Hassan","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":60,"sp":"catharanthus roseus","lo":"Lahore","lt":31.45553,"ln":74.25014},{"id":70,"n":"Shabana Mahfooz","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":1300,"sp":"Neem, Amaltas, Mulberry, Citrus","lo":"Lahore","lt":31.4976,"ln":74.36413},{"id":71,"n":"Ms Rumaisa Saeed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"rose, jasmine","lo":"Okara","lt":30.8218,"ln":73.44785},{"id":72,"n":"Asma Iqbal","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Syngonium","lo":"Okara","lt":30.7878,"ln":73.4704},{"id":73,"n":"saliha khan","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"plant","lo":"Okara","lt":30.7908,"ln":73.4734},{"id":74,"n":"Quratulain Shahid","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Araucaria","lo":"Okara","lt":30.7938,"ln":73.4764},{"id":75,"n":"Humaira Aslam","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Tomato, bakain, flower plant","lo":"Okara","lt":30.81346,"ln":73.43193},{"id":76,"n":"Sahar Ali","tp":"I","br":"B","rg":"C","cy":"Okara","tr":5,"sp":"Bougainvillea, Night Jasmine, Bleeding Heart Vine, Citrus Plant, Areca Palm","lo":"Okara","lt":30.80419,"ln":73.43119},{"id":77,"n":"Bisma Murtaza","tp":"S","br":"B","rg":"C","cy":"Okara","tr":100,"sp":"Bottlebrush, Neem, Peepal, Kikar","lo":"Okara","lt":30.8028,"ln":73.4284},{"id":78,"n":"Bisma Murtaza","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"kikar","lo":"Okara","lt":30.8058,"ln":73.4314},{"id":79,"n":"Madiha Ashfaq","tp":"I","br":"B","rg":"C","cy":"Okara","tr":4,"sp":"Elephant bush (Portulacaria afra), Crape jasmine, Common sunflower","lo":"Okara","lt":30.8,"ln":73.432},{"id":80,"n":"Anila Ghulam Nabi","tp":"I","br":"B","rg":"C","cy":"Okara","tr":4,"sp":"Rose, Sun flower, Alo vera, Dwarf umbrella tree","lo":"Okara","lt":30.80019,"ln":73.45996},{"id":81,"n":"Fouzia Mahmood","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Araucaria","lo":"Okara","lt":30.8148,"ln":73.4404},{"id":82,"n":"Shabana Mahfooz","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":400,"sp":"Neem, Mulberry, Citrus, moringa","lo":"Lahore","lt":31.2802,"ln":74.0716},{"id":83,"n":"Hira Mujeeb","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Flowering Shrubs, Flowering plants, Tagetes Erecta","lo":"Okara","lt":30.80207,"ln":73.44638},{"id":84,"n":"Amina Khawaja","tp":"I","br":"B","rg":"C","cy":"Lahore","tr":20,"sp":"Neem, peepal, castor oil plant, ficus","lo":"Lahore","lt":31.5597,"ln":74.3396},{"id":85,"n":"Fariha Bibi","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Jasmine","lo":"Okara","lt":30.8268,"ln":73.4524},{"id":86,"n":"Sumaira Kashif","tp":"I","br":"B","rg":"C","cy":"Okara","tr":7,"sp":"","lo":"Okara","lt":30.8298,"ln":73.4554},{"id":87,"n":"Shawana Benazir","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Aleo vera","lo":"Okara","lt":30.8328,"ln":73.4584},{"id":88,"n":"Sohairah Manzoor","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Mangifera indica","lo":"Okara","lt":30.8358,"ln":73.4614},{"id":89,"n":"Mudassara Parveen","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Neem, hairy fruited eggplant","lo":"Okara","lt":30.8388,"ln":73.4644},{"id":90,"n":"Rukhsana Kosar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"","lo":"Okara","lt":30.8418,"ln":73.4674},{"id":91,"n":"Sabeeha Ashraf","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Neem","lo":"Okara","lt":30.8138,"ln":73.45338},{"id":92,"n":"Saba Asghar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Bougainvillea, Marigold, Olive Plant","lo":"Okara","lt":30.81826,"ln":73.44761},{"id":93,"n":"Rukhsana Shafiq","tp":"S","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Neeam, pilko","lo":"Okara","lt":30.7818,"ln":73.4764},{"id":94,"n":"Irum Waseem","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Neam, Guava & Jamun","lo":"Okara","lt":30.7848,"ln":73.4794},{"id":95,"n":"Farhat Parveen","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"3.0","lo":"Okara","lt":30.80477,"ln":73.43562},{"id":96,"n":"Irhama Ashique Irhama Ashique","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"mulberry","lo":"Okara","lt":30.81344,"ln":73.43181},{"id":97,"n":"Rukhsana Perveen","tp":"I","br":"B","rg":"C","cy":"Okara","tr":6,"sp":"1. Bakain Tree, 2. Willow Tree, 3.Banyan Tree, 4. Peeple Tree, 5. Cone Tree","lo":"Okara","lt":30.7938,"ln":73.4314},{"id":98,"n":"Fatima Fazal Elahi","tp":"I","br":"H","rg":"C","cy":"Okara","tr":1,"sp":"Vernonia amygdalina","lo":"Okara","lt":30.7968,"ln":73.4344},{"id":99,"n":"Saba Asgher","tp":"S","br":"B","rg":"C","cy":"Okara","tr":190,"sp":"Marigold, jasmine, night blooming jasmine, Guava, Shehtoot","lo":"Okara","lt":30.7998,"ln":73.4374},{"id":100,"n":"Naveed Iqbal","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Guava","lo":"Okara","lt":30.8028,"ln":73.4404},{"id":101,"n":"Javairia Imran","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":65,"sp":"Neem, Chinaberry, pomegranate, lemon, jamun","lo":"Lahore","lt":31.5417,"ln":74.3336},{"id":102,"n":"Kiran Jamil","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Japanese photinia, Alovera","lo":"Okara","lt":30.8088,"ln":73.4464},{"id":103,"n":"Amina Amin","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Maiden hair fern","lo":"Okara","lt":30.8118,"ln":73.4494},{"id":104,"n":"Romaisa Saeed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":7,"sp":"Neem, Mulbery, orange(fruiter, kinu), Mango","lo":"Okara","lt":30.82329,"ln":73.4607},{"id":105,"n":"Sehar Khalid","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Bakain","lo":"Okara","lt":30.8178,"ln":73.4554},{"id":106,"n":"Hina Ghias Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"safaida","lo":"Okara","lt":30.8208,"ln":73.4584},{"id":107,"n":"Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":5,"sp":"Pomegranate Tree, Japanese Plum Tree, Fig Tree","lo":"Okara","lt":30.8238,"ln":73.4614},{"id":108,"n":"Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Guava, Jade plant, dipterocarpus alatus","lo":"Okara","lt":30.8268,"ln":73.4644},{"id":109,"n":"Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"Dipterocarpus Alatus, guava, jade plant","lo":"Okara","lt":30.8298,"ln":73.4674},{"id":110,"n":"Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Java plum (Syzygium cumini)","lo":"Okara","lt":30.8328,"ln":73.4704},{"id":111,"n":"Fatima Sheraz","tp":"S","br":"B","rg":"S","cy":"Karachi","tr":8,"sp":"Neem tree","lo":"Karachi","lt":24.92944,"ln":67.12981},{"id":112,"n":"ayaz asghar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"plamer amaranth","lo":"Okara","lt":30.8388,"ln":73.4764},{"id":113,"n":"ayaz asghar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"palmer amaranth","lo":"Okara","lt":30.8418,"ln":73.4794},{"id":114,"n":"Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Azadirachta indica, Psidium guajava","lo":"Okara","lt":30.8448,"ln":73.4254},{"id":115,"n":"Tehmina Kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Melbury","lo":"Okara","lt":30.7788,"ln":73.4284},{"id":116,"n":"Nida Rasheed","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Movie fax","lo":"Okara","lt":30.7818,"ln":73.4314},{"id":117,"n":"Fatima Sheraz","tp":"S","br":"B","rg":"S","cy":"Karachi","tr":8,"sp":"neem","lo":"Karachi","lt":24.8317,"ln":66.9821},{"id":118,"n":"Maria Khalid","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"conocarpus","lo":"Okara","lt":30.7878,"ln":73.4374},{"id":119,"n":"Nabeela Ayub","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Sandalwood","lo":"Okara","lt":30.7908,"ln":73.4404},{"id":120,"n":"Tariq Shahzad","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Ficus plant","lo":"Okara","lt":30.7938,"ln":73.4434},{"id":121,"n":"Safiha Munir","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Mango 1 specie","lo":"Okara","lt":30.7968,"ln":73.4464},{"id":122,"n":"Sajida Yaqoob","tp":"I","br":"B","rg":"C","cy":"Okara","tr":3,"sp":"lemon, fruiter","lo":"Okara","lt":30.7998,"ln":73.4494},{"id":123,"n":"Bushra Shahnaz","tp":"S","br":"B","rg":"C","cy":"Lahore","tr":24,"sp":"","lo":"Lahore","lt":31.5387,"ln":74.3426},{"id":124,"n":"Ms Tehmina Kausar Ms Tehmina K","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"sandalwood","lo":"Okara","lt":30.8058,"ln":73.4554},{"id":125,"n":"Abida Zia","tp":"I","br":"B","rg":"C","cy":"Okara","tr":2,"sp":"Drumstick tree, Tea tree","lo":"Okara","lt":30.8088,"ln":73.4584},{"id":126,"n":"Tehmina Kausar Tehmina kausar","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Weeping fig","lo":"Okara","lt":30.8118,"ln":73.4614},{"id":127,"n":"Tanzeela Masroor","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Clusia Rosea","lo":"Okara","lt":30.8148,"ln":73.4644},{"id":128,"n":"Nimra Hussain","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Euphorbia Milii","lo":"Okara","lt":30.8178,"ln":73.4674},{"id":129,"n":"Fatima Yousaf","tp":"I","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Golden Pothos","lo":"Okara","lt":30.8208,"ln":73.4704},{"id":130,"n":"Aleena Riaz","tp":"S","br":"B","rg":"C","cy":"Gujranwala","tr":140,"sp":"Citrus, Succulent","lo":"Gujranwala","lt":32.1977,"ln":74.2145},{"id":131,"n":"Sajid Maseeh","tp":"S","br":"B","rg":"C","cy":"Okara","tr":1,"sp":"Neem","lo":"Okara","lt":30.81028,"ln":73.43053},{"id":132,"n":"Mian ureed","tp":"I","br":"B","rg":"C","cy":"Gujranwala","tr":7,"sp":"Oak, pine, conifer","lo":"Gujranwala","lt":32.2037,"ln":74.2205},{"id":133,"n":"Zainab Fida","tp":"I","br":"B","rg":"C","cy":"Gujranwala","tr":4,"sp":"Lemon, mint, aloe vera, pomegranate","lo":"Gujranwala","lt":32.06399,"ln":74.1792},{"id":134,"n":"Ramsha Zafar","tp":"S","br":"B","rg":"S","cy":"Karachi","tr":20,"sp":"Plumeria and Neem","lo":"Karachi","lt":24.86344,"ln":67.0793},{"id":135,"n":"Farah Asad","tp":"S","br":"B","rg":"S","cy":"Karachi","tr":10,"sp":"Sugar apple tree and Neem","lo":"Karachi","lt":24.86344,"ln":67.0793},{"id":136,"n":"Mr. Sultan","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1600,"sp":"","lo":"Jallo Park","lt":31.5777,"ln":74.3246},{"id":137,"n":"Mr. Majid Nawaz","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1050,"sp":"","lo":"Jallo Park","lt":31.5807,"ln":74.3276},{"id":138,"n":"Mr. Majid Nawaz","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":850,"sp":"","lo":"Jallo Park","lt":31.5147,"ln":74.3306},{"id":139,"n":"Mr. Hassan Ms. Iqra - Principa","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1550,"sp":"","lo":"Jallo Park","lt":31.5177,"ln":74.3336},{"id":140,"n":"Mr. Shabir Mr. Tauqeet Butter-","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":900,"sp":"","lo":"Sharaqpur","lt":31.5207,"ln":74.3366},{"id":141,"n":"Mr. Shabir Mr. Tauqeet Butter-","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1250,"sp":"","lo":"Sharaqpur","lt":31.5237,"ln":74.3396},{"id":142,"n":"Ms. Amna Khan Mr. Zou Dar - NW","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1950,"sp":"","lo":"Sharaqpur","lt":31.5267,"ln":74.3426},{"id":143,"n":"Ms. Amna Khan Mr. Zou Dar - NW","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1350,"sp":"","lo":"Sharaqpur","lt":31.5297,"ln":74.3456},{"id":144,"n":"Ms. Amna Khan Mr. Zou Dar - NW","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":1500,"sp":"","lo":"Sharaqpur","lt":31.5327,"ln":74.3486},{"id":145,"n":"Ms. Asma Ms.Mumtaz - Principal","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":700,"sp":"","lo":"Kasuri Farm","lt":31.5357,"ln":74.3516},{"id":146,"n":"Mr. Ijaz ul Hassan Mr. Ijaz ul","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":600,"sp":"","lo":"Kasuri Farm","lt":31.5387,"ln":74.3546},{"id":147,"n":"Ms.Zahida Ms.Zahida- Prinicipa","tp":"I","br":"E","rg":"C","cy":"Lahore","tr":550,"sp":"","lo":"Kasuri Farm","lt":31.5417,"ln":74.3576},{"id":148,"n":"Siraj Gujjar","tp":"S","br":"E","rg":"R","cy":"Basti Malook","tr":700,"sp":"Terminalia, Bakain, Moringa, Sukh chain","lo":"Mirpur Forest Multan","lt":30.195,"ln":72.917},{"id":149,"n":"Muhammad Amjad","tp":"S","br":"E","rg":"R","cy":"Khanewal","tr":1500,"sp":"Terminalia, Bakain, Moringa, Sukh chain, Amaltas","lo":"Canal Road","lt":30.2997,"ln":71.9521},{"id":150,"n":"Sheikh Tanveer","tp":"S","br":"E","rg":"R","cy":"Arifwala","tr":2000,"sp":"Banyan, Peepal, Sandal, Oak, Pine","lo":"Pakpattan Road","lt":30.2927,"ln":72.983},{"id":151,"n":"Sarfraz Ahmed","tp":"S","br":"E","rg":"R","cy":"Rahimyarkhan","tr":45,"sp":"Neem, Indian Rosewood, moringa, sunflower","lo":"Abbasia Town"},{"id":152,"n":"Rana Babar","tp":"S","br":"E","rg":"R","cy":"Jalalpur","tr":100,"sp":"Neem, Indian Rosewood, Orchid Tree, Acacia   *Flowering Plants  Rose, Marigold","lo":"Zaher Pir Morr Lodhran Road Jalal Pur Pi","lt":32.6488,"ln":74.1616},{"id":153,"n":"Halima Sadia","tp":"S","br":"E","rg":"R","cy":"Burewala","tr":100,"sp":"Lemon plant, Persimmon tree, Rose, Sunflower, Mango tree","lo":"College Road","lt":30.1697,"ln":72.6254},{"id":154,"n":"Arona Shabbir","tp":"S","br":"E","rg":"R","cy":"Multan","tr":50,"sp":"Amaltas . Terminalia, Bakain, Moringa","lo":"Shamsabad colony","lt":30.1705,"ln":71.5029},{"id":155,"n":"Rana / Uzma Sohail / Ghauri","tp":"S","br":"E","rg":"R","cy":"Sahiwal","tr":400,"sp":"Amaltas, Gulmohar, Kachnar, Champa, Gulab","lo":"Pak avenue","lt":30.6842,"ln":73.0879},{"id":156,"n":"Rana / Uzma Sohail / Ghauri","tp":"S","br":"E","rg":"R","cy":"Sahiwal","tr":400,"sp":"Neem, Banyan, Amaltas, Gulmohar, Kachnar","lo":"College Road","lt":30.6872,"ln":73.0909},{"id":157,"n":"Usman Shafiq","tp":"S","br":"E","rg":"R","cy":"Kacha Khuh","tr":100,"sp":"Neem, Banyan, Peepal, Sheesham, Babul","lo":"Gulshan Iqbal - GT road"},{"id":158,"n":"Ms. Surriya Mohiyuddin Ms. Sur","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Nariyal Park","lt":24.92408,"ln":67.10877},{"id":159,"n":"Ms. Mahera Suleman Ms. Mahera ","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Aziz Bhatti Park Near Gulshan Campus III","lt":24.91942,"ln":67.09168},{"id":160,"n":"Mr. Amir Quershi Ms. Sana","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Near School - Green Belt Area","lt":24.95669,"ln":67.1262},{"id":161,"n":"Mr. Amir Quershi Ms. Ayesha","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Boy Scouts Association Facility","lt":24.95669,"ln":67.1262},{"id":162,"n":"Mr. Amir Quershi Ms. Arooba","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Boy Scouts Association Facility","lt":24.95669,"ln":67.1262},{"id":163,"n":"Mr. Rana Rehan Ms. Nadia","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Future Park Near Gulshan Campus IV","lt":24.90665,"ln":67.08062},{"id":164,"n":"Mr. (Major) Haroon Ms. Mamona","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":300,"sp":"Moringa","lo":"Jauhar Park","lt":24.91341,"ln":67.12804},{"id":165,"n":"Mr. (Major) Haroon Ms. Mamona","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":200,"sp":"Moringa","lo":"Jauhar Park","lt":24.91341,"ln":67.12804},{"id":166,"n":"Ms. Sumaira Zeeshan Ms. Sumair","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Khawateen Park","lt":24.89619,"ln":67.065},{"id":167,"n":"Dr. Anjum Afrdi Ms. Kashifa","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"North Nazimabad Park","lt":24.94804,"ln":67.05281},{"id":168,"n":"Mrs. Nazia & Mr Omer Mrs. Marr","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Jama Islamia Fatta Uloom","lt":24.99851,"ln":67.04263},{"id":169,"n":"Mr. Naveed Siddiqui Ms. Qurat ","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Near School - Green Belt Area","lt":24.86959,"ln":67.34969},{"id":170,"n":"Mr. Naveed Siddiqui Ms. Qurat ","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Near School - Green Belt Area","lt":24.91172,"ln":67.18478},{"id":171,"n":"Mr. Naveed Siddiqui Ms. Qurat ","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":200,"sp":"Moringa","lo":"Near School - Green Belt Area","lt":24.88504,"ln":67.14737},{"id":172,"n":"Mr. Shahzaib Behan Ms. Erum","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Jamal Park","lt":24.89773,"ln":67.11045},{"id":173,"n":"Mr. Imran Kazi Ms. Kulsoom","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Moringa","lo":"Near School - Green Belt Area","lt":24.93899,"ln":66.96025},{"id":174,"n":"Mr. Imran Kazi Ms. Kulsoom","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":1000,"sp":"Moringa","lo":"Orangi Park","lt":24.93887,"ln":66.96025},{"id":175,"n":"Mr. Sohail Musa Ms. Tahira","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":1500,"sp":"Moringa, Nan Sukh, Neem","lo":"Sir Syed Park","lt":24.93676,"ln":67.06711},{"id":176,"n":"Mr. Mustafa Ghufran Ms. Qurat ","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":600,"sp":"Gul Mohar, Naeem & Moringa","lo":"Public Park Nearest to the Campus","lt":24.8707,"ln":66.9881},{"id":177,"n":"Mr. Khurram Shehzad Ms. Ambree","tp":"I","br":"E","rg":"S","cy":"Karachi","tr":500,"sp":"Gul Mohar, Naeem & Moringa","lo":"Public Park Nearest to the Campus","lt":24.8737,"ln":66.9911},{"id":178,"n":"Mr.Khawaja Farooq Ahmad -","tp":"I","br":"E","rg":"F","cy":"Jarranwala","tr":200,"sp":"Shehtoot (Mulberry), Pilkhan Tree (White Fig), Terminalia, Bakain, Ulta Ashok","lo":"Faisalabad Road, Govt. Post Graduate Col","lt":31.32282,"ln":73.40309},{"id":179,"n":"Mr.Zulifiqar Haider","tp":"I","br":"E","rg":"F","cy":"Okara","tr":500,"sp":"Ulta, Ashok, Neem, Terminalia, Sheesham","lo":"Canal Road, Okara","lt":30.83129,"ln":73.45702},{"id":180,"n":"Qazi Afzal -","tp":"I","br":"E","rg":"F","cy":"Hafizabad","tr":300,"sp":"Mango, Kikar, Shehtoot","lo":"The Educators Hafizabad Campus","lt":32.07279,"ln":73.69115},{"id":181,"n":"Fozia Rehan -","tp":"I","br":"E","rg":"F","cy":"Mianwali","tr":1,"sp":"Neem, Crazia(Budha), Borh, Pine Black, Ashok","lo":"Behind The Educators Iskandarabad Campus","lt":32.89301,"ln":71.59269}];
+
+// Allow users to add/edit 2025 entries; load overrides from localStorage
+function get2025Data(){
+  const overrides=localStorage.getItem('bhs_ly_overrides');
+  if(overrides){
+    const ov=JSON.parse(overrides);
+    return [...LAST_YEAR,...ov];
+  }
+  return [...LAST_YEAR];
+}
+function save2025Override(entries){localStorage.setItem('bhs_ly_overrides',JSON.stringify(entries.filter(e=>e._custom)));}
+
+// ─── 2025 SUMMARY CARDS ────────────────────────────────────────────────────
+function render2025Summary(){
+  const data=get2025Data();
+  const total=data.reduce((a,d)=>a+d.tr,0);
+  const cities=[...new Set(data.map(d=>d.cy))].length;
+  const bss=data.filter(d=>d.br==='B');const edu=data.filter(d=>d.br==='E');const ho=data.filter(d=>d.br==='H');
+  const bssTrees=bss.reduce((a,d)=>a+d.tr,0);const eduTrees=edu.reduce((a,d)=>a+d.tr,0);const hoTrees=ho.reduce((a,d)=>a+d.tr,0);
+  const currentTotal=state.schools.reduce((a,s)=>a+s.required,0);
+  document.getElementById('yr-summary').innerHTML=`
+    <div class="yr-card"><div class="yr-val" style="color:var(--gr)">${total.toLocaleString()}</div><div class="yr-lbl">Total trees planted in 2025</div></div>
+    <div class="yr-card"><div class="yr-val" style="color:var(--bl)">${currentTotal.toLocaleString()}</div><div class="yr-lbl">Trees to be provided in 2026</div></div>
+    <div class="yr-card"><div class="yr-val" style="color:var(--am)">${(total+currentTotal).toLocaleString()}</div><div class="yr-lbl">Combined impact (2025+2026)</div></div>
+    <div class="yr-card" style="border-left:3px solid #1D9E75">
+      <div class="yr-val" style="color:#1D9E75">${bssTrees.toLocaleString()}</div>
+      <div style="font-size:13px;font-weight:600;margin:2px 0">Beaconhouse School</div>
+      <div class="yr-lbl">${bss.length} responses · ${cities} cities</div>
+    </div>
+    <div class="yr-card" style="border-left:3px solid #9B59B6">
+      <div class="yr-val" style="color:#9B59B6">${eduTrees.toLocaleString()}</div>
+      <div style="font-size:13px;font-weight:600;margin:2px 0">The Educators</div>
+      <div class="yr-lbl">${edu.length} responses</div>
+    </div>
+    <div class="yr-card" style="border-left:3px solid #378ADD">
+      <div class="yr-val" style="color:#378ADD">${hoTrees.toLocaleString()}</div>
+      <div style="font-size:13px;font-weight:600;margin:2px 0">HO / RON / ROS</div>
+      <div class="yr-lbl">${ho.length} responses · ${data.length} total</div>
+    </div>
+  `;}
+
+// ─── MAP ───────────────────────────────────────────────────────────────────
+let _map=null, _markers=[], _heat=null, _heatOn=false;
+
+function renderMap(){
+  const rfilter=(document.getElementById('map-region-filter')||{}).value||'';
+  const bfilter=(document.getElementById('map-brand-filter')||{}).value||'';
+  const data=get2025Data().filter(d=>d.lt&&d.ln&&(!rfilter||d.rg===rfilter||d.rg.startsWith(rfilter))&&(!bfilter||d.br===bfilter));
+  
+  if(!_map){
+    _map=L.map('plantation-map',{zoomControl:true}).setView([30.3753,69.3451],5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',maxZoom:19}).addTo(_map);
+  }
+  // Clear existing markers
+  _markers.forEach(m=>_map.removeLayer(m));_markers=[];
+  if(_heat){_map.removeLayer(_heat);_heat=null;}
+  
+  const heatPoints=[];
+  data.forEach(d=>{
+    const col=d.br==='E'?'#9B59B6':d.br==='H'?'#378ADD':'#1D9E75';
+    const m=L.circleMarker([d.lt,d.ln],{
+      radius:5,fillColor:col,color:'#fff',weight:1,fillOpacity:0.85
+    }).bindPopup(`<strong>${d.n}</strong><br>${d.tp==='S'?'🏫 School':'👤 Individual'} · ${d.cy}<br>🌱 <strong>${d.tr.toLocaleString()} trees</strong><br>${d.sp?'Species: '+d.sp+'<br>':''}${d.lo&&d.lo!==d.cy?'📍 '+d.lo:''}`,{maxWidth:200});
+    m.on('mouseover',function(){this.openPopup();});
+    m.on('mouseout',function(){this.closePopup();});
+    _markers.push(m.addTo(_map));
+    heatPoints.push([d.lt,d.ln,Math.min(1,d.tr/500)]);
+  });
+  _heat=L.heatLayer(heatPoints,{radius:35,blur:20,maxZoom:12,gradient:{0.2:'blue',0.5:'lime',0.8:'yellow',1:'red'}});
+  if(_heatOn){_heat.addTo(_map);_markers.forEach(m=>_map.removeLayer(m));}
+}
+
+function toggleHeat(){
+  _heatOn=!_heatOn;
+  const btn=document.getElementById('btn-heat');
+  if(_heatOn){
+    _markers.forEach(m=>_map.removeLayer(m));
+    if(_heat)_heat.addTo(_map);
+    if(btn){btn.classList.add('btn-p');btn.innerHTML='<i class="ti ti-dots"></i>Dot map';}
+  } else {
+    if(_heat)_map.removeLayer(_heat);
+    _markers.forEach(m=>m.addTo(_map));
+    if(btn){btn.classList.remove('btn-p');btn.innerHTML='<i class="ti ti-flame"></i>Heatmap';}
+  }
+}
+
+function show2025Tab(t){
+  document.getElementById('yr-map-section').classList.toggle('hidden',t!=='map');
+  document.getElementById('yr-table-section').classList.toggle('hidden',t!=='table');
+  document.getElementById('tb-map').classList.toggle('on',t==='map');
+  document.getElementById('tb-table').classList.toggle('on',t!=='map');
+  if(t==='map'&&_map)setTimeout(()=>_map.invalidateSize(),100);
+}
+
+// ─── 2025 TABLE WITH INLINE EDIT ──────────────────────────────────────────
+function render2025Table(){
+  const q=(document.getElementById('yr-search')||{}).value?.toLowerCase()||'';
+  const tf=(document.getElementById('yr-type-filter')||{}).value||'';
+  const bf=(document.getElementById('yr-brand-filter')||{}).value||'';
+  const data=get2025Data().filter(d=>{
+    const mq=!q||(d.n+d.cy+d.sp+d.lo).toLowerCase().includes(q);
+    return mq&&(!tf||d.tp===tf)&&(!bf||d.br===bf);
+  });
+  document.getElementById('yr-tbody').innerHTML=data.map(d=>`
+    <tr id="yr-row-${d.id}">
+      <td style="font-size:11px;color:var(--tx3)">${d.id}</td>
+      <td style="font-size:13px"><strong>${d.n||'—'}</strong></td>
+      <td><span class="badge" style="background:${d.br==='E'?'#F0E6FF':d.br==='H'?'var(--bl-l)':'var(--gr-l)'};color:${d.br==='E'?'#6C3483':d.br==='H'?'var(--bl-d)':'var(--gr-d)'}">${d.br==='E'?'Educators':d.br==='H'?'HO/RON/ROS':'BSS'}</span></td>
+      <td><span class="badge ${d.tp==='S'?'b-c':'b-n'}">${d.tp==='S'?'School':'Individual'}</span></td>
+      <td style="font-size:12px">${d.cy}</td>
+      <td style="font-size:13px;font-weight:600;color:var(--gr)">${d.tr.toLocaleString()}</td>
+      <td style="font-size:11px;color:var(--tx2);max-width:160px">${d.sp||'—'}</td>
+      <td><button class="btn btn-s" onclick="edit2025Row(${d.id})" title="Edit"><i class="ti ti-pencil"></i></button>${d._custom?`<button class="btn btn-s btn-d" onclick="del2025Row(${d.id})" style="margin-left:4px"><i class="ti ti-trash"></i></button>`:''}</td>
+    </tr>`).join('');
+}
+
+function edit2025Row(id){
+  const data=get2025Data();
+  const d=data.find(x=>x.id===id);if(!d)return;
+  const row=document.getElementById('yr-row-'+id);if(!row)return;
+  row.classList.add('editing');
+  row.innerHTML=`
+    <td style="font-size:11px;color:var(--tx3)">${id}</td>
+    <td><input value="${d.n||''}" id="e-n"></td>
+    <td><select id="e-tp"><option value="S"${d.tp==='S'?' selected':''}>School</option><option value="I"${d.tp==='I'?' selected':''}>Individual</option></select></td>
+    <td><input value="${d.cy||''}" id="e-cy" style="width:80px"></td>
+    <td><input type="number" value="${d.tr}" id="e-tr" style="width:60px"></td>
+    <td><input value="${d.sp||''}" id="e-sp"></td>
+    <td><input value="${d.lo||''}" id="e-lo"></td>
+    <td><button class="btn btn-s btn-p" onclick="save2025Row(${id})"><i class="ti ti-check"></i></button>
+    <button class="btn btn-s" onclick="render2025Table()" style="margin-left:3px"><i class="ti ti-x"></i></button></td>`;
+}
+
+function save2025Row(id){
+  const overrides=JSON.parse(localStorage.getItem('bhs_ly_overrides')||'[]');
+  const updated={
+    id,
+    n:document.getElementById('e-n').value.trim(),
+    tp:document.getElementById('e-tp').value,
+    cy:document.getElementById('e-cy').value.trim(),
+    tr:parseInt(document.getElementById('e-tr').value)||1,
+    sp:document.getElementById('e-sp').value.trim(),
+    lo:document.getElementById('e-lo').value.trim(),
+    _custom:true,_edit:true
+  };
+  // Check if editing original data
+  const inOriginal=LAST_YEAR.find(x=>x.id===id);
+  if(inOriginal){
+    // Store as override
+    const idx=overrides.findIndex(x=>x.id===id&&x._edit);
+    if(idx>=0)overrides[idx]=updated;else overrides.push(updated);
+  } else {
+    const idx=overrides.findIndex(x=>x.id===id);
+    if(idx>=0)overrides[idx]={...overrides[idx],...updated};
+  }
+  localStorage.setItem('bhs_ly_overrides',JSON.stringify(overrides));
+  render2025Table();render2025Summary();renderMap();
+  showInAppNotif('Entry updated');
+}
+
+function del2025Row(id){
+  if(!confirm('Delete this custom entry?'))return;
+  const ov=JSON.parse(localStorage.getItem('bhs_ly_overrides')||'[]');
+  localStorage.setItem('bhs_ly_overrides',JSON.stringify(ov.filter(x=>x.id!==id)));
+  render2025Table();render2025Summary();renderMap();
+}
+
+function add2025Entry(){
+  const ov=JSON.parse(localStorage.getItem('bhs_ly_overrides')||'[]');
+  const newId=Date.now();
+  ov.push({id:newId,n:'New Entry',tp:'I',rg:'C',cy:'Lahore',tr:1,sp:'',lo:'',_custom:true});
+  localStorage.setItem('bhs_ly_overrides',JSON.stringify(ov));
+  show2025Tab('table');render2025Table();
+  setTimeout(()=>edit2025Row(newId),100);
+}
+
+function export2025CSV(){
+  const data=get2025Data();
+  const rows=[['ID','Name','Type','Region','City','Trees','Species','Location','Lat','Lng']];
+  data.forEach(d=>rows.push([d.id,d.n,d.tp==='S'?'School':'Individual',d.rg,d.cy,d.tr,d.sp,d.lo,d.lt||'',d.ln||'']));
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n'));
+  a.download='bhs-2025-plantation.csv';a.click();
+}
+
+
+// ─── BRANDING ────────────────────────────────────────────────────────────────
+function applyBranding(){
+  const n=state.settings.projectName||'BHS Plantation Drive';
+  const y=state.settings.projectYear||'2026';
+  document.title=`🌱 ${n} — ${y}`;
+  const logo=document.querySelector('.sb-logo h1');if(logo)logo.textContent=`🌱 ${n}`;
+  const sub=document.querySelector('.sb-logo p');if(sub)sub.textContent=`${y} Dispatch Tracker`;
+  const ph=document.querySelector('#pane-dashboard .ph p');if(ph)ph.textContent=`Live overview · ${y} ${n}`;
+  const mt=document.getElementById('mobile-title');if(mt)mt.textContent=`🌱 ${n}`;
+  const sbt=document.getElementById('sb-title');if(sbt)sbt.textContent=`${n}`;
+  const sbs=document.getElementById('sb-sub');if(sbs)sbs.textContent=`${y} Dispatch Tracker`;
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+async function boot(){
+  const k=document.getElementById('sk').value.trim();
+  if(k){state.settings.apiKey=k;localStorage.setItem('bhs_api_tmp',k);}
+  const jbkSetup=document.getElementById('jbk-setup');
+  if(jbkSetup&&jbkSetup.value.trim())state.settings.jbKey=jbkSetup.value.trim();
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  applyBranding();try{applyLabels();}catch(e){console.warn("applyLabels:",e);}rDash();updateBadge();
+  if(state.settings.gasUrl&&state.settings.gasKey){
+    updateSyncBadge('saving');
+    const ok=await fullSync();
+    updateSyncBadge(ok?'connected':'error');
+    setInterval(()=>{if(state.settings.gasUrl&&state.settings.gasKey)fullSync();},120000);
+  } else {
+    updateSyncBadge('local');
+  }
+  setTimeout(()=>{checkAndAlert(false);autoWeeklyCheck();autoWeeklyDigest();updateGmailStatus();fetchLiveHeads();},1500);
+}
+
+loadState();
+const tmpKey=localStorage.getItem('bhs_api_tmp');
+if(tmpKey&&!state.settings.apiKey){state.settings.apiKey=tmpKey;}
+window.addEventListener('load',()=>{if(state.settings.ejk && typeof emailjs!=="undefined")emailjs.init({publicKey:state.settings.ejk});});
+</script>
+</body>
+</html>
