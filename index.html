@@ -12,8 +12,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <style>
-:root{--gr:#1D9E75;--gr-l:#E1F5EE;--gr-d:#0F6E56;--am:#BA7517;--am-l:#FAEEDA;--am-d:#854F0B;--re:#E24B4A;--re-l:#FCEBEB;--re-d:#A32D2D;--bl:#378ADD;--bl-l:#E6F1FB;--bl-d:#185FA5;--bg:#fff;--bg2:#f8f8f6;--bg3:#f1efe8;--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--bd:rgba(0,0,0,.12);--bd2:rgba(0,0,0,.2);--r:8px;--rl:12px}
-@media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--bd:rgba(255,255,255,.1);--bd2:rgba(255,255,255,.18)}}
+:root{--gr:#1FAE7E;--gr-l:#DFF5EC;--gr-d:#0B6B4D;--am:#E0A020;--am-l:#FCEFD4;--am-d:#8A5A0A;--re:#D6483F;--re-l:#FBEAE8;--re-d:#9C2F28;--bl:#2D8FE0;--bl-l:#E3F1FC;--bl-d:#1B5E96;--mg:#C42D6B;--mg-l:#FBE7EF;--mg-d:#8A1F4B;--bg:#fff;--bg2:#f8f8f6;--bg3:#f1efe8;--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--bd:rgba(0,0,0,.12);--bd2:rgba(0,0,0,.2);--r:8px;--rl:12px}
+@media(prefers-color-scheme:dark){:root{--gr:#34C77B;--gr-l:#123B2C;--gr-d:#7FE3B4;--am:#F0B23A;--am-l:#3D2E0F;--am-d:#FFD98A;--re:#E86259;--re-l:#3B1614;--re-d:#FF9990;--bl:#4FA3EA;--bl-l:#122B3D;--bl-d:#9CCBF2;--mg:#E0559A;--mg-l:#3A1225;--mg-d:#F5A8CB;--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--bd:rgba(255,255,255,.1);--bd2:rgba(255,255,255,.18)}}
+:root[data-theme="dark"]{--gr:#34C77B;--gr-l:#123B2C;--gr-d:#7FE3B4;--am:#F0B23A;--am-l:#3D2E0F;--am-d:#FFD98A;--re:#E86259;--re-l:#3B1614;--re-d:#FF9990;--bl:#4FA3EA;--bl-l:#122B3D;--bl-d:#9CCBF2;--mg:#E0559A;--mg-l:#3A1225;--mg-d:#F5A8CB;--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--bd:rgba(255,255,255,.1);--bd2:rgba(255,255,255,.18)}
+:root[data-theme="light"]{--gr:#1FAE7E;--gr-l:#DFF5EC;--gr-d:#0B6B4D;--am:#E0A020;--am-l:#FCEFD4;--am-d:#8A5A0A;--re:#D6483F;--re-l:#FBEAE8;--re-d:#9C2F28;--bl:#2D8FE0;--bl-l:#E3F1FC;--bl-d:#1B5E96;--mg:#C42D6B;--mg-l:#FBE7EF;--mg-d:#8A1F4B;--bg:#fff;--bg2:#f8f8f6;--bg3:#f1efe8;--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--bd:rgba(0,0,0,.12);--bd2:rgba(0,0,0,.2)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--tx);font-size:14px;min-height:100vh}
 .app{display:flex;min-height:100vh}
@@ -112,6 +114,26 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
 .species-chip{display:inline-block;font-size:11px;padding:3px 9px;background:var(--bg3);border-radius:20px;color:var(--tx2);margin:2px 3px 0 0}
 @media(max-width:640px){.cd-grid{grid-template-columns:1fr}}
 #sync-badge{font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:6px;cursor:pointer}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--gr);position:relative}
+.pulse-dot::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--gr)}
+.pulse-dot.ping::after{animation:pulseRing 1.2s ease-out}
+@keyframes pulseRing{0%{transform:scale(1);opacity:.6}100%{transform:scale(3.4);opacity:0}}
+.pane.active{animation:paneFade .22s ease}
+@keyframes paneFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.stagger-item{opacity:0;transform:translateY(8px)}
+.stagger-item.in{animation:staggerIn .4s ease forwards}
+@keyframes staggerIn{to{opacity:1;transform:translateY(0)}}
+.pf{transition:width 1s cubic-bezier(.16,1,.3,1)}
+.sprout-track{position:relative;height:22px}
+.sprout-bar{position:absolute;left:0;top:8px;height:6px;border-radius:3px;background:var(--gr-l);width:100%}
+.sprout-fill{position:absolute;left:0;top:8px;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--gr-d),var(--gr));width:0%;transition:width 1s cubic-bezier(.16,1,.3,1)}
+.sprout-icon{position:absolute;top:-11px;font-size:16px;transform:translateX(-50%) scale(.4);opacity:0;transition:all 1s cubic-bezier(.16,1,.3,1);left:0%}
+.skeleton{background:linear-gradient(90deg,var(--bg2) 25%,var(--bd) 50%,var(--bg2) 75%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;border-radius:4px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.ph h2,.ph-row h2,.md h3{font-family:Georgia,'Times New Roman',ui-serif,serif}
+#confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:999}
+.done-badge-pop{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--mg-d);background:var(--mg-l);padding:2px 9px;border-radius:20px;margin-left:6px;animation:doneBadgePop .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes doneBadgePop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
 .mobile-bar{display:none}.sb-backdrop{display:none}
 @media(max-width:768px){
   .mobile-bar{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:var(--bg);border-bottom:.5px solid var(--bd);position:sticky;top:0;z-index:300}
@@ -166,7 +188,8 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
   <div class="nav" onclick="go('settings');closeSidebar()" id="nav-settings"><i class="ti ti-settings" aria-hidden="true"></i><span>Settings</span></div>
   <div class="sb-bottom">
     <button class="btn btn-p" onclick="openDM(null)" style="width:100%;justify-content:center;margin-bottom:8px"><i class="ti ti-plus"></i>Log Dispatch</button>
-    <button class="btn" onclick="exportCSV()" style="width:100%;justify-content:center"><i class="ti ti-download"></i>Export CSV</button>
+    <button class="btn" onclick="exportCSV()" style="width:100%;justify-content:center;margin-bottom:8px"><i class="ti ti-download"></i>Export CSV</button>
+    <button class="btn" onclick="toggleTheme()" style="width:100%;justify-content:center" id="theme-toggle-btn"><i class="ti ti-moon" id="theme-toggle-icon"></i><span id="theme-toggle-label">Dark mode</span></button>
   </div>
 </nav>
 
@@ -176,6 +199,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
   <div class="ph-row ph">
     <div><h2>Dashboard</h2><p>Live overview · BSS 2026 Plantation Drive</p></div>
     <div id="sync-badge" onclick="go('settings')">
+      <span class="pulse-dot hidden" id="sync-pulse"></span>
       <i class="ti ti-cloud-off" id="sync-icon"></i><span id="sync-text">Local only — not shared</span>
     </div>
   </div>
@@ -190,11 +214,11 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
     <div class="metric"><div class="mlabel">Project completion</div><div class="mval" id="m4" style="color:var(--gr)">—</div><div class="msub" id="m4s">dispatched vs required</div></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
-    <div class="card"><div class="ch"><h3><i class="ti ti-alert-triangle" style="color:var(--re)"></i> Prepare immediately</h3></div><div id="d-urgent"></div></div>
-    <div class="card"><div class="ch"><h3><i class="ti ti-chart-bar" style="color:var(--gr)"></i> Progress by region</h3></div><div id="d-regions"></div></div>
+    <div class="card stagger-item" id="dash-card-1"><div class="ch"><h3><i class="ti ti-alert-triangle" style="color:var(--re)"></i> Prepare immediately</h3></div><div id="d-urgent"></div></div>
+    <div class="card stagger-item" id="dash-card-2"><div class="ch"><h3><i class="ti ti-chart-bar" style="color:var(--gr)"></i> Progress by region</h3></div><div id="d-regions"></div></div>
   </div>
-  <div class="card"><div class="ch"><h3><i class="ti ti-calendar" style="color:var(--bl)"></i> Upcoming dispatches (next 30 days)</h3><button class="btn btn-s" onclick="go('alerts')">See all alerts</button></div><div id="d-upcoming"></div></div>
-  <div class="card"><div class="ch"><h3><i class="ti ti-activity" style="color:var(--gr)"></i> Recent activity</h3></div><div id="d-activity"></div></div>
+  <div class="card stagger-item" id="dash-card-3"><div class="ch"><h3><i class="ti ti-calendar" style="color:var(--bl)"></i> Upcoming dispatches (next 30 days)</h3><button class="btn btn-s" onclick="go('alerts')">See all alerts</button></div><div id="d-upcoming"></div></div>
+  <div class="card stagger-item" id="dash-card-4"><div class="ch"><h3><i class="ti ti-activity" style="color:var(--gr)"></i> Recent activity</h3></div><div id="d-activity"></div></div>
 </div>
 
 <!-- CLUSTERS -->
@@ -220,7 +244,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
       <button class="btn btn-p" onclick="openDM(null)"><i class="ti ti-plus"></i>Log dispatch</button>
     </div>
   </div>
-  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Date</th><th>Cluster</th><th>City</th><th>Qty sent</th><th>Species / notes</th><th>Logged by</th><th>Photo</th><th>Source</th><th></th></tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"><i class="ti ti-truck-delivery"></i>No dispatches logged yet</div></div></div>
+  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Date</th><th>Cluster</th><th>City</th><th>Qty sent</th><th>Species / notes</th><th>Logged by</th><th>Photo</th><th>Source</th><th></th></tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"></div></div></div>
 </div>
 
 <!-- NEARBY -->
@@ -412,6 +436,8 @@ service cloud.firestore {
 <div class="mo hidden" id="photo-modal" onclick="closeMo()">
 <img id="photo-modal-img" style="max-width:90vw;max-height:90vh;border-radius:var(--r)" src="">
 </div>
+
+<canvas id="confetti-canvas"></canvas>
 
 <!-- Delete modal -->
 <div class="mo hidden" id="delm">
@@ -649,7 +675,12 @@ function showHeads(clusterCode){
   document.getElementById('heads-modal-title').innerHTML=`<i class="ti ti-users" style="color:var(--gr)"></i> ${clusterCode} — Campuses &amp; School Heads`;
   modal.classList.remove('hidden');
   if(!_liveHeads){
-    document.getElementById('heads-modal-body').innerHTML='<div class="empty"><i class="ti ti-reload spin"></i>Loading from Google Sheet...</div>';
+    document.getElementById('heads-modal-body').innerHTML=`<div style="padding:.5rem 0">
+      <div class="skeleton" style="height:14px;width:60%;margin-bottom:10px"></div>
+      <div class="skeleton" style="height:36px;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:36px;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:36px"></div>
+    </div>`;
     fetchLiveHeads().then(()=>renderHeadsModal(clusterCode));
     return;
   }
@@ -659,7 +690,7 @@ function renderHeadsModal(clusterCode){
   const body=document.getElementById('heads-modal-body');
   const campuses=(_liveHeads&&_liveHeads[clusterCode.toUpperCase()])||[];
   if(!campuses.length){
-    body.innerHTML=`<div class="empty"><i class="ti ti-info-circle"></i>No campus data found for ${clusterCode} in the live sheet.<br><small style="color:var(--tx3)">Data refreshes from Google Sheet every hour.</small></div>`;
+    body.innerHTML=`<div class="empty">${saplingSvg(48)}No campus data found for ${clusterCode} in the live sheet.<br><small style="color:var(--tx3)">Data refreshes from Google Sheet every hour.</small></div>`;
     return;
   }
   const rows=campuses.map(c=>`
@@ -679,20 +710,51 @@ function renderHeadsModal(clusterCode){
 async function refreshHeads(clusterCode){
   localStorage.removeItem('bhs_live_heads');localStorage.removeItem('bhs_live_heads_time');
   _liveHeads=null;_headsLoading=false;
-  document.getElementById('heads-modal-body').innerHTML='<div class="empty"><i class="ti ti-reload spin"></i>Refreshing...</div>';
+  document.getElementById('heads-modal-body').innerHTML=`<div style="padding:.5rem 0"><div class="skeleton" style="height:36px;margin-bottom:8px"></div><div class="skeleton" style="height:36px"></div></div>`;
   await fetchLiveHeads();
   renderHeadsModal(clusterCode);
 }
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 function fmt(n){return Math.round(n).toLocaleString();}
+const _countAnimState={};
+function animateCount(elId,target){
+  const el=document.getElementById(elId);if(!el)return;
+  target=Math.round(target);
+  const from=_countAnimState[elId]!==undefined?_countAnimState[elId]:target;
+  if(from===target){el.textContent=fmt(target);return;}
+  const start=performance.now();const ms=800;
+  function tick(now){
+    const t=Math.min(1,(now-start)/ms);
+    const eased=1-Math.pow(1-t,3);
+    el.textContent=fmt(from+(target-from)*eased);
+    if(t<1)requestAnimationFrame(tick);
+    else{el.textContent=fmt(target);_countAnimState[elId]=target;}
+  }
+  requestAnimationFrame(tick);
+}
 function fmtD(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 function du(d){if(!d)return null;return Math.floor((new Date(d)-TODAY)/86400000);}
 function gst(s){if(s.dispatched>=s.required)return'done';if(s.dispatched>0)return'partial';return'pending';}
 function stLbl(s){const st=gst(s);return st==='done'?'Done':st==='partial'?'Partial':'Pending';}
 function pct(s){return s.required>0?Math.min(100,Math.round(s.dispatched/s.required*100)):0;}
-function progBar(p){return`<div class="prog" style="margin-bottom:2px"><div class="pf ${p<30?'d':p<70?'w':''}" style="width:${p}%"></div></div><span style="font-size:10px;color:var(--tx3)">${p}%</span>`;}
+function progBar(p){return`<div class="prog" style="margin-bottom:2px"><div class="pf ${p<30?'d':p<70?'w':''}" data-target="${p}" style="width:0%"></div></div><span style="font-size:10px;color:var(--tx3)">${p}%</span>`;}
+function sproutBar(p){return`<div class="sprout-track"><div class="sprout-bar"></div><div class="sprout-fill" data-target="${p}" style="width:0%"></div><div class="sprout-icon" data-target-left="${p}" style="left:0%">🌱</div></div>`;}
+function animateBars(){
+  document.querySelectorAll('.pf[data-target]').forEach(el=>{el.style.width=el.dataset.target+'%';});
+  document.querySelectorAll('.sprout-fill[data-target]').forEach(el=>{el.style.width=el.dataset.target+'%';});
+  document.querySelectorAll('.sprout-icon[data-target-left]').forEach(el=>{el.style.left=el.dataset.targetLeft+'%';el.style.opacity='1';el.style.transform='translateX(-50%) scale(1)';});
+}
 function rgBadge(r){return`<span class="badge b-${r.toLowerCase()}">${RN[r]||r}</span>`;}
+function saplingSvg(size){
+  size=size||56;
+  return`<svg width="${size}" height="${size}" viewBox="0 0 56 56" style="margin-bottom:8px">
+    <ellipse cx="28" cy="48" rx="16" ry="4" fill="var(--bg3)"/>
+    <path d="M28 46 L28 22" stroke="var(--gr)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M28 30 C 20 28, 16 20, 18 14 C 24 16, 28 22, 28 30 Z" fill="var(--gr-l)" stroke="var(--gr)" stroke-width="1.5"/>
+    <path d="M28 26 C 36 24, 40 17, 39 12 C 32 13, 28 19, 28 26 Z" fill="var(--gr-l)" stroke="var(--gr)" stroke-width="1.5"/>
+  </svg>`;
+}
 
 // ─── NAVIGATION ───────────────────────────────────────────────────────────────
 function go(p){
@@ -719,10 +781,10 @@ function rDash(){
   const dis=state.schools.reduce((a,s)=>a+s.dispatched,0);
   const rem=tot-dis;
   const p=tot>0?Math.round(dis/tot*100):0;
-  document.getElementById('m1').textContent=fmt(tot);
-  document.getElementById('m2').textContent=fmt(dis);
+  animateCount('m1',tot);
+  animateCount('m2',dis);
   document.getElementById('m2s').textContent=p+'% complete';
-  document.getElementById('m3').textContent=fmt(rem);
+  animateCount('m3',rem);
   document.getElementById('m4').textContent=p+'%';
   document.getElementById('m4s').textContent=fmt(dis)+' of '+fmt(tot)+' dispatched';
 
@@ -736,8 +798,8 @@ function rDash(){
 
   const regs=['N','C','S'];
   document.getElementById('d-regions').innerHTML=regs.map(r=>{
-    const rs=state.schools.filter(s=>s.region===r);const rt=rs.reduce((a,s)=>a+s.required,0);const rd=rs.reduce((a,s)=>a+s.dispatched,0);const rp=rt>0?Math.round(rd/rt*100):0;
-    return`<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>${rgBadge(r)} <span style="color:var(--tx3)">${rs.length} clusters</span></span><span style="color:var(--tx2)">${fmt(rd)}/${fmt(rt)} (${rp}%)</span></div><div class="prog"><div class="pf ${rp<30?'d':rp<70?'w':''}" style="width:${rp}%"></div></div></div>`;}).join('');
+    const rs=state.schools.filter(s=>s.region===r);const rt=rs.reduce((a,s)=>a+s.required,0);const rd=rs.reduce((a,s)=>a+s.dispatched,0);const rp=rt>0?Math.min(100,Math.round(rd/rt*100)):0;
+    return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span>${rgBadge(r)} <span style="color:var(--tx3)">${rs.length} clusters</span></span><span style="color:var(--tx2)">${fmt(rd)}/${fmt(rt)} (${rp}%)</span></div>${sproutBar(rp)}</div>`;}).join('');
 
   const up=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>0&&d<=30&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
   const overdue=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=0&&gst(s)!=='done';}).sort((a,b)=>new Date(b.plantingDate)-new Date(a.plantingDate));
@@ -749,6 +811,11 @@ function rDash(){
     `<div style="font-size:11px;color:var(--tx3);margin-top:8px;padding-top:8px;border-top:.5px solid var(--bd)">${upLabel} · <a href="#" onclick="go('alerts')" style="color:var(--bl-d)">View all alerts →</a></div>`;
   renderDispatchSparkline();
   renderActivityFeed();
+  requestAnimationFrame(()=>requestAnimationFrame(animateBars));
+  document.querySelectorAll('#pane-dashboard .stagger-item').forEach((el,i)=>{
+    el.classList.remove('in');void el.offsetWidth;
+    el.style.animationDelay=(i*70)+'ms';el.classList.add('in');
+  });
 }
 
 // ─── DISPATCH TREND (from real dispatch dates, no synthetic data) ────────────
@@ -793,7 +860,7 @@ function timeAgo(iso){
 function renderActivityFeed(){
   const el=document.getElementById('d-activity');if(!el)return;
   const items=state.dispatches.filter(d=>!d.imported).sort((a,b)=>new Date(b.createdAt||b.date||0)-new Date(a.createdAt||a.date||0)).slice(0,10);
-  if(!items.length){el.innerHTML='<p style="color:var(--tx3);font-size:13px">No manually logged dispatches yet — activity will show up here as your team logs them.</p>';return;}
+  if(!items.length){el.innerHTML=`<div style="text-align:center;padding:1rem">${saplingSvg(40)}<div style="font-size:13px;color:var(--tx3)">No manually logged dispatches yet — activity will show up here as your team logs them.</div></div>`;return;}
   el.innerHTML=items.map(d=>{
     const name=(d.by||'—').trim();
     const initials=name==='—'?'?':name.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -816,6 +883,7 @@ function rClusters(){
     const st=gst(s);const pc=pct(s);const d=du(s.plantingDate);
     const ds=s.plantingDate?fmtD(s.plantingDate)+(d!==null&&d<=7&&st!=='done'?` <span style="color:var(--re);font-size:10px">(${d<0?'overdue':d+'d'})</span>`:''):'—';
     return`<tr><td><strong class="cluster-link" onclick="showClusterDetail(${s.id})" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--bd2)" title="View cluster detail">${s.cluster}</strong><button class="btn btn-s" onclick="showSpecies(${s.id})" title="Species requested" style="margin-left:6px;padding:2px 6px;font-size:11px">🌱</button><button class="btn btn-s" onclick="showHeads('${s.cluster}')" title="View campuses & school heads (live)" style="margin-left:3px;padding:2px 6px;font-size:11px"><i class="ti ti-users"></i></button></td><td style="font-size:12px;color:var(--tx2)">${getConvenor(s)}</td><td style="font-size:12px">${s.city}</td><td>${rgBadge(s.region)}</td><td style="font-weight:500">${fmt(s.required)}</td><td>${fmt(s.dispatched)}</td><td style="min-width:90px">${progBar(pc)}</td><td style="font-size:12px">${ds}</td><td><span class="badge b-${st}">${stLbl(s)}</span></td><td><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-truck-delivery"></i></button></td></tr>`;}).join('');
+  requestAnimationFrame(()=>requestAnimationFrame(animateBars));
 }
 function showSpecies(id){
   const s=state.schools.find(x=>x.id===id);if(!s)return;
@@ -849,7 +917,7 @@ function showClusterDetail(id){
       <div class="cd-side">
         <div class="stat"><div class="cd-label">Convenor</div>${getConvenor(s)}<br><a href="tel:${s.contact}" style="color:var(--bl-d);font-size:12px"><i class="ti ti-phone"></i> ${s.contact}</a></div>
         <div class="stat"><div class="cd-label">Planting date</div>${fmtD(s.plantingDate)}</div>
-        <div class="stat"><div class="cd-label">Required / dispatched</div>${fmt(s.required)} / ${fmt(s.dispatched)}<div class="prog" style="margin-top:6px"><div class="pf ${pc<30?'d':pc<70?'w':''}" style="width:${pc}%"></div></div></div>
+        <div class="stat"><div class="cd-label">Required / dispatched</div>${fmt(s.required)} / ${fmt(s.dispatched)}<div style="margin-top:8px">${sproutBar(pc)}</div></div>
         <div class="stat"><div class="cd-label">Species requested</div><div>${speciesHtml}</div></div>
         <div class="stat"><button class="btn btn-p btn-s" style="width:100%;justify-content:center" onclick="closeMo();openDM(${s.id})"><i class="ti ti-truck-delivery"></i> Log a dispatch here</button></div>
       </div>
@@ -859,12 +927,14 @@ function showClusterDetail(id){
       </div>
     </div>`;
   document.getElementById('cd-modal').classList.remove('hidden');
+  requestAnimationFrame(()=>requestAnimationFrame(animateBars));
 }
 
 // ─── DISPATCH LOG ─────────────────────────────────────────────────────────────
 function rDispatch(){
   const has=state.dispatches.length>0;
   document.getElementById('de').classList.toggle('hidden',has);
+  if(!has)document.getElementById('de').innerHTML=`${saplingSvg(48)}<div>No dispatches logged yet</div><div style="font-size:11px;color:var(--tx3);margin-top:2px">Log your first one to start the trail</div>`;
   document.getElementById('dt').innerHTML=state.dispatches.slice().reverse().map((d)=>{
     const src=d.imported?'<span class="badge b-imp">Imported</span>':'<span class="badge b-done">Manual</span>';
     const del=d.imported?'':` <button class="btn btn-s btn-d" onclick="askDel('${d.id}')" title="Delete"><i class="ti ti-trash"></i></button>`;
@@ -892,8 +962,9 @@ function rNearby(){
   state.schools.forEach(s=>{s.city.split('/').map(c=>c.trim()).forEach(c=>{if(!cm[c])cm[c]=[];cm[c].push(s);});});
   const groups=Object.entries(cm).filter(([,ss])=>ss.length>1).sort((a,b)=>b[1].length-a[1].length);
   document.getElementById('ng').innerHTML=groups.map(([city,ss])=>{
-    const tot=ss.reduce((a,s)=>a+s.required,0);const dis=ss.reduce((a,s)=>a+s.dispatched,0);const p=Math.round(dis/tot*100);
-    return`<div class="cc"><h4><i class="ti ti-map-pin" style="color:var(--gr)"></i>${city} <span style="font-weight:400;font-size:12px;color:var(--tx3)">${ss.length} clusters · ${fmt(tot)} plants</span></h4><div class="prog" style="margin:4px 0 2px"><div class="pf ${p<30?'d':p<70?'w':''}" style="width:${p}%"></div></div><div style="font-size:11px;color:var(--tx3);margin-bottom:6px">${p}% dispatched · ${fmt(tot-dis)} remaining</div><div class="stags">${ss.map(s=>`<span class="stag">${s.cluster} · ${fmt(remaining(s))} rem</span>`).join('')}</div></div>`;}).join('');
+    const tot=ss.reduce((a,s)=>a+s.required,0);const dis=ss.reduce((a,s)=>a+s.dispatched,0);const p=Math.min(100,Math.round(dis/tot*100));
+    return`<div class="cc"><h4><i class="ti ti-map-pin" style="color:var(--gr)"></i>${city} <span style="font-weight:400;font-size:12px;color:var(--tx3)">${ss.length} clusters · ${fmt(tot)} plants</span></h4>${sproutBar(p)}<div style="font-size:11px;color:var(--tx3);margin:4px 0 6px">${p}% dispatched · ${fmt(Math.max(0,tot-dis))} remaining</div><div class="stags">${ss.map(s=>`<span class="stag">${s.cluster} · ${fmt(remaining(s))} rem</span>`).join('')}</div></div>`;}).join('');
+  requestAnimationFrame(()=>requestAnimationFrame(animateBars));
 }
 
 // ─── DISPATCH PLAN ────────────────────────────────────────────────────────────
@@ -1145,7 +1216,7 @@ async function saveDispatch(){
     }catch(e){console.warn('Firestore add failed:',e.message);updateSyncBadge('error');showInAppNotif('⚠️ Could not sync to shared database — check your connection.');}
   } else {
     state.dispatches.push(newDispatch);
-    recomputeDispatched();save();rDash();rDispatch();rAlerts();rClusters();rNearby();renderPlan();updateBadge();
+    recomputeDispatched();checkForNewlyDone();save();rDash();rDispatch();rAlerts();rClusters();rNearby();renderPlan();updateBadge();
   }
 }
 function askDel(id){delTarget=id;document.getElementById('delm').classList.remove('hidden');}
@@ -1216,7 +1287,7 @@ async function saveBulkDispatch(){
     }catch(e){console.warn('Firestore bulk add failed:',e.message);updateSyncBadge('error');showInAppNotif('⚠️ Could not sync to shared database — check your connection.');}
   } else {
     state.dispatches.push(...entries);
-    recomputeDispatched();save();rDash();rDispatch();rAlerts();rClusters();rNearby();renderPlan();updateBadge();
+    recomputeDispatched();checkForNewlyDone();save();rDash();rDispatch();rAlerts();rClusters();rNearby();renderPlan();updateBadge();
   }
   showInAppNotif(`Logged ${entries.length} entries totaling ${fmt(entries.reduce((a,e)=>a+e.qty,0))} plants`);
 }
@@ -1260,6 +1331,28 @@ function updateFbStatus(){
   el.textContent=fbReady()?'✓ Connected':(state.settings.fbConfigRaw?'Saved, not yet connected':'Not connected');
   el.style.color=fbReady()?'var(--gr-d)':'var(--tx3)';
 }
+// ─── THEME TOGGLE (dark/light, overrides system preference) ──────────────────
+function applyStoredTheme(){
+  const saved=localStorage.getItem('bhs_theme');
+  if(saved==='dark'||saved==='light'){document.documentElement.setAttribute('data-theme',saved);}
+  updateThemeToggleUI();
+}
+function toggleTheme(){
+  const current=document.documentElement.getAttribute('data-theme')||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  const next=current==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('bhs_theme',next);
+  updateThemeToggleUI();
+}
+function updateThemeToggleUI(){
+  const icon=document.getElementById('theme-toggle-icon');const label=document.getElementById('theme-toggle-label');
+  if(!icon)return;
+  const current=document.documentElement.getAttribute('data-theme')||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  if(current==='dark'){icon.className='ti ti-sun';label.textContent='Light mode';}
+  else{icon.className='ti ti-moon';label.textContent='Dark mode';}
+}
+applyStoredTheme();
+
 function updateSyncBadge(status){
   const icon=document.getElementById('sync-icon');const text=document.getElementById('sync-text');
   if(!icon||!text)return;
@@ -1308,11 +1401,14 @@ function disconnectFirebase(){
 }
 
 let _dispatchesUnsub=null, _settingsUnsub=null;
+let _firstDispatchSnapshot=true;
 function listenDispatches(){
   if(_dispatchesUnsub)_dispatchesUnsub();
   _dispatchesUnsub=db.collection('dispatches').onSnapshot(snap=>{
     state.dispatches=snap.docs.map(doc=>({id:doc.id,...doc.data()}));
     recomputeDispatched();
+    if(_firstDispatchSnapshot){_firstDispatchSnapshot=false;initDoneTracking();}
+    else{checkForNewlyDone();pulseSyncBadge();}
     rDash();updateBadge();
     if(document.getElementById('pane-clusters').classList.contains('active'))rClusters();
     if(document.getElementById('pane-dispatch').classList.contains('active'))rDispatch();
@@ -1320,6 +1416,12 @@ function listenDispatches(){
     if(document.getElementById('pane-alerts').classList.contains('active'))rAlerts();
     if(document.getElementById('pane-plan').classList.contains('active'))renderPlan();
   },err=>{console.warn('dispatches listener error:',err.message);updateSyncBadge('error');});
+}
+function pulseSyncBadge(){
+  const dot=document.getElementById('sync-pulse');if(!dot)return;
+  dot.classList.remove('hidden','ping');
+  void dot.offsetWidth;
+  dot.classList.add('ping');
 }
 function listenSettings(){
   if(_settingsUnsub)_settingsUnsub();
@@ -1376,6 +1478,54 @@ function showInAppNotif(msg){
   n.className='alert ag';n.style.cssText='position:fixed;top:1rem;right:1rem;z-index:900;max-width:360px';
   n.innerHTML=`<i class="ti ti-check"></i><div>${msg}</div>`;
   document.body.appendChild(n);setTimeout(()=>n.remove(),4000);
+}
+
+// ─── COMPLETION CELEBRATION ───────────────────────────────────────────────────
+let _priorDoneIds=new Set();
+function initDoneTracking(){
+  _priorDoneIds=new Set(state.schools.filter(s=>gst(s)==='done').map(s=>s.id));
+}
+function checkForNewlyDone(){
+  const nowDone=new Set(state.schools.filter(s=>gst(s)==='done').map(s=>s.id));
+  const newly=[...nowDone].filter(id=>!_priorDoneIds.has(id));
+  _priorDoneIds=nowDone;
+  newly.forEach(id=>{
+    const s=state.schools.find(x=>x.id===id);
+    if(s)fireCelebration(s.cluster);
+  });
+}
+function fireCelebration(clusterName){
+  showInAppNotif(`🎉 <strong>${clusterName}</strong> fully dispatched!`);
+  const canvas=document.getElementById('confetti-canvas');
+  if(!canvas)return;
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d');
+  const originX=window.innerWidth-140,originY=40;
+  const colors=['var(--gr)','var(--am)','var(--bl)','var(--mg)'].map(v=>getComputedStyle(document.documentElement).getPropertyValue(v.slice(4,-1)).trim()||'#1FAE7E');
+  const particles=Array.from({length:70},()=>({
+    x:originX,y:originY,
+    vx:(Math.random()-0.5)*11,
+    vy:-Math.random()*9-3,
+    size:Math.random()*5+3,
+    color:colors[Math.floor(Math.random()*colors.length)],
+    rot:Math.random()*360,vr:(Math.random()-0.5)*10
+  }));
+  let frame=0;
+  function step(){
+    frame++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive=false;
+    particles.forEach(p=>{
+      p.vy+=0.35;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;
+      if(p.y<canvas.height)alive=true;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color;ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6);
+      ctx.restore();
+    });
+    if(alive&&frame<130)requestAnimationFrame(step);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  step();
 }
 
 // ─── 2025 INITIATIVE DATA ────────────────────────────────────────────────────
@@ -1474,6 +1624,7 @@ async function boot(){
 }
 
 loadState();
+initDoneTracking();
 if(state.settings.fbConfigRaw){
   document.getElementById('sk').value=state.settings.fbConfigRaw;
 }
