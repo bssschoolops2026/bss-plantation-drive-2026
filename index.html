@@ -134,6 +134,24 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
 #confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:999}
 .done-badge-pop{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--mg-d);background:var(--mg-l);padding:2px 9px;border-radius:20px;margin-left:6px;animation:doneBadgePop .4s cubic-bezier(.34,1.56,.64,1)}
 @keyframes doneBadgePop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+.sortable{cursor:pointer;user-select:none}.sortable:hover{color:var(--tx)}
+.sort-icon{font-size:12px;margin-left:3px;vertical-align:middle;color:var(--tx3)}.sort-icon.active{color:var(--gr)}
+tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outline-offset:-2px;background:var(--gr-l)}
+.chip-group{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:5px 12px;border-radius:20px;border:.5px solid var(--bd2);background:var(--bg);color:var(--tx2);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s}
+.chip:hover{background:var(--bg2)}.chip.active{background:var(--gr);color:#fff;border-color:var(--gr-d)}
+.chip-qty{padding:4px 12px;border-radius:20px;border:.5px solid var(--bd2);background:var(--bg2);font-size:12px;cursor:pointer;color:var(--tx2);font-family:inherit;transition:all .15s}
+.chip-qty:hover{background:var(--gr-l);color:var(--gr-d);border-color:var(--gr)}
+.photo-drop{border:1.5px dashed var(--bd2);border-radius:var(--r);padding:16px;text-align:center;font-size:12px;color:var(--tx3);cursor:pointer;transition:all .15s}
+.photo-drop:hover,.photo-drop.drag{border-color:var(--gr);background:var(--gr-l);color:var(--gr-d)}
+.photo-drop i{font-size:20px;display:block;margin-bottom:4px}
+.spark-tooltip{position:absolute;transform:translate(-50%,-100%);background:var(--tx);color:var(--bg);font-size:10px;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;z-index:10;margin-top:-6px}
+.plan-item{cursor:grab}.plan-item.dragging{opacity:.4}
+.plan-load.drag-over{background:var(--gr-l);outline:1.5px dashed var(--gr)}
+.presence-bar{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx3);margin-bottom:10px}
+.presence-stack{display:flex}
+.presence-avatar{width:20px;height:20px;border-radius:50%;background:var(--gr-l);color:var(--gr-d);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);margin-left:-6px}
+.presence-avatar:first-child{margin-left:0}
 .mobile-bar{display:none}.sb-backdrop{display:none}
 @media(max-width:768px){
   .mobile-bar{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:var(--bg);border-bottom:.5px solid var(--bd);position:sticky;top:0;z-index:300}
@@ -187,6 +205,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
   <div class="sb-section-label">Configure</div>
   <div class="nav" onclick="go('settings');closeSidebar()" id="nav-settings"><i class="ti ti-settings" aria-hidden="true"></i><span>Settings</span></div>
   <div class="sb-bottom">
+    <div class="presence-bar hidden" id="presence-bar"></div>
     <button class="btn btn-p" onclick="openDM(null)" style="width:100%;justify-content:center;margin-bottom:8px"><i class="ti ti-plus"></i>Log Dispatch</button>
     <button class="btn" onclick="exportCSV()" style="width:100%;justify-content:center;margin-bottom:8px"><i class="ti ti-download"></i>Export CSV</button>
     <button class="btn" onclick="toggleTheme()" style="width:100%;justify-content:center" id="theme-toggle-btn"><i class="ti ti-moon" id="theme-toggle-icon"></i><span id="theme-toggle-label">Dark mode</span></button>
@@ -227,12 +246,35 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
     <div><h2>All Clusters</h2><p id="clusters-count">Loading...</p></div>
     <button class="btn btn-p" onclick="openDM(null)"><i class="ti ti-truck-delivery"></i>Log dispatch</button>
   </div>
-  <div class="filters">
-    <input type="text" id="fs" placeholder="Search cluster, city, convenor..." oninput="rClusters()">
-    <select id="fr" onchange="rClusters()"><option value="">All regions</option><option value="N">North</option><option value="C">Center</option><option value="S">South</option></select>
-    <select id="fst" onchange="rClusters()"><option value="">All statuses</option><option value="pending">Pending</option><option value="partial">Partial</option><option value="done">Done</option></select>
+  <div class="filters" style="flex-direction:column;align-items:stretch;gap:10px">
+    <input type="text" id="fs" placeholder="Search cluster, city, convenor..." oninput="rClusters()" style="width:100%">
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div class="chip-group" id="chips-region">
+        <button class="chip active" onclick="setChipFilter('region','',this)">All regions</button>
+        <button class="chip" onclick="setChipFilter('region','N',this)">North</button>
+        <button class="chip" onclick="setChipFilter('region','C',this)">Center</button>
+        <button class="chip" onclick="setChipFilter('region','S',this)">South</button>
+      </div>
+      <div class="chip-group" id="chips-status">
+        <button class="chip active" onclick="setChipFilter('status','',this)">All statuses</button>
+        <button class="chip" onclick="setChipFilter('status','pending',this)">Pending</button>
+        <button class="chip" onclick="setChipFilter('status','partial',this)">Partial</button>
+        <button class="chip" onclick="setChipFilter('status','done',this)">Done</button>
+      </div>
+    </div>
   </div>
-  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Cluster</th><th>Convenor</th><th>City</th><th>Rgn</th><th>Required</th><th>Dispatched</th><th>Progress</th><th>Planting date</th><th>Status</th><th></th></tr></thead><tbody id="ct"></tbody></table></div></div>
+  <div class="card" style="padding:0;margin-top:1rem"><div class="tw"><table><thead><tr>
+    <th class="sortable" onclick="sortClusters('cluster')">Cluster <i class="ti ti-arrows-sort sort-icon" data-col="cluster"></i></th>
+    <th>Convenor</th>
+    <th class="sortable" onclick="sortClusters('city')">City <i class="ti ti-arrows-sort sort-icon" data-col="city"></i></th>
+    <th class="sortable" onclick="sortClusters('region')">Rgn <i class="ti ti-arrows-sort sort-icon" data-col="region"></i></th>
+    <th class="sortable" onclick="sortClusters('required')">Required <i class="ti ti-arrows-sort sort-icon" data-col="required"></i></th>
+    <th class="sortable" onclick="sortClusters('dispatched')">Dispatched <i class="ti ti-arrows-sort sort-icon" data-col="dispatched"></i></th>
+    <th class="sortable" onclick="sortClusters('progress')">Progress <i class="ti ti-arrows-sort sort-icon" data-col="progress"></i></th>
+    <th class="sortable" onclick="sortClusters('plantingDate')">Planting date <i class="ti ti-arrows-sort sort-icon" data-col="plantingDate"></i></th>
+    <th class="sortable" onclick="sortClusters('status')">Status <i class="ti ti-arrows-sort sort-icon" data-col="status"></i></th>
+    <th></th>
+  </tr></thead><tbody id="ct"></tbody></table></div></div>
 </div>
 
 <!-- DISPATCH LOG -->
@@ -264,9 +306,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
 <!-- DISPATCH PLAN -->
 <div class="pane" id="pane-plan">
   <div class="ph-row ph">
-    <div><h2>Suggested Dispatch Plan</h2><p>Container loads of 12,000–15,000 saplings · Grouped by proximity</p></div>
+    <div><h2>Suggested Dispatch Plan</h2><p>Container loads of 12,000–15,000 saplings · Grouped by proximity · Drag a cluster card between loads to rearrange</p></div>
     <div style="display:flex;gap:8px">
-      <button class="btn" onclick="renderPlan()"><i class="ti ti-refresh"></i>Refresh</button>
+      <button class="btn" onclick="resetAndRenderPlan()"><i class="ti ti-refresh"></i>Refresh</button>
       <button class="btn btn-p" onclick="exportPlan()"><i class="ti ti-download"></i>Export plan</button>
     </div>
   </div>
@@ -332,7 +374,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
     </div>
     <div class="card">
       <div class="fr"><label>Firestore security rules — paste into Firebase Console → Firestore → Rules</label>
-        <textarea id="rules-snippet" readonly rows="9" style="font-family:monospace;font-size:11px;background:var(--bg3);color:var(--tx2);border-color:var(--bd)">rules_version = '2';
+        <textarea id="rules-snippet" readonly rows="13" style="font-family:monospace;font-size:11px;background:var(--bg3);color:var(--tx2);border-color:var(--bd)">rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /dispatches/{id} {
@@ -340,6 +382,10 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
     match /meta/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /presence/{id} {
       allow read: if true;
       allow write: if request.auth != null;
     }
@@ -400,13 +446,24 @@ service cloud.firestore {
   <div class="fr"><label>Cluster *</label><select id="d-cluster"></select></div>
   <div class="fg2">
     <div class="fr"><label>Dispatch date *</label><input type="date" id="d-date"></div>
-    <div class="fr"><label>Plants dispatched *</label><input type="number" id="d-qty" min="1" placeholder="e.g. 500"></div>
+    <div class="fr"><label>Plants dispatched *</label><input type="number" id="d-qty" min="1" placeholder="e.g. 500">
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <button type="button" class="chip-qty" onclick="setQty(500)">500</button>
+        <button type="button" class="chip-qty" onclick="setQty(1000)">1,000</button>
+        <button type="button" class="chip-qty" onclick="setQty(2500)">2,500</button>
+        <button type="button" class="chip-qty" onclick="setQty(5000)">5,000</button>
+      </div>
+    </div>
   </div>
   <div class="fr"><label>Logged by</label><input type="text" id="d-by" placeholder="Your name"></div>
   <div class="fr"><label>Species breakdown (optional)</label><textarea id="d-sp" placeholder="Kachnar: 100, Neem: 200..."></textarea></div>
   <div class="fr"><label>Notes (vehicle, driver, delivery point)</label><textarea id="d-notes" placeholder="e.g. Mazda truck LHR-1234, driver Ali, to school gate"></textarea></div>
   <div class="fr"><label>Photo of delivered plants (optional)</label>
-    <input type="file" accept="image/*" id="d-photo" onchange="handlePhotoSelect(event)">
+    <div class="photo-drop" id="photo-drop" onclick="document.getElementById('d-photo').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handlePhotoDrop(event)">
+      <i class="ti ti-cloud-upload" aria-hidden="true"></i>
+      <span>Drag a photo here, or click to browse</span>
+    </div>
+    <input type="file" accept="image/*" id="d-photo" onchange="handlePhotoSelect(event)" style="display:none">
     <div id="d-photo-preview" style="margin-top:6px"></div>
   </div>
   <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-p" onclick="saveDispatch()"><i class="ti ti-check"></i>Save</button></div>
@@ -585,6 +642,8 @@ const CSP={
 };
 
 let state={schools:[],dispatches:[],settings:{recipients:"mahnoor.safdar@bh.edu.pk, azal.zahir@bh.edu.pk",alertDays:5,digestDay:1,projectName:"BHS Plantation Drive",fbConfig:null}};
+let clusterFilters={region:'',status:''};
+let clusterSort={col:null,dir:1};
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 function buildImportedDispatches(){
@@ -611,6 +670,7 @@ function recomputeDispatched(){
   state.schools.forEach(s=>{
     s.dispatched=state.dispatches.filter(d=>String(d.schoolId)===String(s.id)).reduce((a,d)=>a+(parseInt(d.qty)||0),0);
   });
+  _planOverrides={};
 }
 function remaining(s){return Math.max(0,s.required-s.dispatched);}
 
@@ -818,15 +878,14 @@ function rDash(){
   });
 }
 
-// ─── DISPATCH TREND (from real dispatch dates, no synthetic data) ────────────
+// ─── DISPATCH TREND (month-wise totals, from real dispatch dates) ────────────
 function renderDispatchSparkline(){
   const el=document.getElementById('dispatch-spark');if(!el)return;
-  const byDate={};
-  state.dispatches.filter(d=>d.date).forEach(d=>{byDate[d.date]=(byDate[d.date]||0)+(parseInt(d.qty)||0);});
-  const dates=Object.keys(byDate).sort();
-  if(dates.length<2){el.innerHTML='';return;}
-  let running=0;const cum=dates.map(d=>{running+=byDate[d];return running;});
-  const pts=cum.slice(-10);
+  const byMonth={};
+  state.dispatches.filter(d=>d.date).forEach(d=>{const m=d.date.slice(0,7);byMonth[m]=(byMonth[m]||0)+(parseInt(d.qty)||0);});
+  const months=Object.keys(byMonth).sort();
+  if(months.length<2){el.innerHTML='';return;}
+  const pts=months.map(m=>byMonth[m]);
   const w=110,h=34,pad=3;
   const min=Math.min(...pts),max=Math.max(...pts);
   const range=max-min||1;
@@ -836,12 +895,31 @@ function renderDispatchSparkline(){
     return[x,y];
   });
   const line=coords.map(c=>c.join(',')).join(' ');
-  const [lx,ly]=coords[coords.length-1];
+  const areaPts=`${coords[0][0]},${h-pad} ${line} ${coords[coords.length-1][0]},${h-pad}`;
   const delta=pts[pts.length-1]-pts[pts.length-2];
-  el.innerHTML=`<svg width="${w}" height="${h}" style="overflow:visible" aria-label="Dispatch trend, ${delta>=0?'up':'down'} ${fmt(Math.abs(delta))} since previous entry">
-    <polyline points="${line}" fill="none" stroke="var(--gr)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="${lx}" cy="${ly}" r="3" fill="var(--gr)"/>
-  </svg><div style="font-size:10px;color:var(--tx3);text-align:right;margin-top:2px">${delta>=0?'+':''}${fmt(delta)} last entry</div>`;
+  const visDots=coords.map((c,i)=>`<circle cx="${c[0]}" cy="${c[1]}" r="${i===coords.length-1?3:1.5}" fill="var(--gr)"/>`).join('');
+  const hoverDots=coords.map((c,i)=>`<circle class="spark-hover-dot" data-month="${months[i]}" data-val="${pts[i]}" cx="${c[0]}" cy="${c[1]}" r="7" fill="transparent" style="cursor:pointer"/>`).join('');
+  el.innerHTML=`<div style="position:relative">
+    <svg width="${w}" height="${h}" style="overflow:visible" aria-label="Monthly dispatch trend, ${delta>=0?'up':'down'} ${fmt(Math.abs(delta))} vs previous month">
+      <polygon points="${areaPts}" fill="var(--gr-l)" opacity="0.5"/>
+      <polyline points="${line}" fill="none" stroke="var(--gr)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${visDots}
+      ${hoverDots}
+    </svg>
+    <div class="spark-tooltip hidden" id="spark-tooltip"></div>
+    <div style="font-size:10px;color:var(--tx3);text-align:right;margin-top:2px">${delta>=0?'+':''}${fmt(delta)} vs prev month</div>
+  </div>`;
+  el.querySelectorAll('.spark-hover-dot').forEach(dot=>{
+    dot.addEventListener('mouseenter',()=>{
+      const tip=document.getElementById('spark-tooltip');
+      const monthLabel=new Date(dot.dataset.month+'-01').toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+      tip.textContent=`${monthLabel}: ${fmt(dot.dataset.val)} plants`;
+      tip.style.left=dot.getAttribute('cx')+'px';
+      tip.style.top=dot.getAttribute('cy')+'px';
+      tip.classList.remove('hidden');
+    });
+    dot.addEventListener('mouseleave',()=>{document.getElementById('spark-tooltip').classList.add('hidden');});
+  });
 }
 
 // ─── ACTIVITY FEED (real dispatch-log actions, most recent first) ────────────
@@ -869,21 +947,62 @@ function renderActivityFeed(){
 }
 
 // ─── CLUSTERS TABLE ───────────────────────────────────────────────────────────
+function setChipFilter(type,val,btn){
+  clusterFilters[type]=val;
+  btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  rClusters();
+}
+function sortClusters(col){
+  if(clusterSort.col===col){clusterSort.dir*=-1;}else{clusterSort.col=col;clusterSort.dir=1;}
+  rClusters();
+}
 function rClusters(){
   const q=(document.getElementById('fs').value||'').toLowerCase();
-  const rf=document.getElementById('fr').value;
-  const sf=document.getElementById('fst').value;
+  const rf=clusterFilters.region;
+  const sf=clusterFilters.status;
   const filtered=state.schools.filter(s=>{
     const mq=!q||s.cluster.toLowerCase().includes(q)||getConvenor(s).toLowerCase().includes(q)||s.city.toLowerCase().includes(q);
     return mq&&(!rf||s.region===rf)&&(!sf||gst(s)===sf);
   });
+  if(clusterSort.col){
+    const col=clusterSort.col,dir=clusterSort.dir;
+    filtered.sort((a,b)=>{
+      let av,bv;
+      switch(col){
+        case 'cluster':av=a.cluster;bv=b.cluster;break;
+        case 'city':av=a.city;bv=b.city;break;
+        case 'region':av=a.region;bv=b.region;break;
+        case 'required':av=a.required;bv=b.required;break;
+        case 'dispatched':av=a.dispatched;bv=b.dispatched;break;
+        case 'progress':av=pct(a);bv=pct(b);break;
+        case 'plantingDate':av=a.plantingDate?new Date(a.plantingDate).getTime():Infinity;bv=b.plantingDate?new Date(b.plantingDate).getTime():Infinity;break;
+        case 'status':av=gst(a);bv=gst(b);break;
+      }
+      if(typeof av==='string')return av.localeCompare(bv)*dir;
+      return (av-bv)*dir;
+    });
+  }
   const cEl=document.getElementById('clusters-count');
-  if(cEl)cEl.textContent=`${state.schools.length} clusters · Click a cluster name for full detail`;
+  if(cEl)cEl.textContent=`${state.schools.length} clusters · Click a cluster name for full detail · Use ↑↓ + Enter to browse`;
   document.getElementById('ct').innerHTML=filtered.map(s=>{
     const st=gst(s);const pc=pct(s);const d=du(s.plantingDate);
     const ds=s.plantingDate?fmtD(s.plantingDate)+(d!==null&&d<=7&&st!=='done'?` <span style="color:var(--re);font-size:10px">(${d<0?'overdue':d+'d'})</span>`:''):'—';
-    return`<tr><td><strong class="cluster-link" onclick="showClusterDetail(${s.id})" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--bd2)" title="View cluster detail">${s.cluster}</strong><button class="btn btn-s" onclick="showSpecies(${s.id})" title="Species requested" style="margin-left:6px;padding:2px 6px;font-size:11px">🌱</button><button class="btn btn-s" onclick="showHeads('${s.cluster}')" title="View campuses & school heads (live)" style="margin-left:3px;padding:2px 6px;font-size:11px"><i class="ti ti-users"></i></button></td><td style="font-size:12px;color:var(--tx2)">${getConvenor(s)}</td><td style="font-size:12px">${s.city}</td><td>${rgBadge(s.region)}</td><td style="font-weight:500">${fmt(s.required)}</td><td>${fmt(s.dispatched)}</td><td style="min-width:90px">${progBar(pc)}</td><td style="font-size:12px">${ds}</td><td><span class="badge b-${st}">${stLbl(s)}</span></td><td><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-truck-delivery"></i></button></td></tr>`;}).join('');
+    return`<tr tabindex="0" data-id="${s.id}"><td><strong class="cluster-link" onclick="showClusterDetail(${s.id})" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--bd2)" title="View cluster detail">${s.cluster}</strong><button class="btn btn-s" onclick="showSpecies(${s.id})" title="Species requested" style="margin-left:6px;padding:2px 6px;font-size:11px">🌱</button><button class="btn btn-s" onclick="showHeads('${s.cluster}')" title="View campuses & school heads (live)" style="margin-left:3px;padding:2px 6px;font-size:11px"><i class="ti ti-users"></i></button></td><td style="font-size:12px;color:var(--tx2)">${getConvenor(s)}</td><td style="font-size:12px">${s.city}</td><td>${rgBadge(s.region)}</td><td style="font-weight:500">${fmt(s.required)}</td><td>${fmt(s.dispatched)}</td><td style="min-width:90px">${progBar(pc)}</td><td style="font-size:12px">${ds}</td><td><span class="badge b-${st}">${stLbl(s)}</span></td><td><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-truck-delivery"></i></button></td></tr>`;}).join('');
+  document.querySelectorAll('#pane-clusters .sort-icon').forEach(ic=>{
+    const col=ic.dataset.col;
+    if(col===clusterSort.col){ic.className='ti '+(clusterSort.dir===1?'ti-sort-ascending':'ti-sort-descending')+' sort-icon active';}
+    else{ic.className='ti ti-arrows-sort sort-icon';}
+  });
   requestAnimationFrame(()=>requestAnimationFrame(animateBars));
+}
+function clusterTableKeyNav(e){
+  const rows=[...document.querySelectorAll('#ct tr')];
+  const idx=rows.indexOf(document.activeElement);
+  if(idx===-1)return;
+  if(e.key==='ArrowDown'){e.preventDefault();(rows[idx+1]||rows[0]).focus();}
+  else if(e.key==='ArrowUp'){e.preventDefault();(rows[idx-1]||rows[rows.length-1]).focus();}
+  else if(e.key==='Enter'){e.preventDefault();const id=document.activeElement.dataset.id;if(id)showClusterDetail(parseInt(id));}
 }
 function showSpecies(id){
   const s=state.schools.find(x=>x.id===id);if(!s)return;
@@ -1032,6 +1151,34 @@ const ZONES=[
    cids:[44,51,45,46,47]}
 ];
 
+let _planOverrides={};
+function getContainers(zone){
+  return _planOverrides[zone.id]||packContainers(zone);
+}
+let _planDrag=null;
+function planDragStart(e,zoneId,containerIdx,itemIdx){
+  _planDrag={zoneId,containerIdx,itemIdx};
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',zoneId+':'+containerIdx+':'+itemIdx);
+  e.currentTarget.classList.add('dragging');
+}
+function planDragEnd(e){e.currentTarget.classList.remove('dragging');}
+function planDrop(e,zoneId,targetIdx){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(!_planDrag||_planDrag.zoneId!==zoneId||_planDrag.containerIdx===targetIdx){_planDrag=null;return;}
+  const zone=ZONES.find(z=>z.id===zoneId);
+  const containers=getContainers(zone).map(c=>({...c,items:[...c.items]}));
+  const [moved]=containers[_planDrag.containerIdx].items.splice(_planDrag.itemIdx,1);
+  _planDrag=null;
+  if(!moved)return;
+  containers[targetIdx].items.push(moved);
+  containers.forEach(c=>{c.total=c.items.reduce((a,i)=>a+i.take,0);c.belowMin=c.total<CMIN;});
+  _planOverrides[zoneId]=containers.filter(c=>c.items.length>0);
+  renderPlan();
+}
+function resetAndRenderPlan(){_planOverrides={};renderPlan();}
+
 function packContainers(zone){
   const pending=zone.cids.map(id=>state.schools.find(s=>s.id===id))
     .filter(s=>s&&(remaining(s))>0)
@@ -1074,7 +1221,7 @@ function renderPlan(){
     if(!anyPending)return;
     html+=`<div style="font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin:1.5rem 0 .75rem">${rgn} Region</div>`;
     zones.forEach(zone=>{
-      const containers=packContainers(zone);
+      const containers=getContainers(zone);
       if(!containers.length)return;
       const zoneTot=containers.reduce((a,c)=>a+c.total,0);
       html+=`<div class="card" style="margin-bottom:.75rem;padding:1rem 1.25rem">
@@ -1091,20 +1238,21 @@ function renderPlan(){
       if(zone.note){html+=`<div style="font-size:12px;color:var(--bl-d);background:var(--bl-l);border-radius:var(--r);padding:6px 10px;margin-bottom:10px;border:.5px solid #85B7EB"><i class="ti ti-bulb" style="font-size:13px;margin-right:4px" aria-hidden="true"></i>${zone.note}</div>`;}
       if(zoneTot<CMIN){html+=`<div class="alert aw" style="margin-bottom:10px;font-size:12px"><i class="ti ti-alert-triangle"></i><div><strong>Zone total (${fmt(zoneTot)} plants) is below the 12,000 minimum truck load.</strong><br>Club this zone with a nearby zone in the same trip to meet minimum load requirement for OTIF.</div></div>`;}
       containers.forEach((c,ci)=>{
-        html+=`<div style="border:.5px solid var(--bd);border-radius:var(--r);margin-top:8px;overflow:hidden">
+        html+=`<div class="plan-load" ondragover="event.preventDefault();event.currentTarget.classList.add('drag-over')" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="planDrop(event,'${zone.id}',${ci})" style="border:.5px solid var(--bd);border-radius:var(--r);margin-top:8px;overflow:hidden">
           <div style="background:var(--bg2);padding:6px 12px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
             <span><i class="ti ti-truck-delivery" style="font-size:13px;margin-right:5px;color:var(--gr)" aria-hidden="true"></i>Load ${ci+1} of ${containers.length}</span>
             <span style="color:${c.total<CMIN?'var(--re-d)':'var(--gr)'}"><i class="ti ti-${c.total>=CMIN?'circle-check':'alert-triangle'}" style="font-size:12px;margin-right:3px"></i>${fmt(c.total)} plants${c.total<CMIN?' — BELOW 12,000 MIN: combine with another load':' (min load met ✓)'}</span>
           </div>`;
-        c.items.forEach(item=>{
+        c.items.forEach((item,ii)=>{
           const sp=CSP[item.id]||'Species to be confirmed';
           const pd=item.plantingDate?du(item.plantingDate):null;
           const otifColor2=pd===null?'var(--tx3)':pd<=0?'var(--re-d)':pd<=7?'var(--am-d)':'var(--gr-d)';
           const otifLbl=pd===null?'No date set':pd<0?`Planting overdue by ${Math.abs(pd)} days — URGENT`:pd===0?'Planting TODAY':pd<=7?`Planting in ${pd} days — prepare now`:`Planting ${fmtD(item.plantingDate)} (${pd}d)`;
 
-          html+=`<div style="padding:8px 12px;border-top:.5px solid var(--bd)">
+          html+=`<div class="plan-item" draggable="true" ondragstart="planDragStart(event,'${zone.id}',${ci},${ii})" ondragend="planDragEnd(event)" style="padding:8px 12px;border-top:.5px solid var(--bd)" title="Drag to move this cluster to a different load">
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
               <div>
+                <i class="ti ti-grip-vertical" style="color:var(--tx3);font-size:13px;margin-right:4px" aria-hidden="true"></i>
                 <strong style="font-size:13px">${item.cluster}</strong>
                 <span style="font-size:12px;color:var(--tx3);margin-left:8px">${item.city}</span>
                 ${item.partial?`<span class="badge" style="background:var(--am-l);color:var(--am-d);margin-left:6px;font-size:10px">Partial — ${fmt(item.rem-item.take)} to next load</span>`:''}
@@ -1114,6 +1262,7 @@ function renderPlan(){
             </div>
             <div style="font-size:11px;color:${otifColor2};margin-top:3px"><i class="ti ti-clock" style="font-size:11px" aria-hidden="true"></i> OTIF: ${otifLbl}</div>
             <div style="font-size:11px;color:var(--tx3);margin-top:1px"><i class="ti ti-leaf" style="font-size:11px" aria-hidden="true"></i> ${sp}</div>
+            <div style="font-size:11px;color:var(--tx3);margin-top:1px"><i class="ti ti-clipboard-list" style="font-size:11px" aria-hidden="true"></i> Cluster's total remaining requirement: <strong>${fmt(item.rem)}</strong></div>
           </div>`;
         });
         html+='</div>';
@@ -1127,7 +1276,7 @@ function renderPlan(){
 function exportPlan(){
   let txt=`PLANTATION DISPATCH PLAN\n${'='.repeat(50)}\nGenerated: ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}\n\n`;
   ZONES.forEach(zone=>{
-    const c=packContainers(zone);
+    const c=getContainers(zone);
     if(!c.length)return;
     txt+=`\n${zone.id}: ${zone.name} (${zone.region})\n${'─'.repeat(50)}\n${zone.desc}\n`;
     if(zone.note)txt+=`NOTE: ${zone.note}\n`;
@@ -1148,6 +1297,7 @@ function exportPlan(){
 
 // ─── DISPATCH MODAL ───────────────────────────────────────────────────────────
 let delTarget=null;
+function setQty(n){document.getElementById('d-qty').value=n;}
 function openDM(schoolId){
   const sel=document.getElementById('d-cluster');
   sel.innerHTML=state.schools.map(s=>`<option value="${s.id}">${s.cluster} — ${s.city} (${fmt(remaining(s))} remaining)</option>`).join('');
@@ -1184,15 +1334,25 @@ function resizeImageFile(file,maxDim){
     reader.readAsDataURL(file);
   });
 }
-async function handlePhotoSelect(event){
-  const file=event.target.files[0];
-  if(!file)return;
+async function processPhotoFile(file){
   const preview=document.getElementById('d-photo-preview');
   preview.innerHTML='<span style="font-size:12px;color:var(--tx3)">Processing photo...</span>';
   try{
     _pendingPhoto=await resizeImageFile(file,900);
     preview.innerHTML=`<img src="${_pendingPhoto}" style="max-height:80px;border-radius:var(--r);border:.5px solid var(--bd)"> <button class="btn btn-s" type="button" onclick="_pendingPhoto=null;document.getElementById('d-photo').value='';document.getElementById('d-photo-preview').innerHTML=''">Remove</button>`;
   }catch(e){preview.innerHTML='<span style="font-size:12px;color:var(--re-d)">Could not read this photo — try another.</span>';_pendingPhoto=null;}
+}
+async function handlePhotoSelect(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  processPhotoFile(file);
+}
+function handlePhotoDrop(event){
+  event.preventDefault();
+  event.currentTarget.classList.remove('drag');
+  const file=event.dataTransfer.files[0];
+  if(!file||!file.type.startsWith('image/'))return;
+  processPhotoFile(file);
 }
 function showPhoto(src){
   document.getElementById('photo-modal-img').src=src;
@@ -1374,6 +1534,7 @@ async function initFirebaseFromConfig(configRaw){
     listenDispatches();
     listenSettings();
     seedIfNeeded();
+    startPresence();
     updateSyncBadge('connected');
     return true;
   }catch(e){
@@ -1395,9 +1556,50 @@ async function connectFirebase(){
 function disconnectFirebase(){
   if(!confirm('Disconnect from Firebase? (Your local data stays safe, but you\'ll stop syncing with your team.)'))return;
   state.settings.fbConfigRaw='';save();
+  stopPresence();
   db=null;fbApp=null;fbAuthReady=false;
   document.getElementById('s-fb-config').value='';
   updateSyncBadge('local');updateFbStatus();
+}
+
+// ─── LIVE PRESENCE (who's viewing the dashboard right now) ───────────────────
+let _presenceId=null,_presenceInterval=null,_presenceUnsub=null;
+function startPresence(){
+  if(!fbReady()||_presenceId)return;
+  _presenceId='p_'+Math.random().toString(36).slice(2)+Date.now();
+  const heartbeat=()=>{
+    const name=(localStorage.getItem('bhs_by')||'Someone').trim()||'Someone';
+    db.collection('presence').doc(_presenceId).set({name,lastSeen:Date.now()}).catch(()=>{});
+  };
+  heartbeat();
+  _presenceInterval=setInterval(heartbeat,20000);
+  window.addEventListener('beforeunload',()=>{if(db&&_presenceId)db.collection('presence').doc(_presenceId).delete().catch(()=>{});});
+  listenPresence();
+}
+function stopPresence(){
+  if(_presenceInterval){clearInterval(_presenceInterval);_presenceInterval=null;}
+  if(_presenceUnsub){_presenceUnsub();_presenceUnsub=null;}
+  if(db&&_presenceId)db.collection('presence').doc(_presenceId).delete().catch(()=>{});
+  _presenceId=null;
+  renderPresence([]);
+}
+function listenPresence(){
+  if(_presenceUnsub)_presenceUnsub();
+  _presenceUnsub=db.collection('presence').onSnapshot(snap=>{
+    const now=Date.now();
+    const active=snap.docs.map(d=>d.data()).filter(p=>p.lastSeen&&(now-p.lastSeen)<60000);
+    renderPresence(active);
+  },err=>console.warn('presence listener error:',err.message));
+}
+function renderPresence(active){
+  const el=document.getElementById('presence-bar');if(!el)return;
+  if(active.length<2){el.classList.add('hidden');el.innerHTML='';return;}
+  const initials=active.slice(0,5).map(p=>{
+    const n=(p.name||'?').trim();
+    return n.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  });
+  el.classList.remove('hidden');
+  el.innerHTML=`<div class="presence-stack">${initials.map(i=>`<span class="presence-avatar" title="Online now">${i}</span>`).join('')}</div><span>${active.length} online now</span>`;
 }
 
 let _dispatchesUnsub=null, _settingsUnsub=null;
@@ -1622,6 +1824,8 @@ async function boot(){
   }
   fetchLiveHeads();
 }
+
+document.getElementById('ct').addEventListener('keydown',clusterTableKeyNav);
 
 loadState();
 initDoneTracking();
