@@ -97,8 +97,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
 .tabular{font-variant-numeric:tabular-nums}
 .bulk-row{display:grid;grid-template-columns:1.4fr .9fr .8fr auto;gap:8px;margin-bottom:8px;align-items:center}
 .bulk-row select,.bulk-row input{padding:6px 9px;font-size:12px}
-#photo-modal{background:rgba(0,0,0,.75);cursor:pointer}
-.photo-thumb-btn{width:32px;height:32px;border-radius:6px;border:.5px solid var(--bd2);background:var(--bg2) center/cover no-repeat;cursor:pointer;flex-shrink:0}
 .feed-item{display:flex;gap:10px;padding:10px 0;border-bottom:.5px solid var(--bd);font-size:13px}
 .feed-item:last-child{border-bottom:none}
 .feed-avatar{width:28px;height:28px;border-radius:50%;background:var(--gr-l);color:var(--gr-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
@@ -143,9 +141,6 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
 .chip:hover{background:var(--bg2)}.chip.active{background:var(--gr);color:#fff;border-color:var(--gr-d)}
 .chip-qty{padding:4px 12px;border-radius:20px;border:.5px solid var(--bd2);background:var(--bg2);font-size:12px;cursor:pointer;color:var(--tx2);font-family:inherit;transition:all .15s}
 .chip-qty:hover{background:var(--gr-l);color:var(--gr-d);border-color:var(--gr)}
-.photo-drop{border:1.5px dashed var(--bd2);border-radius:var(--r);padding:16px;text-align:center;font-size:12px;color:var(--tx3);cursor:pointer;transition:all .15s}
-.photo-drop:hover,.photo-drop.drag{border-color:var(--gr);background:var(--gr-l);color:var(--gr-d)}
-.photo-drop i{font-size:20px;display:block;margin-bottom:4px}
 .plan-item{cursor:grab}.plan-item.dragging{opacity:.4}
 .plan-load.drag-over{background:var(--gr-l);outline:1.5px dashed var(--gr)}
 .presence-bar{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx3);margin-bottom:10px}
@@ -287,7 +282,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
       <button class="btn btn-p" onclick="openDM(null)"><i class="ti ti-plus"></i>Log dispatch</button>
     </div>
   </div>
-  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Date</th><th>Cluster</th><th>City</th><th>Qty sent</th><th>Species / notes</th><th>Logged by</th><th>Photo</th><th>Source</th><th></th></tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"></div></div></div>
+  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Date</th><th>Cluster</th><th>City</th><th>Qty sent</th><th>Species / notes</th><th>Logged by</th><th>Source</th><th></th></tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"></div></div></div>
 </div>
 
 <!-- NEARBY -->
@@ -459,14 +454,6 @@ service cloud.firestore {
   <div class="fr"><label>Logged by</label><input type="text" id="d-by" placeholder="Your name"></div>
   <div class="fr"><label>Species breakdown (optional)</label><textarea id="d-sp" placeholder="Kachnar: 100, Neem: 200..."></textarea></div>
   <div class="fr"><label>Notes (vehicle, driver, delivery point)</label><textarea id="d-notes" placeholder="e.g. Mazda truck LHR-1234, driver Ali, to school gate"></textarea></div>
-  <div class="fr"><label>Photo of delivered plants (optional)</label>
-    <div class="photo-drop" id="photo-drop" onclick="document.getElementById('d-photo').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handlePhotoDrop(event)">
-      <i class="ti ti-cloud-upload" aria-hidden="true"></i>
-      <span>Drag a photo here, or click to browse</span>
-    </div>
-    <input type="file" accept="image/*" id="d-photo" onchange="handlePhotoSelect(event)" style="display:none">
-    <div id="d-photo-preview" style="margin-top:6px"></div>
-  </div>
   <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-p" onclick="saveDispatch()"><i class="ti ti-check"></i>Save</button></div>
 </div>
 </div>
@@ -488,11 +475,6 @@ service cloud.firestore {
   </div>
   <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-p" onclick="saveBulkDispatch()"><i class="ti ti-check"></i>Save all entries</button></div>
 </div>
-</div>
-
-<!-- Photo lightbox -->
-<div class="mo hidden" id="photo-modal" onclick="closeMo()">
-<img id="photo-modal-img" style="max-width:90vw;max-height:90vh;border-radius:var(--r)" src="">
 </div>
 
 <canvas id="confetti-canvas"></canvas>
@@ -668,9 +650,12 @@ function mkSchool(sd){
 function save(){localStorage.setItem('bhs_v4',JSON.stringify({dispatches:state.dispatches,settings:{...state.settings,fbConfig:undefined}}));}
 
 function recomputeDispatched(){
-  state.schools.forEach(s=>{
-    s.dispatched=state.dispatches.filter(d=>String(d.schoolId)===String(s.id)).reduce((a,d)=>a+(parseInt(d.qty)||0),0);
+  const totals=new Map();
+  state.dispatches.forEach(d=>{
+    const key=String(d.schoolId);
+    totals.set(key,(totals.get(key)||0)+(parseInt(d.qty)||0));
   });
+  state.schools.forEach(s=>{s.dispatched=totals.get(String(s.id))||0;});
   _planOverrides={};
 }
 function remaining(s){return Math.max(0,s.required-s.dispatched);}
@@ -756,10 +741,10 @@ function renderHeadsModal(clusterCode){
   }
   const rows=campuses.map(c=>`
     <tr>
-      <td style="font-size:13px;font-weight:500">${c.campus||'—'}</td>
-      <td style="font-size:12px;color:var(--tx2)">${c.city||'—'}</td>
-      <td style="font-size:13px">${c.head||'<span style="color:var(--tx3)">Vacant</span>'}</td>
-      <td><a href="tel:${c.contact}" class="btn btn-s" style="font-size:11px"><i class="ti ti-phone"></i>${c.contact||'—'}</a></td>
+      <td style="font-size:13px;font-weight:500">${esc(c.campus)||'—'}</td>
+      <td style="font-size:12px;color:var(--tx2)">${esc(c.city)||'—'}</td>
+      <td style="font-size:13px">${esc(c.head)||'<span style="color:var(--tx3)">Vacant</span>'}</td>
+      <td><a href="tel:${esc(c.contact)}" class="btn btn-s" style="font-size:11px"><i class="ti ti-phone"></i>${esc(c.contact)||'—'}</a></td>
     </tr>`).join('');
   body.innerHTML=`
     <div style="font-size:12px;color:var(--tx3);margin-bottom:.75rem;display:flex;justify-content:space-between">
@@ -778,6 +763,14 @@ async function refreshHeads(clusterCode){
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 function fmt(n){return Math.round(n).toLocaleString();}
+const _ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+function esc(str){return String(str==null?'':str).replace(/[&<>"']/g,c=>_ESC_MAP[c]);}
+// Local calendar date, not toISOString()'s UTC date — Pakistan is UTC+5, so for a few hours
+// after local midnight, toISOString().split('T')[0] would still report yesterday's date.
+function todayLocal(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 const _countAnimState={};
 function animateCount(elId,target){
   const el=document.getElementById(elId);if(!el)return;
@@ -897,8 +890,8 @@ function renderActivityFeed(){
   if(!items.length){el.innerHTML=`<div style="text-align:center;padding:1rem">${saplingSvg(40)}<div style="font-size:13px;color:var(--tx3)">No manually logged dispatches yet — activity will show up here as your team logs them.</div></div>`;return;}
   el.innerHTML=items.map(d=>{
     const name=(d.by||'—').trim();
-    const initials=name==='—'?'?':name.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    return`<div class="feed-item"><div class="feed-avatar">${initials}</div><div><strong>${name||'Someone'}</strong> logged <strong>${fmt(d.qty)}</strong> plants to <strong>${d.cluster}</strong>${d.photo?' <i class="ti ti-photo" style="font-size:12px;color:var(--tx3)" title="Photo attached"></i>':''}<br><span class="feed-time">${timeAgo(d.createdAt||d.date)}</span></div></div>`;
+    const initials=esc(name==='—'?'?':name.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase());
+    return`<div class="feed-item"><div class="feed-avatar">${initials}</div><div><strong>${esc(name)||'Someone'}</strong> logged <strong>${fmt(d.qty)}</strong> plants to <strong>${esc(d.cluster)}</strong><br><span class="feed-time">${timeAgo(d.createdAt||d.date)}</span></div></div>`;
   }).join('');
 }
 
@@ -977,9 +970,8 @@ function showClusterDetail(id){
   const historyHtml=history.length?history.map(d=>`
     <div class="cd-tl-item${d.imported?' imported':''}">
       <div style="font-size:11px;color:var(--tx3)">${fmtD(d.date)}</div>
-      <div style="font-size:13px;margin-top:2px"><strong>${fmt(d.qty)} plants</strong>${d.notes?' — '+d.notes:''}${d.species?'<br><span style="font-size:11px;color:var(--tx3)">'+d.species+'</span>':''}
-        <br><span style="font-size:11px;color:var(--tx3)">${d.imported?'Imported from tracking sheet':'Logged by '+(d.by||'—')}</span>
-        ${d.photo?`<div class="photo-thumb-btn" style="background-image:url('${d.photo}');margin-top:4px" onclick="showPhoto('${d.photo}')" title="View photo"></div>`:''}
+      <div style="font-size:13px;margin-top:2px"><strong>${fmt(d.qty)} plants</strong>${d.notes?' — '+esc(d.notes):''}${d.species?'<br><span style="font-size:11px;color:var(--tx3)">'+esc(d.species)+'</span>':''}
+        <br><span style="font-size:11px;color:var(--tx3)">${d.imported?'Imported from tracking sheet':'Logged by '+esc(d.by||'—')}</span>
       </div>
     </div>`).join(''):'<div style="font-size:13px;color:var(--tx3)">No dispatches logged yet.</div>';
 
@@ -1012,9 +1004,8 @@ function rDispatch(){
   if(!has)document.getElementById('de').innerHTML=`${saplingSvg(48)}<div>No dispatches logged yet</div><div style="font-size:11px;color:var(--tx3);margin-top:2px">Log your first one to start the trail</div>`;
   document.getElementById('dt').innerHTML=state.dispatches.slice().reverse().map((d)=>{
     const src=d.imported?'<span class="badge b-imp">Imported</span>':'<span class="badge b-done">Manual</span>';
-    const del=d.imported?'':` <button class="btn btn-s btn-d" onclick="askDel('${d.id}')" title="Delete"><i class="ti ti-trash"></i></button>`;
-    const photo=d.photo?`<div class="photo-thumb-btn" style="background-image:url('${d.photo}')" onclick="showPhoto('${d.photo}')" title="View photo"></div>`:'<span style="font-size:11px;color:var(--tx3)">—</span>';
-    return`<tr><td style="font-size:12px;white-space:nowrap">${fmtD(d.date)}</td><td><strong>${d.cluster}</strong></td><td style="font-size:12px;color:var(--tx2)">${d.city}</td><td style="font-weight:600;color:var(--gr)">${fmt(d.qty)}</td><td style="font-size:11px;color:var(--tx2);max-width:200px">${d.species||d.notes||'—'}</td><td style="font-size:12px">${d.by||'—'}</td><td>${photo}</td><td>${src}</td><td>${del}</td></tr>`;}).join('');
+    const del=d.imported?'':` <button class="btn btn-s btn-d" data-del-id="${esc(d.id)}" title="Delete"><i class="ti ti-trash"></i></button>`;
+    return`<tr><td style="font-size:12px;white-space:nowrap">${fmtD(d.date)}</td><td><strong>${esc(d.cluster)}</strong></td><td style="font-size:12px;color:var(--tx2)">${esc(d.city)}</td><td style="font-weight:600;color:var(--gr)">${fmt(d.qty)}</td><td style="font-size:11px;color:var(--tx2);max-width:200px">${esc(d.species||d.notes||'—')}</td><td style="font-size:12px">${esc(d.by||'—')}</td><td>${src}</td><td>${del}</td></tr>`;}).join('');
 }
 
 // ─── ALERTS ───────────────────────────────────────────────────────────────────
@@ -1247,7 +1238,7 @@ function exportPlan(){
   });
   const a=document.createElement('a');
   a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);
-  a.download=`dispatch-plan-${new Date().toISOString().split('T')[0]}.txt`;
+  a.download=`dispatch-plan-${todayLocal()}.txt`;
   a.click();
 }
 
@@ -1258,62 +1249,21 @@ function openDM(schoolId){
   const sel=document.getElementById('d-cluster');
   sel.innerHTML=state.schools.map(s=>`<option value="${s.id}">${s.cluster} — ${s.city} (${fmt(remaining(s))} remaining)</option>`).join('');
   if(schoolId)sel.value=schoolId;
-  document.getElementById('d-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('d-date').value=todayLocal();
   document.getElementById('d-qty').value='';
   document.getElementById('d-by').value=localStorage.getItem('bhs_by')||'';
   document.getElementById('d-sp').value='';
   document.getElementById('d-notes').value='';
-  document.getElementById('d-photo').value='';
-  document.getElementById('d-photo-preview').innerHTML='';
-  _pendingPhoto=null;
   document.getElementById('dm').classList.remove('hidden');
 }
 
-// ─── PHOTO CAPTURE (resized client-side, stored as a data URI) ───────────────
-let _pendingPhoto=null;
-function resizeImageFile(file,maxDim){
-  return new Promise((resolve,reject)=>{
-    const img=new Image();
-    const reader=new FileReader();
-    reader.onload=e=>{img.src=e.target.result;};
-    reader.onerror=reject;
-    img.onload=()=>{
-      let w=img.width,h=img.height;
-      if(w>h&&w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}
-      else if(h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}
-      const canvas=document.createElement('canvas');
-      canvas.width=w;canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      resolve(canvas.toDataURL('image/jpeg',0.6));
-    };
-    img.onerror=reject;
-    reader.readAsDataURL(file);
-  });
-}
-async function processPhotoFile(file){
-  const preview=document.getElementById('d-photo-preview');
-  preview.innerHTML='<span style="font-size:12px;color:var(--tx3)">Processing photo...</span>';
-  try{
-    _pendingPhoto=await resizeImageFile(file,900);
-    preview.innerHTML=`<img src="${_pendingPhoto}" style="max-height:80px;border-radius:var(--r);border:.5px solid var(--bd)"> <button class="btn btn-s" type="button" onclick="_pendingPhoto=null;document.getElementById('d-photo').value='';document.getElementById('d-photo-preview').innerHTML=''">Remove</button>`;
-  }catch(e){preview.innerHTML='<span style="font-size:12px;color:var(--re-d)">Could not read this photo — try another.</span>';_pendingPhoto=null;}
-}
-async function handlePhotoSelect(event){
-  const file=event.target.files[0];
-  if(!file)return;
-  processPhotoFile(file);
-}
-function handlePhotoDrop(event){
-  event.preventDefault();
-  event.currentTarget.classList.remove('drag');
-  const file=event.dataTransfer.files[0];
-  if(!file||!file.type.startsWith('image/'))return;
-  processPhotoFile(file);
-}
-function showPhoto(src){
-  document.getElementById('photo-modal-img').src=src;
-  document.getElementById('photo-modal').classList.remove('hidden');
-}
+// Delete buttons carry their doc id in a data-* attribute and are wired up here via
+// delegation (never re-interpolated into an inline onclick="...('${value}')" string) so a
+// hostile value written straight to Firestore can't break out of a quoted JS context.
+document.addEventListener('click',e=>{
+  const delBtn=e.target.closest('[data-del-id]');
+  if(delBtn)askDel(delBtn.dataset.delId);
+});
 async function saveDispatch(){
   const sid=parseInt(document.getElementById('d-cluster').value);
   const qty=parseInt(document.getElementById('d-qty').value)||0;
@@ -1321,7 +1271,7 @@ async function saveDispatch(){
   const s=state.schools.find(x=>x.id===sid);
   const by=document.getElementById('d-by').value.trim();
   if(by)localStorage.setItem('bhs_by',by);
-  const newDispatch={id:'d_'+Date.now(),schoolId:sid,cluster:s.cluster,city:s.city,date:document.getElementById('d-date').value,qty,species:document.getElementById('d-sp').value.trim(),notes:document.getElementById('d-notes').value.trim(),by,imported:false,createdAt:new Date().toISOString(),photo:_pendingPhoto||null};
+  const newDispatch={id:'d_'+Date.now(),schoolId:sid,cluster:s.cluster,city:s.city,date:document.getElementById('d-date').value,qty,species:document.getElementById('d-sp').value.trim(),notes:document.getElementById('d-notes').value.trim(),by,imported:false,createdAt:new Date().toISOString()};
   closeMo();
   if(fbReady()){
     updateSyncBadge('saving');
@@ -1355,7 +1305,7 @@ async function doDelete(){
 let _bulkRowN=0;
 function openBulkDM(){
   document.getElementById('bulk-rows').innerHTML='';
-  document.getElementById('bd-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('bd-date').value=todayLocal();
   document.getElementById('bd-vehicle').value='';
   document.getElementById('bd-by').value=localStorage.getItem('bhs_by')||'';
   addBulkRow();addBulkRow();
@@ -1388,7 +1338,7 @@ async function saveBulkDispatch(){
     const species=row.querySelector('.bulk-species').value.trim();
     if(!sid||qty<=0)return;
     const s=state.schools.find(x=>x.id===sid);
-    entries.push({id:'d_'+Date.now()+'_'+i,schoolId:sid,cluster:s.cluster,city:s.city,date,qty,species,notes:vehicle,by,imported:false,createdAt,photo:null});
+    entries.push({id:'d_'+Date.now()+'_'+i,schoolId:sid,cluster:s.cluster,city:s.city,date,qty,species,notes:vehicle,by,imported:false,createdAt});
   });
   if(!entries.length){alert('Enter a quantity for at least one cluster.');return;}
   closeMo();
@@ -1412,7 +1362,7 @@ async function saveBulkDispatch(){
 function exportCSV(){
   const rows=[['Cluster','City','Region','Required','Dispatched','Remaining','Status','Planting Date','Convenor','Contact']];
   state.schools.forEach(s=>rows.push([s.cluster,s.city,RN[s.region],s.required,s.dispatched,remaining(s),stLbl(s),s.plantingDate||'',getConvenor(s),s.contact]));
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));a.download=`bhs-plantation-${new Date().toISOString().split('T')[0]}.csv`;a.click();
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));a.download=`bhs-plantation-${todayLocal()}.csv`;a.click();
 }
 
 // ─── SETTINGS ─────────────────────────────────────────────────────────────────
@@ -1605,7 +1555,7 @@ function renderPresence(active){
   if(active.length<2){el.classList.add('hidden');el.innerHTML='';return;}
   const initials=active.slice(0,5).map(p=>{
     const n=(p.name||'?').trim();
-    return n.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return esc(n.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase());
   });
   el.classList.remove('hidden');
   el.innerHTML=`<div class="presence-stack">${initials.map(i=>`<span class="presence-avatar" title="Online now">${i}</span>`).join('')}</div><span>${active.length} online now</span>`;
