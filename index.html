@@ -173,10 +173,11 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
 <div class="sc">
   <div style="font-size:32px;margin-bottom:.75rem">🌱</div>
   <h2>BSS Plantation Drive</h2>
-  <p>Beaconhouse School System · 2026 · Pre-loaded with all tracking data. Connect Firebase below to sync live with your team, or skip and connect later from Settings.</p>
-  <div class="fr"><label>Firebase config <span style="font-weight:400;color:var(--tx3)">(optional — paste the JSON snippet from your Firebase project settings)</span></label><textarea id="sk" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea></div>
+  <p>Beaconhouse School System · 2026 · Pre-loaded with all tracking data. Sign in with your @bh.edu.pk Google account to sync live with your team, or skip to use it locally on this device.</p>
+  <div class="fr"><label>Firebase config <span style="font-weight:400;color:var(--tx3)">(needed once, only if signing in — paste the JSON snippet from your Firebase project settings)</span></label><textarea id="sk" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea></div>
   <div style="font-size:11px;color:var(--tx3);margin-bottom:1.25rem">Stored only in your browser · Get this from <a href="https://console.firebase.google.com" target="_blank" style="color:var(--gr)">console.firebase.google.com</a> → Project settings → Your apps</div>
-  <div style="display:flex;gap:8px"><button class="btn btn-p" onclick="boot()" style="flex:1;justify-content:center">Open dashboard</button></div>
+  <button class="btn btn-p" onclick="bootWithGoogle()" style="width:100%;justify-content:center;margin-bottom:8px"><i class="ti ti-brand-google"></i> Sign in with Google</button>
+  <button class="btn" onclick="bootLocalOnly()" style="width:100%;justify-content:center">Skip — use locally on this device</button>
 </div>
 </div>
 
@@ -371,34 +372,39 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
   <div>
     <div class="sec-t">Live team sync (Firebase)</div>
     <div class="info-box" style="font-size:12px">
-      <strong>One-time setup (~3 min, free, no credit card):</strong><br>
+      <strong>One-time setup (~4 min, free, no credit card):</strong><br>
       1. Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--bl-d)">console.firebase.google.com</a> → Add project → give it any name<br>
       2. In the project, click Build → Firestore Database → Create database → Start in <em>test mode</em><br>
-      3. Click Build → Authentication → Get started → Sign-in method → enable <em>Anonymous</em><br>
-      4. Click the gear icon → Project settings → scroll to "Your apps" → Add app → Web (&lt;/&gt;) → register it<br>
-      5. Copy the <code>firebaseConfig</code> object shown → paste it below → Connect<br>
-      6. In Firestore → Rules tab, paste the rules below → Publish
+      3. Click Build → Authentication → Get started → Sign-in method → enable <em>Google</em><br>
+      4. Same section → Settings tab → Authorized domains → add the domain this app is hosted on<br>
+      5. Click the gear icon → Project settings → scroll to "Your apps" → Add app → Web (&lt;/&gt;) → register it<br>
+      6. Copy the <code>firebaseConfig</code> object shown → paste it below → Connect<br>
+      7. In Firestore → Rules tab, paste the rules below → Publish
+    </div>
+    <div class="info-box" style="font-size:12px;background:var(--gr-l);color:var(--gr-d);border-color:#5DCAA5">
+      <strong>Access is restricted to @bh.edu.pk accounts</strong>, enforced two ways: the app rejects and signs out any other Google account immediately, and — this is the part that actually matters for security — the Firestore rules below check the signed-in email's domain server-side, so someone couldn't bypass the app and hit your database directly with an unauthorized account.
     </div>
     <div class="card">
       <div class="fr"><label>Firestore security rules — paste into Firebase Console → Firestore → Rules</label>
-        <textarea id="rules-snippet" readonly rows="17" style="font-family:monospace;font-size:11px;background:var(--bg3);color:var(--tx2);border-color:var(--bd)">rules_version = '2';
+        <textarea id="rules-snippet" readonly rows="20" style="font-family:monospace;font-size:11px;background:var(--bg3);color:var(--tx2);border-color:var(--bd)">rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAllowed() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email.lower().matches('.*@bh[.]edu[.]pk$');
+    }
     match /dispatches/{id} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read, write: if isAllowed();
     }
     match /meta/{doc} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read, write: if isAllowed();
     }
     match /presence/{id} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read, write: if isAllowed();
     }
     match /clusters/{id} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read, write: if isAllowed();
     }
   }
 }</textarea>
@@ -781,7 +787,18 @@ async function saveClusterForm(){
     try{
       await db.collection('clusters').doc(String(id)).set(record,{merge:true});
       updateSyncBadge('connected');
-    }catch(e){console.warn('Firestore cluster save failed:',e.message);updateSyncBadge('error');showInAppNotif('⚠️ Could not sync cluster to shared database.');}
+      // Optimistic local update — don't wait on the listener round-trip to show the edit.
+      const idx=state.schools.findIndex(x=>x.id===id);
+      const merged={...record,dispatched:idx>-1?state.schools[idx].dispatched:0};
+      if(idx>-1)state.schools[idx]=merged;else state.schools.push(merged);
+      recomputeDispatched();
+      renderAllViews();
+      showInAppNotif(isEdit?'Cluster updated':'Cluster added');
+    }catch(e){
+      console.warn('Firestore cluster save failed:',e.message);
+      updateSyncBadge('error');
+      showInAppNotif(`⚠️ Could not save — the shared database rejected this (${e.message}). If you've connected Firebase, make sure the Firestore rules in Settings (they now include a "clusters" collection) have been re-published.`);
+    }
   } else {
     const idx=state.schools.findIndex(x=>x.id===id);
     const merged={...record,dispatched:idx>-1?state.schools[idx].dispatched:0};
@@ -789,8 +806,8 @@ async function saveClusterForm(){
     saveClustersLocal();
     recomputeDispatched();
     renderAllViews();
+    showInAppNotif(isEdit?'Cluster updated':'Cluster added');
   }
-  showInAppNotif(isEdit?'Cluster updated':'Cluster added');
   openClusterAdmin();
 }
 function confirmDeleteCluster(id){
@@ -804,14 +821,22 @@ async function deleteClusterConfirmed(id){
     try{
       await db.collection('clusters').doc(String(id)).delete();
       updateSyncBadge('connected');
-    }catch(e){console.warn('Firestore cluster delete failed:',e.message);updateSyncBadge('error');}
+      state.schools=state.schools.filter(x=>x.id!==id);
+      recomputeDispatched();
+      renderAllViews();
+      showInAppNotif('Cluster removed');
+    }catch(e){
+      console.warn('Firestore cluster delete failed:',e.message);
+      updateSyncBadge('error');
+      showInAppNotif(`⚠️ Could not delete — the shared database rejected this (${e.message}).`);
+    }
   } else {
     state.schools=state.schools.filter(x=>x.id!==id);
     saveClustersLocal();
     recomputeDispatched();
     renderAllViews();
+    showInAppNotif('Cluster removed');
   }
-  showInAppNotif('Cluster removed');
   openClusterAdmin();
 }
 
@@ -1669,27 +1694,51 @@ function updateSyncBadge(status){
   else{icon.className='ti ti-cloud-off';icon.style.color='var(--tx3)';text.textContent='Local only — connect Firebase to share';text.style.color='var(--tx3)';}
 }
 
-async function initFirebaseFromConfig(configRaw){
+function initFirebaseApp(configRaw){
   let config;
   try{config=JSON.parse(configRaw);}catch(e){alert('That doesn\'t look like valid JSON. Paste the whole firebaseConfig object, including the curly braces.');return false;}
   try{
-    fbApp=firebase.initializeApp(config);
+    if(!fbApp)fbApp=firebase.initializeApp(config);
     db=firebase.firestore();
-    updateSyncBadge('saving');
-    await firebase.auth().signInAnonymously();
-    fbAuthReady=true;
-    listenDispatches();
-    listenSettings();
-    seedIfNeeded();
-    listenClusters();
-    seedClustersIfNeeded();
-    startPresence();
-    updateSyncBadge('connected');
     return true;
   }catch(e){
     console.warn('Firebase init failed:',e.message);
+    alert('Could not connect to Firebase.\n\nError: '+e.message+'\n\nCheck that the config was pasted correctly.');
+    return false;
+  }
+}
+function isAllowedEmail(email){return !!email&&/@bh\.edu\.pk$/i.test(email.trim());}
+async function onAuthUserReady(){
+  fbAuthReady=true;
+  listenDispatches();
+  listenSettings();
+  seedIfNeeded();
+  listenClusters();
+  seedClustersIfNeeded();
+  startPresence();
+  updateSyncBadge('connected');
+}
+async function signInWithGoogleDomain(){
+  const provider=new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({hd:'bh.edu.pk'});
+  updateSyncBadge('saving');
+  try{
+    const result=await firebase.auth().signInWithPopup(provider);
+    const email=result.user&&result.user.email;
+    if(!isAllowedEmail(email)){
+      await firebase.auth().signOut();
+      updateSyncBadge('error');
+      alert(`Only @bh.edu.pk email addresses can sign in to shared data.\n\n"${email||'That account'}" isn't one — please try again with your school Google account.`);
+      return false;
+    }
+    await onAuthUserReady();
+    return true;
+  }catch(e){
+    console.warn('Google sign-in failed:',e.message);
     updateSyncBadge('error');
-    alert('Could not connect to Firebase.\n\nError: '+e.message+'\n\nCheck that:\n• The config was pasted correctly\n• Firestore is created (test mode)\n• Anonymous sign-in is enabled\n• The security rules from Settings are published');
+    if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){
+      alert('Could not sign in with Google.\n\nError: '+e.message+'\n\nCheck that:\n• Google is enabled as a sign-in provider in Firebase Console → Authentication → Sign-in method\n• This site\'s domain is listed under Authentication → Settings → Authorized domains\n• The security rules from Settings are published');
+    }
     return false;
   }
 }
@@ -1697,15 +1746,17 @@ async function initFirebaseFromConfig(configRaw){
 async function connectFirebase(){
   const raw=document.getElementById('s-fb-config').value.trim();
   if(!raw){alert('Paste your Firebase config first.');return;}
+  if(!initFirebaseApp(raw))return;
   state.settings.fbConfigRaw=raw;save();
-  const ok=await initFirebaseFromConfig(raw);
+  const ok=await signInWithGoogleDomain();
   updateFbStatus();
-  if(ok)alert('✅ Connected! Dispatches will now sync live with your team.\n\nShare the same Firebase config with your teammates — they paste it into their own Settings → Connect.');
+  if(ok)alert('✅ Signed in! Dispatches will now sync live with your team.\n\nShare the same Firebase config with your teammates — each of them signs in with their own @bh.edu.pk Google account.');
 }
 function disconnectFirebase(){
   if(!confirm('Disconnect from Firebase? (Your local data stays safe, but you\'ll stop syncing with your team.)'))return;
   state.settings.fbConfigRaw='';save();
   stopPresence();
+  if(fbApp)firebase.auth().signOut().catch(()=>{});
   db=null;fbApp=null;fbAuthReady=false;
   document.getElementById('s-fb-config').value='';
   updateSyncBadge('local');updateFbStatus();
@@ -1807,7 +1858,10 @@ function listenClusters(){
     recomputeDispatched();
     renderAllViews();
     if(!document.getElementById('cluster-admin-modal').classList.contains('hidden'))renderClusterAdminList();
-  },err=>console.warn('clusters listener error:',err.message));
+  },err=>{
+    console.warn('clusters listener error:',err.message);
+    showInAppNotif(`⚠️ Cluster sync is not working (${err.message}). If you've connected Firebase, make sure the Firestore rules in Settings — they now include a "clusters" collection — have been re-published in the Firebase Console.`);
+  });
 }
 async function seedClustersIfNeeded(){
   try{
@@ -1983,20 +2037,41 @@ function render2025Table(){
 }
 
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
-async function boot(){
-  const raw=document.getElementById('sk').value.trim();
+async function bootWithGoogle(){
+  const raw=document.getElementById('sk').value.trim()||state.settings.fbConfigRaw;
+  if(!raw){alert('Paste your Firebase config above first — this tells the app which shared project to sign in to.');return;}
+  if(!initFirebaseApp(raw))return;
+  state.settings.fbConfigRaw=raw;save();
   document.getElementById('setup').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   rDash();updateBadge();
-  if(raw){
-    state.settings.fbConfigRaw=raw;save();
-    await initFirebaseFromConfig(raw);
-  } else if(state.settings.fbConfigRaw){
-    await initFirebaseFromConfig(state.settings.fbConfigRaw);
-  } else {
-    updateSyncBadge('local');
-  }
+  await signInWithGoogleDomain();
   fetchLiveHeads();
+}
+function bootLocalOnly(){
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  rDash();updateBadge();
+  updateSyncBadge('local');
+  fetchLiveHeads();
+}
+// If a Firebase config was already saved from a previous visit and Firebase Auth still has
+// a valid, domain-matching session, resume straight into the dashboard — no repeat sign-in.
+async function tryResumeSession(){
+  if(!state.settings.fbConfigRaw)return;
+  if(!initFirebaseApp(state.settings.fbConfigRaw))return;
+  firebase.auth().onAuthStateChanged(async user=>{
+    if(fbAuthReady)return;
+    if(user&&isAllowedEmail(user.email)){
+      document.getElementById('setup').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      rDash();updateBadge();
+      await onAuthUserReady();
+      fetchLiveHeads();
+    } else if(user){
+      await firebase.auth().signOut();
+    }
+  });
 }
 
 document.getElementById('ct').addEventListener('keydown',clusterTableKeyNav);
@@ -2005,6 +2080,7 @@ loadState();
 initDoneTracking();
 if(state.settings.fbConfigRaw){
   document.getElementById('sk').value=state.settings.fbConfigRaw;
+  tryResumeSession();
 }
 </script>
 </body>
