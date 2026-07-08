@@ -29,8 +29,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .nav i{font-size:17px}.bc{background:var(--re);color:#fff;font-size:10px;padding:1px 5px;border-radius:8px;margin-left:auto}
 .sb-bottom{margin-top:auto;padding:1.25rem;border-top:.5px solid var(--bd)}
 .sb-backdrop{display:none}
-#setup{position:fixed;inset:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;z-index:1000;padding:2rem}
-.sc{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:2rem;width:460px;max-width:100%;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+#setup{position:fixed;inset:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;z-index:1000;padding:2rem;overflow:hidden}
+#setup-ambient{position:absolute;inset:0;pointer-events:none}
+.sc{position:relative;z-index:1;background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);padding:2rem;width:460px;max-width:100%;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .sc h2{font-size:18px;font-weight:600;margin-bottom:.5rem}.sc p{font-size:13px;color:var(--tx2);margin-bottom:1.5rem;line-height:1.6}
 .pane{display:none}.pane.active{display:block}
 .ph{margin-bottom:1.5rem}.ph h2{font-size:20px;font-weight:600}.ph p{font-size:13px;color:var(--tx2);margin-top:3px}
@@ -43,7 +44,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}.ch h3{font-size:14px;font-weight:600}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--bg);color:var(--tx);font-size:13px;cursor:pointer;transition:all .15s;font-family:inherit}
 .btn:hover{background:var(--bg2)}.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn-p{background:var(--gr);color:#fff;border-color:var(--gr-d)}.btn-p:hover{background:var(--gr-d)}
+.btn-p{background:var(--gr);color:#fff;border-color:var(--gr-d);transition:background .15s,transform .15s ease,box-shadow .15s ease}.btn-p:hover{background:var(--gr-d)}
 .btn-b{background:var(--bl-l);color:var(--bl-d);border-color:var(--bl)}.btn-b:hover{background:var(--bl);color:#fff}
 .btn-s{padding:4px 10px;font-size:12px}.btn-d{background:var(--re-l);color:var(--re-d);border-color:var(--re)}
 input,select,textarea{width:100%;padding:8px 12px;border:.5px solid var(--bd2);border-radius:var(--r);background:var(--bg);color:var(--tx);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
@@ -167,6 +168,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
 <body>
 
 <div id="setup">
+<canvas id="setup-ambient"></canvas>
 <div class="sc">
   <div style="font-size:32px;margin-bottom:.75rem">🌱</div>
   <h2>BSS Plantation Drive</h2>
@@ -1466,6 +1468,59 @@ function updateThemeToggleUI(){
   else{icon.className='ti ti-moon';label.textContent='Dark mode';}
 }
 applyStoredTheme();
+
+// ─── AMBIENT SETUP-SCREEN BACKGROUND (drifting particles, one-time screen only) ─
+function initSetupAmbient(){
+  const canvas=document.getElementById('setup-ambient');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+  resize();
+  window.addEventListener('resize',resize);
+  const particles=Array.from({length:26},()=>({
+    x:Math.random()*window.innerWidth,
+    y:Math.random()*window.innerHeight+40,
+    r:Math.random()*3+1.5,
+    speed:Math.random()*0.3+0.15,
+    sway:Math.random()*0.6+0.25,
+    phase:Math.random()*Math.PI*2,
+    opacity:Math.random()*0.3+0.15
+  }));
+  function hexToRgb(hex){
+    const h=hex.replace('#','').trim();
+    return [parseInt(h.substring(0,2),16),parseInt(h.substring(2,4),16),parseInt(h.substring(4,6),16)];
+  }
+  function step(t){
+    if(document.getElementById('setup').classList.contains('hidden'))return;
+    const [r,g,b]=hexToRgb(getComputedStyle(document.documentElement).getPropertyValue('--gr')||'#1FAE7E');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+      p.y-=p.speed;
+      if(p.y<-10){p.y=canvas.height+10;p.x=Math.random()*canvas.width;}
+      const x=p.x+Math.sin(t/1000+p.phase)*p.sway*20;
+      ctx.beginPath();ctx.arc(x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},${p.opacity})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+initSetupAmbient();
+
+// ─── MAGNETIC HOVER-TILT (primary buttons) ────────────────────────────────────
+document.addEventListener('mousemove',e=>{
+  const btn=e.target.closest('.btn-p');
+  if(!btn)return;
+  const r=btn.getBoundingClientRect();
+  const x=e.clientX-r.left-r.width/2, y=e.clientY-r.top-r.height/2;
+  btn.style.transform=`translate(${x*0.2}px,${y*0.2}px)`;
+  btn.style.boxShadow='0 6px 16px rgba(11,107,77,.28)';
+});
+document.addEventListener('mouseout',e=>{
+  const btn=e.target.closest('.btn-p');
+  if(btn&&!btn.contains(e.relatedTarget)){btn.style.transform='translate(0,0)';btn.style.boxShadow='none';}
+});
 
 function updateSyncBadge(status){
   const icon=document.getElementById('sync-icon');const text=document.getElementById('sync-text');
