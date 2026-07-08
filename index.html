@@ -147,6 +147,12 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
 .presence-stack{display:flex}
 .presence-avatar{width:20px;height:20px;border-radius:50%;background:var(--gr-l);color:var(--gr-d);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);margin-left:-6px}
 .presence-avatar:first-child{margin-left:0}
+.pager{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:.5px solid var(--bd);font-size:12px;color:var(--tx3)}
+.pager:empty{display:none;border-top:none}
+.pager-btns{display:flex;gap:6px}
+.pager-btn{padding:4px 10px;border-radius:var(--r);border:.5px solid var(--bd2);background:var(--bg);color:var(--tx2);font-size:12px;cursor:pointer;font-family:inherit}
+.pager-btn:hover:not(:disabled){background:var(--bg2)}
+.pager-btn:disabled{opacity:.4;cursor:not-allowed}
 .mobile-bar{display:none}.sb-backdrop{display:none}
 @media(max-width:768px){
   .mobile-bar{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:var(--bg);border-bottom:.5px solid var(--bd);position:sticky;top:0;z-index:300}
@@ -243,7 +249,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
     <button class="btn btn-p" onclick="openDM(null)"><i class="ti ti-truck-delivery"></i>Log dispatch</button>
   </div>
   <div class="filters" style="flex-direction:column;align-items:stretch;gap:10px">
-    <input type="text" id="fs" placeholder="Search cluster, city, convenor..." oninput="rClusters()" style="width:100%">
+    <input type="text" id="fs" placeholder="Search cluster, city, convenor..." oninput="clusterPage=0;rClusters()" style="width:100%">
     <div style="display:flex;gap:16px;flex-wrap:wrap">
       <div class="chip-group" id="chips-region">
         <button class="chip active" onclick="setChipFilter('region','',this)">All regions</button>
@@ -270,7 +276,9 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
     <th class="sortable" onclick="sortClusters('plantingDate')">Planting date <i class="ti ti-arrows-sort sort-icon" data-col="plantingDate"></i></th>
     <th class="sortable" onclick="sortClusters('status')">Status <i class="ti ti-arrows-sort sort-icon" data-col="status"></i></th>
     <th></th>
-  </tr></thead><tbody id="ct"></tbody></table></div></div>
+  </tr></thead><tbody id="ct"></tbody></table></div>
+  <div class="pager" id="ct-pager"></div>
+  </div>
 </div>
 
 <!-- DISPATCH LOG -->
@@ -282,7 +290,10 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
       <button class="btn btn-p" onclick="openDM(null)"><i class="ti ti-plus"></i>Log dispatch</button>
     </div>
   </div>
-  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Date</th><th>Cluster</th><th>City</th><th>Qty sent</th><th>Species / notes</th><th>Logged by</th><th>Source</th><th></th></tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"></div></div></div>
+  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Date</th><th>Cluster</th><th>City</th><th>Qty sent</th><th>Species / notes</th><th>Logged by</th><th>Source</th><th></th></tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"></div>
+  <div class="pager" id="dt-pager"></div>
+  </div>
+</div>
 </div>
 
 <!-- NEARBY -->
@@ -370,7 +381,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
     </div>
     <div class="card">
       <div class="fr"><label>Firestore security rules — paste into Firebase Console → Firestore → Rules</label>
-        <textarea id="rules-snippet" readonly rows="13" style="font-family:monospace;font-size:11px;background:var(--bg3);color:var(--tx2);border-color:var(--bd)">rules_version = '2';
+        <textarea id="rules-snippet" readonly rows="17" style="font-family:monospace;font-size:11px;background:var(--bg3);color:var(--tx2);border-color:var(--bd)">rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /dispatches/{id} {
@@ -385,6 +396,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if request.auth != null;
     }
+    match /clusters/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
   }
 }</textarea>
         <button class="btn btn-s" style="margin-top:6px" onclick="navigator.clipboard.writeText(document.getElementById('rules-snippet').value).then(()=>this.textContent='Copied ✓')"><i class="ti ti-copy"></i> Copy rules</button>
@@ -395,6 +410,12 @@ service cloud.firestore {
         <button class="btn btn-d" onclick="disconnectFirebase()" style="font-size:12px"><i class="ti ti-unlink"></i>Disconnect</button>
         <span id="fb-status" style="font-size:12px;align-self:center;color:var(--tx3)"></span>
       </div>
+    </div>
+
+    <div class="sec-t">Manage clusters</div>
+    <div class="card">
+      <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">Add, edit, or remove clusters — no more editing source code. Changes sync live to your team when Firebase is connected, or stay saved on this device otherwise.</p>
+      <button class="btn btn-p" onclick="openClusterAdmin()"><i class="ti ti-building-school"></i>Manage clusters</button>
     </div>
 
     <div class="sec-t">Weekly email digest (GitHub Actions)</div>
@@ -511,6 +532,45 @@ service cloud.firestore {
 <div class="md" style="width:720px">
   <div id="cd-modal-body"></div>
   <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
+</div>
+</div>
+
+<!-- Manage Clusters (admin list) modal -->
+<div class="mo hidden" id="cluster-admin-modal">
+<div class="md" style="width:760px">
+  <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span><i class="ti ti-building-school" style="color:var(--gr)"></i> Manage Clusters</span>
+    <button class="btn btn-p btn-s" onclick="openClusterForm(null)"><i class="ti ti-plus"></i> Add cluster</button>
+  </h3>
+  <p style="font-size:12px;color:var(--tx3);margin:-8px 0 12px" id="cluster-admin-count">Loading...</p>
+  <div class="tw" style="max-height:420px;overflow-y:auto"><table>
+    <thead><tr><th>Cluster</th><th>City</th><th>Rgn</th><th>Required</th><th>Convenor</th><th></th></tr></thead>
+    <tbody id="cluster-admin-list"></tbody>
+  </table></div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
+</div>
+</div>
+
+<!-- Cluster add/edit form modal -->
+<div class="mo hidden" id="cluster-form-modal">
+<div class="md">
+  <h3 id="cluster-form-title"><i class="ti ti-building-school" style="color:var(--gr)"></i> Add cluster</h3>
+  <input type="hidden" id="cf-id">
+  <div class="fr"><label>Cluster name *</label><input type="text" id="cf-cluster" placeholder="e.g. N-15"></div>
+  <div class="fg2">
+    <div class="fr"><label>City *</label><input type="text" id="cf-city" placeholder="e.g. Lahore"></div>
+    <div class="fr"><label>Region *</label><select id="cf-region"><option value="N">North</option><option value="C">Center</option><option value="S">South</option></select></div>
+  </div>
+  <div class="fg2">
+    <div class="fr"><label>Required quantity *</label><input type="number" id="cf-required" min="0" placeholder="e.g. 5000"></div>
+    <div class="fr"><label>Planting date</label><input type="date" id="cf-date"></div>
+  </div>
+  <div class="fg2">
+    <div class="fr"><label>Convenor name</label><input type="text" id="cf-convenor" placeholder="e.g. Ayesha Khan"></div>
+    <div class="fr"><label>Contact</label><input type="text" id="cf-contact" placeholder="e.g. 03001234567"></div>
+  </div>
+  <div class="fr"><label>Species requested (optional)</label><textarea id="cf-species" placeholder="Kachnar, Neem, Sheesham..."></textarea></div>
+  <div class="ma"><button class="btn" onclick="closeMo();openClusterAdmin()">Cancel</button><button class="btn btn-p" onclick="saveClusterForm()"><i class="ti ti-check"></i>Save</button></div>
 </div>
 </div>
 
@@ -641,11 +701,15 @@ function loadState(){
   } else {
     state.dispatches=buildImportedDispatches();
   }
-  state.schools=SD.map(mkSchool);
+  const savedClusters=localStorage.getItem('bhs_clusters_v1');
+  state.schools=savedClusters?JSON.parse(savedClusters).map(s=>({...s,dispatched:0})):SD.map(mkSchool);
   recomputeDispatched();
 }
 function mkSchool(sd){
-  return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:0,plantingDate:sd[6],convenor:sd[7],contact:sd[8]};
+  return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:0,plantingDate:sd[6],convenor:sd[7],contact:sd[8],species:CSP[sd[0]]||''};
+}
+function saveClustersLocal(){
+  localStorage.setItem('bhs_clusters_v1',JSON.stringify(state.schools.map(s=>({id:s.id,cluster:s.cluster,city:s.city,region:s.region,required:s.required,plantingDate:s.plantingDate,convenor:s.convenor,contact:s.contact,species:s.species||''}))));
 }
 function save(){localStorage.setItem('bhs_v4',JSON.stringify({dispatches:state.dispatches,settings:{...state.settings,fbConfig:undefined}}));}
 
@@ -659,6 +723,97 @@ function recomputeDispatched(){
   _planOverrides={};
 }
 function remaining(s){return Math.max(0,s.required-s.dispatched);}
+function renderAllViews(){
+  rDash();rClusters();rDispatch();rAlerts();rNearby();renderPlan();updateBadge();
+}
+
+// ─── MANAGE CLUSTERS (admin) ──────────────────────────────────────────────────
+function openClusterAdmin(){
+  renderClusterAdminList();
+  document.getElementById('cluster-admin-modal').classList.remove('hidden');
+}
+function renderClusterAdminList(){
+  const el=document.getElementById('cluster-admin-list');if(!el)return;
+  el.innerHTML=state.schools.slice().sort((a,b)=>a.cluster.localeCompare(b.cluster)).map(s=>`
+    <tr>
+      <td><strong>${esc(s.cluster)}</strong></td>
+      <td style="font-size:12px">${esc(s.city)}</td>
+      <td>${rgBadge(s.region)}</td>
+      <td class="tabular">${fmt(s.required)}</td>
+      <td style="font-size:12px;color:var(--tx2)">${esc(s.convenor)}</td>
+      <td style="white-space:nowrap"><button class="btn btn-s" onclick="openClusterForm(${s.id})" title="Edit"><i class="ti ti-pencil"></i></button> <button class="btn btn-s btn-d" onclick="confirmDeleteCluster(${s.id})" title="Delete"><i class="ti ti-trash"></i></button></td>
+    </tr>`).join('');
+  const countEl=document.getElementById('cluster-admin-count');
+  if(countEl)countEl.textContent=`${state.schools.length} clusters`;
+}
+function openClusterForm(id){
+  document.getElementById('cluster-admin-modal').classList.add('hidden');
+  const s=id?state.schools.find(x=>x.id===id):null;
+  document.getElementById('cluster-form-title').innerHTML=s?`<i class="ti ti-building-school" style="color:var(--gr)"></i> Edit ${esc(s.cluster)}`:`<i class="ti ti-building-school" style="color:var(--gr)"></i> Add cluster`;
+  document.getElementById('cf-id').value=s?s.id:'';
+  document.getElementById('cf-cluster').value=s?s.cluster:'';
+  document.getElementById('cf-city').value=s?s.city:'';
+  document.getElementById('cf-region').value=s?s.region:'N';
+  document.getElementById('cf-required').value=s?s.required:'';
+  document.getElementById('cf-date').value=s&&s.plantingDate?s.plantingDate:'';
+  document.getElementById('cf-convenor').value=s?s.convenor||'':'';
+  document.getElementById('cf-contact').value=s?s.contact||'':'';
+  document.getElementById('cf-species').value=s?s.species||'':'';
+  document.getElementById('cluster-form-modal').classList.remove('hidden');
+}
+async function saveClusterForm(){
+  const idRaw=document.getElementById('cf-id').value;
+  const cluster=document.getElementById('cf-cluster').value.trim();
+  const city=document.getElementById('cf-city').value.trim();
+  const region=document.getElementById('cf-region').value;
+  const required=parseInt(document.getElementById('cf-required').value)||0;
+  if(!cluster||!city||required<=0){alert('Cluster name, city, and a required quantity greater than 0 are needed.');return;}
+  const plantingDate=document.getElementById('cf-date').value||null;
+  const convenor=document.getElementById('cf-convenor').value.trim();
+  const contact=document.getElementById('cf-contact').value.trim();
+  const species=document.getElementById('cf-species').value.trim();
+  const isEdit=!!idRaw;
+  const id=isEdit?parseInt(idRaw):Date.now();
+  const record={id,cluster,city,region,required,plantingDate,convenor,contact,species};
+  closeMo();
+  if(fbReady()){
+    updateSyncBadge('saving');
+    try{
+      await db.collection('clusters').doc(String(id)).set(record,{merge:true});
+      updateSyncBadge('connected');
+    }catch(e){console.warn('Firestore cluster save failed:',e.message);updateSyncBadge('error');showInAppNotif('⚠️ Could not sync cluster to shared database.');}
+  } else {
+    const idx=state.schools.findIndex(x=>x.id===id);
+    const merged={...record,dispatched:idx>-1?state.schools[idx].dispatched:0};
+    if(idx>-1)state.schools[idx]=merged;else state.schools.push(merged);
+    saveClustersLocal();
+    recomputeDispatched();
+    renderAllViews();
+  }
+  showInAppNotif(isEdit?'Cluster updated':'Cluster added');
+  openClusterAdmin();
+}
+function confirmDeleteCluster(id){
+  const s=state.schools.find(x=>x.id===id);
+  if(!confirm(`Remove ${s?s.cluster:'this cluster'} from the roster?\n\nExisting dispatch history for it stays visible in the Dispatch Log, but it will no longer appear in Clusters, Nearby Clusters, or the Dispatch Plan. Cannot be undone.`))return;
+  deleteClusterConfirmed(id);
+}
+async function deleteClusterConfirmed(id){
+  if(fbReady()){
+    updateSyncBadge('saving');
+    try{
+      await db.collection('clusters').doc(String(id)).delete();
+      updateSyncBadge('connected');
+    }catch(e){console.warn('Firestore cluster delete failed:',e.message);updateSyncBadge('error');}
+  } else {
+    state.schools=state.schools.filter(x=>x.id!==id);
+    saveClustersLocal();
+    recomputeDispatched();
+    renderAllViews();
+  }
+  showInAppNotif('Cluster removed');
+  openClusterAdmin();
+}
 
 // ─── LIVE SCHOOL HEADS (Google Sheet) ────────────────────────────────────────
 const SCHOOL_HEADS_URL='https://docs.google.com/spreadsheets/d/1-RNYLZARZHWgPw6siRJJfK27FbHAfd1OjtTwuIC1xCY/export?format=csv';
@@ -900,12 +1055,29 @@ function setChipFilter(type,val,btn){
   clusterFilters[type]=val;
   btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
   btn.classList.add('active');
+  clusterPage=0;
   rClusters();
 }
 function sortClusters(col){
   if(clusterSort.col===col){clusterSort.dir*=-1;}else{clusterSort.col=col;clusterSort.dir=1;}
   rClusters();
 }
+// ─── PAGINATION (shared by Clusters and Dispatch Log — keeps rendering fast as data grows) ──
+const PAGE_SIZE=20;
+let clusterPage=0, dispatchPage=0;
+function renderPager(elId,page,totalItems,goFn){
+  const el=document.getElementById(elId);if(!el)return;
+  if(totalItems<=PAGE_SIZE){el.innerHTML='';return;}
+  const totalPages=Math.ceil(totalItems/PAGE_SIZE);
+  const start=page*PAGE_SIZE+1,end=Math.min(totalItems,(page+1)*PAGE_SIZE);
+  el.innerHTML=`<span>${fmt(start)}–${fmt(end)} of ${fmt(totalItems)}</span><div class="pager-btns">
+    <button class="pager-btn" ${page<=0?'disabled':''} onclick="${goFn}(${page-1})"><i class="ti ti-chevron-left"></i></button>
+    <span style="align-self:center">Page ${page+1} of ${totalPages}</span>
+    <button class="pager-btn" ${page>=totalPages-1?'disabled':''} onclick="${goFn}(${page+1})"><i class="ti ti-chevron-right"></i></button>
+  </div>`;
+}
+function goToClusterPage(p){clusterPage=p;rClusters();}
+function goToDispatchPage(p){dispatchPage=p;rDispatch();}
 function rClusters(){
   const q=(document.getElementById('fs').value||'').toLowerCase();
   const rf=clusterFilters.region;
@@ -934,10 +1106,15 @@ function rClusters(){
   }
   const cEl=document.getElementById('clusters-count');
   if(cEl)cEl.textContent=`${state.schools.length} clusters · Click a cluster name for full detail · Use ↑↓ + Enter to browse`;
-  document.getElementById('ct').innerHTML=filtered.map(s=>{
+  const totalPages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
+  if(clusterPage>=totalPages)clusterPage=totalPages-1;
+  if(clusterPage<0)clusterPage=0;
+  const pageItems=filtered.slice(clusterPage*PAGE_SIZE,(clusterPage+1)*PAGE_SIZE);
+  document.getElementById('ct').innerHTML=pageItems.map(s=>{
     const st=gst(s);const pc=pct(s);const d=du(s.plantingDate);
     const ds=s.plantingDate?fmtD(s.plantingDate)+(d!==null&&d<=7&&st!=='done'?` <span style="color:var(--re);font-size:10px">(${d<0?'overdue':d+'d'})</span>`:''):'—';
     return`<tr tabindex="0" data-id="${s.id}"><td><strong class="cluster-link" onclick="showClusterDetail(${s.id})" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--bd2)" title="View cluster detail">${s.cluster}</strong><button class="btn btn-s" onclick="showSpecies(${s.id})" title="Species requested" style="margin-left:6px;padding:2px 6px;font-size:11px">🌱</button><button class="btn btn-s" onclick="showHeads('${s.cluster}')" title="View campuses & school heads (live)" style="margin-left:3px;padding:2px 6px;font-size:11px"><i class="ti ti-users"></i></button></td><td style="font-size:12px;color:var(--tx2)">${getConvenor(s)}</td><td style="font-size:12px">${s.city}</td><td>${rgBadge(s.region)}</td><td style="font-weight:500">${fmt(s.required)}</td><td>${fmt(s.dispatched)}</td><td style="min-width:90px">${progBar(pc)}</td><td style="font-size:12px">${ds}</td><td><span class="badge b-${st}">${stLbl(s)}</span></td><td><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-truck-delivery"></i></button></td></tr>`;}).join('');
+  renderPager('ct-pager',clusterPage,filtered.length,'goToClusterPage');
   document.querySelectorAll('#pane-clusters .sort-icon').forEach(ic=>{
     const col=ic.dataset.col;
     if(col===clusterSort.col){ic.className='ti '+(clusterSort.dir===1?'ti-sort-ascending':'ti-sort-descending')+' sort-icon active';}
@@ -956,7 +1133,7 @@ function clusterTableKeyNav(e){
 function showSpecies(id){
   const s=state.schools.find(x=>x.id===id);if(!s)return;
   document.getElementById('sp-modal-title').innerHTML=`🌱 ${s.cluster} — Species requested`;
-  document.getElementById('sp-modal-body').innerHTML=`<p style="font-size:13px;line-height:1.7;color:var(--tx2)">${CSP[id]||'No species list recorded for this cluster yet.'}</p>`;
+  document.getElementById('sp-modal-body').innerHTML=`<p style="font-size:13px;line-height:1.7;color:var(--tx2)">${esc(s.species)||'No species list recorded for this cluster yet.'}</p>`;
   document.getElementById('sp-modal').classList.remove('hidden');
 }
 
@@ -964,8 +1141,8 @@ function showSpecies(id){
 function showClusterDetail(id){
   const s=state.schools.find(x=>x.id===id);if(!s)return;
   const st=gst(s);const pc=pct(s);
-  const speciesList=(CSP[id]||'').split(',').map(x=>x.trim()).filter(Boolean);
-  const speciesHtml=speciesList.length?speciesList.map(sp=>`<span class="species-chip">${sp}</span>`).join(''):'<span style="font-size:12px;color:var(--tx3)">No species list recorded yet.</span>';
+  const speciesList=(s.species||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const speciesHtml=speciesList.length?speciesList.map(sp=>`<span class="species-chip">${esc(sp)}</span>`).join(''):'<span style="font-size:12px;color:var(--tx3)">No species list recorded yet.</span>';
   const history=state.dispatches.filter(d=>String(d.schoolId)===String(s.id)).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
   const historyHtml=history.length?history.map(d=>`
     <div class="cd-tl-item${d.imported?' imported':''}">
@@ -1001,11 +1178,22 @@ function showClusterDetail(id){
 function rDispatch(){
   const has=state.dispatches.length>0;
   document.getElementById('de').classList.toggle('hidden',has);
-  if(!has)document.getElementById('de').innerHTML=`${saplingSvg(48)}<div>No dispatches logged yet</div><div style="font-size:11px;color:var(--tx3);margin-top:2px">Log your first one to start the trail</div>`;
-  document.getElementById('dt').innerHTML=state.dispatches.slice().reverse().map((d)=>{
+  if(!has){
+    document.getElementById('de').innerHTML=`${saplingSvg(48)}<div>No dispatches logged yet</div><div style="font-size:11px;color:var(--tx3);margin-top:2px">Log your first one to start the trail</div>`;
+    document.getElementById('dt').innerHTML='';
+    document.getElementById('dt-pager').innerHTML='';
+    return;
+  }
+  const all=state.dispatches.slice().reverse();
+  const totalPages=Math.max(1,Math.ceil(all.length/PAGE_SIZE));
+  if(dispatchPage>=totalPages)dispatchPage=totalPages-1;
+  if(dispatchPage<0)dispatchPage=0;
+  const pageItems=all.slice(dispatchPage*PAGE_SIZE,(dispatchPage+1)*PAGE_SIZE);
+  document.getElementById('dt').innerHTML=pageItems.map((d)=>{
     const src=d.imported?'<span class="badge b-imp">Imported</span>':'<span class="badge b-done">Manual</span>';
     const del=d.imported?'':` <button class="btn btn-s btn-d" data-del-id="${esc(d.id)}" title="Delete"><i class="ti ti-trash"></i></button>`;
     return`<tr><td style="font-size:12px;white-space:nowrap">${fmtD(d.date)}</td><td><strong>${esc(d.cluster)}</strong></td><td style="font-size:12px;color:var(--tx2)">${esc(d.city)}</td><td style="font-weight:600;color:var(--gr)">${fmt(d.qty)}</td><td style="font-size:11px;color:var(--tx2);max-width:200px">${esc(d.species||d.notes||'—')}</td><td style="font-size:12px">${esc(d.by||'—')}</td><td>${src}</td><td>${del}</td></tr>`;}).join('');
+  renderPager('dt-pager',dispatchPage,all.length,'goToDispatchPage');
 }
 
 // ─── ALERTS ───────────────────────────────────────────────────────────────────
@@ -1191,7 +1379,7 @@ function renderPlan(){
             <span style="color:${c.total<CMIN?'var(--re-d)':'var(--gr)'}"><i class="ti ti-${c.total>=CMIN?'circle-check':'alert-triangle'}" style="font-size:12px;margin-right:3px"></i>${fmt(c.total)} plants${c.total<CMIN?' — BELOW 12,000 MIN: combine with another load':' (min load met ✓)'}</span>
           </div>`;
         c.items.forEach((item,ii)=>{
-          const sp=CSP[item.id]||'Species to be confirmed';
+          const sp=esc(item.species)||'Species to be confirmed';
           const pd=item.plantingDate?du(item.plantingDate):null;
           const otifColor2=pd===null?'var(--tx3)':pd<=0?'var(--re-d)':pd<=7?'var(--am-d)':'var(--gr-d)';
           const otifLbl=pd===null?'No date set':pd<0?`Planting overdue by ${Math.abs(pd)} days — URGENT`:pd===0?'Planting TODAY':pd<=7?`Planting in ${pd} days — prepare now`:`Planting ${fmtD(item.plantingDate)} (${pd}d)`;
@@ -1230,7 +1418,7 @@ function exportPlan(){
     c.forEach((load,i)=>{
       txt+=`\n  Load ${i+1}: ${fmt(load.total)} plants\n`;
       load.items.forEach(item=>{
-        const sp=CSP[item.id]||'TBD';
+        const sp=item.species||'TBD';
         txt+=`    • ${item.cluster} (${item.city}): ${fmt(item.take)} plants${item.partial?' [PARTIAL]':''}\n      Species: ${sp}\n`;
       });
     });
@@ -1493,6 +1681,8 @@ async function initFirebaseFromConfig(configRaw){
     listenDispatches();
     listenSettings();
     seedIfNeeded();
+    listenClusters();
+    seedClustersIfNeeded();
     startPresence();
     updateSyncBadge('connected');
     return true;
@@ -1606,6 +1796,31 @@ async function seedIfNeeded(){
     batch.set(db.collection('meta').doc('seed'),{done:true,at:new Date().toISOString()});
     await batch.commit();
   }catch(e){console.warn('seed check failed:',e.message);}
+}
+
+let _clustersUnsub=null;
+function listenClusters(){
+  if(_clustersUnsub)_clustersUnsub();
+  _clustersUnsub=db.collection('clusters').onSnapshot(snap=>{
+    if(snap.empty)return; // let seedClustersIfNeeded populate it first
+    state.schools=snap.docs.map(doc=>({...doc.data(),id:parseInt(doc.data().id),dispatched:0}));
+    recomputeDispatched();
+    renderAllViews();
+    if(!document.getElementById('cluster-admin-modal').classList.contains('hidden'))renderClusterAdminList();
+  },err=>console.warn('clusters listener error:',err.message));
+}
+async function seedClustersIfNeeded(){
+  try{
+    const seedDoc=await db.collection('meta').doc('seedClusters').get();
+    if(seedDoc.exists)return;
+    const batch=db.batch();
+    SD.map(mkSchool).forEach(s=>{
+      const {dispatched,...rec}=s;
+      batch.set(db.collection('clusters').doc(String(s.id)),rec);
+    });
+    batch.set(db.collection('meta').doc('seedClusters'),{done:true,at:new Date().toISOString()});
+    await batch.commit();
+  }catch(e){console.warn('cluster seed check failed:',e.message);}
 }
 
 // ─── WEEKLY DIGEST SNAPSHOT (read by the GitHub Actions job) ─────────────────
