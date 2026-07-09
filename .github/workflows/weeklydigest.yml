@@ -24,4 +24,4 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENTS: ${{ vars.DIGEST_RECIPIENTS }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
-        run: node send-weekly-digest.mjs
+        run: node sendweeklydigest.mjs
