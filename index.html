@@ -797,7 +797,7 @@ function renderClusterAdminList(){
       <td class="tabular">${fmt(s.required)}</td>
       <td style="font-size:12px;color:var(--tx2)">${esc(s.convenor)}</td>
       <td style="font-size:11px;color:var(--tx3)">${s.lastEditedBy?`${esc(s.lastEditedBy)}<br>${fmtD(s.lastEditedAt)}`:'—'}</td>
-      <td style="white-space:nowrap"><button class="btn btn-s" onclick="openClusterForm(${s.id})" title="Edit"><i class="ti ti-pencil"></i></button> <button class="btn btn-s btn-d" onclick="confirmDeleteCluster(${s.id})" title="Delete"><i class="ti ti-trash"></i></button></td>
+      <td style="white-space:nowrap"><button class="btn btn-s" onclick="openClusterForm(${s.id})" title="Edit"><i class="ti ti-pencil"></i> Edit</button> <button class="btn btn-s btn-d" onclick="confirmDeleteCluster(${s.id})" title="Delete"><i class="ti ti-trash"></i> Delete</button></td>
     </tr>`).join('');
   const countEl=document.getElementById('cluster-admin-count');
   if(countEl)countEl.textContent=`${state.schools.length} clusters`;
@@ -1253,7 +1253,7 @@ function rClusters(){
   document.getElementById('ct').innerHTML=pageItems.map(s=>{
     const st=gst(s);const pc=pct(s);const d=du(s.plantingDate);
     const ds=s.plantingDate?fmtD(s.plantingDate)+(d!==null&&d<=7&&st!=='done'?` <span style="color:var(--re);font-size:10px">(${d<0?'overdue':d+'d'})</span>`:''):'—';
-    return`<tr tabindex="0" data-id="${s.id}"><td><strong class="cluster-link" onclick="showClusterDetail(${s.id})" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--bd2)" title="View cluster detail">${s.cluster}</strong><button class="btn btn-s" onclick="showSpecies(${s.id})" title="Species requested" style="margin-left:6px;padding:2px 6px;font-size:11px">🌱</button><button class="btn btn-s" onclick="showHeads('${s.cluster}')" title="View campuses & school heads (live)" style="margin-left:3px;padding:2px 6px;font-size:11px"><i class="ti ti-users"></i></button></td><td style="font-size:12px;color:var(--tx2)">${getConvenor(s)}</td><td style="font-size:12px">${s.city}</td><td>${rgBadge(s.region)}</td><td style="font-weight:500">${fmt(s.required)}</td><td>${fmt(s.dispatched)}</td><td style="min-width:90px">${progBar(pc)}</td><td style="font-size:12px">${ds}</td><td><span class="badge b-${st}">${stLbl(s)}</span></td><td><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-truck-delivery"></i></button></td></tr>`;}).join('');
+    return`<tr tabindex="0" data-id="${s.id}"><td><strong class="cluster-link" onclick="showClusterDetail(${s.id})" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--bd2)" title="View cluster detail">${s.cluster}</strong><button class="btn btn-s" onclick="showSpecies(${s.id})" title="Species requested" style="margin-left:6px;padding:2px 6px;font-size:11px">🌱</button><button class="btn btn-s" onclick="showHeads('${s.cluster}')" title="View campuses & school heads (live)" style="margin-left:3px;padding:2px 6px;font-size:11px"><i class="ti ti-users"></i> Heads</button></td><td style="font-size:12px;color:var(--tx2)">${getConvenor(s)}</td><td style="font-size:12px">${s.city}</td><td>${rgBadge(s.region)}</td><td style="font-weight:500">${fmt(s.required)}</td><td>${fmt(s.dispatched)}</td><td style="min-width:90px">${progBar(pc)}</td><td style="font-size:12px">${ds}</td><td><span class="badge b-${st}">${stLbl(s)}</span></td><td><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-truck-delivery"></i> Log</button></td></tr>`;}).join('');
   renderPager('ct-pager',clusterPage,filtered.length,'goToClusterPage');
   document.querySelectorAll('#pane-clusters .sort-icon').forEach(ic=>{
     const col=ic.dataset.col;
@@ -1331,7 +1331,7 @@ function rDispatch(){
   const pageItems=all.slice(dispatchPage*PAGE_SIZE,(dispatchPage+1)*PAGE_SIZE);
   document.getElementById('dt').innerHTML=pageItems.map((d)=>{
     const src=d.imported?'<span class="badge b-imp">Imported</span>':'<span class="badge b-done">Manual</span>';
-    const del=d.imported?'':` <button class="btn btn-s btn-d" data-del-id="${esc(d.id)}" title="Delete"><i class="ti ti-trash"></i></button>`;
+    const del=d.imported?'':` <button class="btn btn-s btn-d" data-del-id="${esc(d.id)}" title="Delete"><i class="ti ti-trash"></i> Delete</button>`;
     return`<tr><td style="font-size:12px;white-space:nowrap">${fmtD(d.date)}</td><td><strong>${esc(d.cluster)}</strong></td><td style="font-size:12px;color:var(--tx2)">${esc(d.city)}</td><td style="font-weight:600;color:var(--gr)">${fmt(d.qty)}</td><td style="font-size:11px;color:var(--tx2);max-width:200px">${esc(d.species||d.notes||'—')}</td><td style="font-size:12px">${esc(d.by||'—')}</td><td>${src}</td><td>${del}</td></tr>`;}).join('');
   renderPager('dt-pager',dispatchPage,all.length,'goToDispatchPage');
 }
@@ -1663,7 +1663,7 @@ function addBulkRow(){
   const row=document.createElement('div');
   row.className='bulk-row';
   row.id='bulk-row-'+id;
-  row.innerHTML=`<select class="bulk-cluster">${state.schools.map(s=>`<option value="${s.id}">${s.cluster} — ${s.city}</option>`).join('')}</select><input type="text" class="bulk-species" placeholder="Species"><input type="number" class="bulk-qty" placeholder="Qty" min="1" oninput="updateBulkTotal()"><button class="btn btn-s btn-d" onclick="document.getElementById('bulk-row-${id}').remove();updateBulkTotal()"><i class="ti ti-x"></i></button>`;
+  row.innerHTML=`<select class="bulk-cluster">${state.schools.map(s=>`<option value="${s.id}">${s.cluster} — ${s.city}</option>`).join('')}</select><input type="text" class="bulk-species" placeholder="Species"><input type="number" class="bulk-qty" placeholder="Qty" min="1" oninput="updateBulkTotal()"><button class="btn btn-s btn-d" onclick="document.getElementById('bulk-row-${id}').remove();updateBulkTotal()" title="Remove row"><i class="ti ti-x"></i> Remove</button>`;
   document.getElementById('bulk-rows').appendChild(row);
   updateBulkTotal();
 }
