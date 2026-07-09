@@ -208,6 +208,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
     <div class="presence-bar hidden" id="presence-bar"></div>
     <button class="btn btn-p" onclick="openDM(null)" style="width:100%;justify-content:center;margin-bottom:8px"><i class="ti ti-plus"></i>Log Dispatch</button>
     <button class="btn" onclick="exportCSV()" style="width:100%;justify-content:center;margin-bottom:8px"><i class="ti ti-download"></i>Export CSV</button>
+    <button class="btn" onclick="openSiteMap()" style="width:100%;justify-content:center;margin-bottom:8px"><i class="ti ti-map-2"></i>Site Map</button>
     <button class="btn" onclick="toggleTheme()" style="width:100%;justify-content:center" id="theme-toggle-btn"><i class="ti ti-moon" id="theme-toggle-icon"></i><span id="theme-toggle-label">Dark mode</span></button>
   </div>
 </nav>
@@ -414,6 +415,12 @@ service cloud.firestore {
       <button class="btn btn-p" onclick="openClusterAdmin()"><i class="ti ti-building-school"></i>Manage clusters</button>
     </div>
 
+    <div class="sec-t">Trash</div>
+    <div class="card">
+      <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">Deleted a dispatch or cluster by mistake? Nothing is gone for good — restore it here.</p>
+      <button class="btn" onclick="openTrash()"><i class="ti ti-trash"></i>Open Trash</button>
+    </div>
+
     <div class="sec-t">Weekly email digest (GitHub Actions)</div>
     <div class="info-box" style="font-size:12px">
       A scheduled job in this project's GitHub repo emails the digest every week — it runs on GitHub's servers, independent of anyone opening this dashboard.<br><br>
@@ -500,7 +507,7 @@ service cloud.firestore {
 <div class="mo hidden" id="delm">
 <div class="md" style="width:380px">
   <h3>Delete this dispatch?</h3>
-  <p style="color:var(--tx2);font-size:13px;margin-bottom:1.25rem">This will subtract the quantity from the cluster's dispatched total. Cannot be undone.</p>
+  <p style="color:var(--tx2);font-size:13px;margin-bottom:1.25rem">This will subtract the quantity from the cluster's dispatched total. It moves to Trash (Settings → Trash) and can be restored later.</p>
   <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-d" onclick="doDelete()"><i class="ti ti-trash"></i>Delete</button></div>
 </div>
 </div>
@@ -533,14 +540,14 @@ service cloud.firestore {
 
 <!-- Manage Clusters (admin list) modal -->
 <div class="mo hidden" id="cluster-admin-modal">
-<div class="md" style="width:760px">
+<div class="md" style="width:860px">
   <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
     <span><i class="ti ti-building-school" style="color:var(--gr)"></i> Manage Clusters</span>
     <button class="btn btn-p btn-s" onclick="openClusterForm(null)"><i class="ti ti-plus"></i> Add cluster</button>
   </h3>
   <p style="font-size:12px;color:var(--tx3);margin:-8px 0 12px" id="cluster-admin-count">Loading...</p>
   <div class="tw" style="max-height:420px;overflow-y:auto"><table>
-    <thead><tr><th>Cluster</th><th>City</th><th>Rgn</th><th>Required</th><th>Convenor</th><th></th></tr></thead>
+    <thead><tr><th>Cluster</th><th>City</th><th>Rgn</th><th>Required</th><th>Convenor</th><th>Last edited</th><th></th></tr></thead>
     <tbody id="cluster-admin-list"></tbody>
   </table></div>
   <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
@@ -567,6 +574,55 @@ service cloud.firestore {
   </div>
   <div class="fr"><label>Species requested (optional)</label><textarea id="cf-species" placeholder="Kachnar, Neem, Sheesham..."></textarea></div>
   <div class="ma"><button class="btn" onclick="closeMo();openClusterAdmin()">Cancel</button><button class="btn btn-p" onclick="saveClusterForm()"><i class="ti ti-check"></i>Save</button></div>
+</div>
+</div>
+
+<!-- Trash / recovery modal -->
+<div class="mo hidden" id="trash-modal">
+<div class="md" style="width:760px">
+  <h3><i class="ti ti-trash" style="color:var(--rd,#d64545)"></i> Trash</h3>
+  <p style="font-size:12px;color:var(--tx3);margin:-8px 0 12px">Deleted dispatches and clusters land here instead of disappearing for good. Restore anything removed by mistake.</p>
+  <div class="sec-t" style="margin-top:0">Deleted clusters</div>
+  <div class="tw" style="max-height:200px;overflow-y:auto;margin-bottom:1rem"><table>
+    <thead><tr><th>Cluster</th><th>City</th><th>Deleted</th><th></th></tr></thead>
+    <tbody id="trash-clusters-list"></tbody>
+  </table></div>
+  <div class="sec-t">Deleted dispatches</div>
+  <div class="tw" style="max-height:200px;overflow-y:auto"><table>
+    <thead><tr><th>Cluster</th><th>Qty</th><th>Deleted</th><th></th></tr></thead>
+    <tbody id="trash-dispatches-list"></tbody>
+  </table></div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
+</div>
+</div>
+
+<!-- Site Map modal -->
+<div class="mo hidden" id="sitemap-modal">
+<div class="md" style="width:720px">
+  <h3><i class="ti ti-map-2" style="color:var(--gr)"></i> Site Map</h3>
+  <p style="font-size:12px;color:var(--tx3);margin:-8px 0 12px">Every section of the app, and where to find it.</p>
+  <div class="tw" style="max-height:520px;overflow-y:auto">
+    <table>
+      <thead><tr><th>Section</th><th>Where</th><th>What it's for</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Dashboard</strong></td><td>Sidebar → Dashboard</td><td>Live totals, progress, trend line, and recent activity across all clusters.</td></tr>
+        <tr><td><strong>All Clusters</strong></td><td>Sidebar → All Clusters</td><td>Every cluster's required vs. dispatched quantity, sortable and filterable by region.</td></tr>
+        <tr><td><strong>Dispatch Log</strong></td><td>Sidebar → Dispatch Log</td><td>Every dispatch ever logged, newest first; log a new one or bulk-log a truck split across clusters here.</td></tr>
+        <tr><td><strong>Nearby Clusters</strong></td><td>Sidebar → Nearby Clusters</td><td>Clusters grouped by city/region — useful for planning shared truck routes.</td></tr>
+        <tr><td><strong>Alerts</strong></td><td>Sidebar → Alerts</td><td>Clusters with an upcoming or overdue planting date that still need dispatches.</td></tr>
+        <tr><td><strong>Dispatch Plan</strong></td><td>Sidebar → Dispatch Plan</td><td>Drag-and-drop planner for splitting remaining stock across clusters.</td></tr>
+        <tr><td><strong>2025 Initiative</strong></td><td>Sidebar → 2025 Initiative</td><td>Reference data from last year's drive.</td></tr>
+        <tr><td><strong>Settings</strong></td><td>Sidebar → Settings</td><td>Firebase sync status, Firestore rules, alert/digest preferences, manual actions.</td></tr>
+        <tr><td>&nbsp;&nbsp;↳ Manage clusters</td><td>Settings → Manage clusters button</td><td>Add, edit, or remove clusters — no source-code edits needed.</td></tr>
+        <tr><td>&nbsp;&nbsp;↳ Trash</td><td>Settings → Trash button</td><td>Restore any dispatch or cluster that was deleted by mistake.</td></tr>
+        <tr><td>&nbsp;&nbsp;↳ Weekly digest setup</td><td>Settings → Weekly email digest card</td><td>One-time GitHub Actions setup so the team gets an emailed summary every week.</td></tr>
+        <tr><td>&nbsp;&nbsp;↳ Export CSV</td><td>Settings → Manual actions, or sidebar bottom</td><td>Download the current cluster roster as a spreadsheet.</td></tr>
+        <tr><td><strong>Log Dispatch</strong></td><td>Sidebar bottom → Log Dispatch button</td><td>Quick-access button to record a new dispatch from anywhere in the app.</td></tr>
+        <tr><td><strong>Dark mode</strong></td><td>Sidebar bottom → Dark mode toggle</td><td>Switch the app's color theme.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
 </div>
 </div>
 
@@ -680,7 +736,9 @@ const CSP={
   51:"Kachnar, Amaltas, Gul-e-Nishter, Sukh Chayn, Jamun, Alstonia, Moringa, Mulberry, Arjun, Neem (Bakain), Guava, Semal"
 };
 
-let state={schools:[],dispatches:[],settings:{recipients:"mahnoor.safdar@bh.edu.pk, azal.zahir@bh.edu.pk",alertDays:5,digestDay:1,projectName:"BHS Plantation Drive",fbConfig:null}};
+let state={schools:[],_rawSchools:[],dispatches:[],settings:{recipients:"mahnoor.safdar@bh.edu.pk, azal.zahir@bh.edu.pk",alertDays:5,digestDay:1,projectName:"BHS Plantation Drive",fbConfig:null}};
+function deriveSchools(){state.schools=state._rawSchools.filter(s=>!s.deleted);}
+function currentUserEmail(){try{return (typeof firebase!=='undefined'&&firebase.auth&&firebase.auth().currentUser)?firebase.auth().currentUser.email:'Local user';}catch(e){return 'Local user';}}
 let clusterFilters={region:'',status:''};
 let clusterSort={col:null,dir:1};
 
@@ -698,20 +756,21 @@ function loadState(){
     state.dispatches=buildImportedDispatches();
   }
   const savedClusters=localStorage.getItem('bhs_clusters_v1');
-  state.schools=savedClusters?JSON.parse(savedClusters).map(s=>({...s,dispatched:0})):SD.map(mkSchool);
+  state._rawSchools=savedClusters?JSON.parse(savedClusters).map(s=>({...s,dispatched:0})):SD.map(mkSchool);
+  deriveSchools();
   recomputeDispatched();
 }
 function mkSchool(sd){
   return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:0,plantingDate:sd[6],convenor:sd[7],contact:sd[8],species:CSP[sd[0]]||''};
 }
 function saveClustersLocal(){
-  localStorage.setItem('bhs_clusters_v1',JSON.stringify(state.schools.map(s=>({id:s.id,cluster:s.cluster,city:s.city,region:s.region,required:s.required,plantingDate:s.plantingDate,convenor:s.convenor,contact:s.contact,species:s.species||''}))));
+  localStorage.setItem('bhs_clusters_v1',JSON.stringify(state._rawSchools.map(s=>({id:s.id,cluster:s.cluster,city:s.city,region:s.region,required:s.required,plantingDate:s.plantingDate,convenor:s.convenor,contact:s.contact,species:s.species||'',lastEditedBy:s.lastEditedBy||null,lastEditedAt:s.lastEditedAt||null,deleted:s.deleted||false,deletedAt:s.deletedAt||null,deletedBy:s.deletedBy||null}))));
 }
 function save(){localStorage.setItem('bhs_v4',JSON.stringify({dispatches:state.dispatches,settings:{...state.settings,fbConfig:undefined}}));}
 
 function recomputeDispatched(){
   const totals=new Map();
-  state.dispatches.forEach(d=>{
+  state.dispatches.filter(d=>!d.deleted).forEach(d=>{
     const key=String(d.schoolId);
     totals.set(key,(totals.get(key)||0)+(parseInt(d.qty)||0));
   });
@@ -737,6 +796,7 @@ function renderClusterAdminList(){
       <td>${rgBadge(s.region)}</td>
       <td class="tabular">${fmt(s.required)}</td>
       <td style="font-size:12px;color:var(--tx2)">${esc(s.convenor)}</td>
+      <td style="font-size:11px;color:var(--tx3)">${s.lastEditedBy?`${esc(s.lastEditedBy)}<br>${fmtD(s.lastEditedAt)}`:'—'}</td>
       <td style="white-space:nowrap"><button class="btn btn-s" onclick="openClusterForm(${s.id})" title="Edit"><i class="ti ti-pencil"></i></button> <button class="btn btn-s btn-d" onclick="confirmDeleteCluster(${s.id})" title="Delete"><i class="ti ti-trash"></i></button></td>
     </tr>`).join('');
   const countEl=document.getElementById('cluster-admin-count');
@@ -770,7 +830,7 @@ async function saveClusterForm(){
   const species=document.getElementById('cf-species').value.trim();
   const isEdit=!!idRaw;
   const id=isEdit?parseInt(idRaw):Date.now();
-  const record={id,cluster,city,region,required,plantingDate,convenor,contact,species};
+  const record={id,cluster,city,region,required,plantingDate,convenor,contact,species,lastEditedBy:currentUserEmail(),lastEditedAt:new Date().toISOString()};
   closeMo();
   if(fbReady()){
     updateSyncBadge('saving');
@@ -778,9 +838,10 @@ async function saveClusterForm(){
       await db.collection('clusters').doc(String(id)).set(record,{merge:true});
       updateSyncBadge('connected');
       // Optimistic local update — don't wait on the listener round-trip to show the edit.
-      const idx=state.schools.findIndex(x=>x.id===id);
-      const merged={...record,dispatched:idx>-1?state.schools[idx].dispatched:0};
-      if(idx>-1)state.schools[idx]=merged;else state.schools.push(merged);
+      const idx=state._rawSchools.findIndex(x=>x.id===id);
+      const merged={...record,dispatched:idx>-1?state._rawSchools[idx].dispatched:0};
+      if(idx>-1)state._rawSchools[idx]=merged;else state._rawSchools.push(merged);
+      deriveSchools();
       recomputeDispatched();
       renderAllViews();
       showInAppNotif(isEdit?'Cluster updated':'Cluster added');
@@ -790,9 +851,10 @@ async function saveClusterForm(){
       showInAppNotif(`⚠️ Could not save — the shared database rejected this (${e.message}). If you've connected Firebase, make sure the Firestore rules in Settings (they now include a "clusters" collection) have been re-published.`);
     }
   } else {
-    const idx=state.schools.findIndex(x=>x.id===id);
-    const merged={...record,dispatched:idx>-1?state.schools[idx].dispatched:0};
-    if(idx>-1)state.schools[idx]=merged;else state.schools.push(merged);
+    const idx=state._rawSchools.findIndex(x=>x.id===id);
+    const merged={...record,dispatched:idx>-1?state._rawSchools[idx].dispatched:0};
+    if(idx>-1)state._rawSchools[idx]=merged;else state._rawSchools.push(merged);
+    deriveSchools();
     saveClustersLocal();
     recomputeDispatched();
     renderAllViews();
@@ -802,32 +864,95 @@ async function saveClusterForm(){
 }
 function confirmDeleteCluster(id){
   const s=state.schools.find(x=>x.id===id);
-  if(!confirm(`Remove ${s?s.cluster:'this cluster'} from the roster?\n\nExisting dispatch history for it stays visible in the Dispatch Log, but it will no longer appear in Clusters, Nearby Clusters, or the Dispatch Plan. Cannot be undone.`))return;
+  if(!confirm(`Remove ${s?s.cluster:'this cluster'} from the roster?\n\nExisting dispatch history for it stays visible in the Dispatch Log, but it will no longer appear in Clusters, Nearby Clusters, or the Dispatch Plan. It moves to Trash (Settings → Trash) and can be restored later.`))return;
   deleteClusterConfirmed(id);
 }
 async function deleteClusterConfirmed(id){
+  const deletedAt=new Date().toISOString(),deletedBy=currentUserEmail();
   if(fbReady()){
     updateSyncBadge('saving');
     try{
-      await db.collection('clusters').doc(String(id)).delete();
+      await db.collection('clusters').doc(String(id)).update({deleted:true,deletedAt,deletedBy});
       updateSyncBadge('connected');
-      state.schools=state.schools.filter(x=>x.id!==id);
+      const idx=state._rawSchools.findIndex(x=>x.id===id);
+      if(idx>-1)state._rawSchools[idx]={...state._rawSchools[idx],deleted:true,deletedAt,deletedBy};
+      deriveSchools();
       recomputeDispatched();
       renderAllViews();
-      showInAppNotif('Cluster removed');
+      showInAppNotif('Cluster moved to Trash');
     }catch(e){
       console.warn('Firestore cluster delete failed:',e.message);
       updateSyncBadge('error');
       showInAppNotif(`⚠️ Could not delete — the shared database rejected this (${e.message}).`);
     }
   } else {
-    state.schools=state.schools.filter(x=>x.id!==id);
+    const idx=state._rawSchools.findIndex(x=>x.id===id);
+    if(idx>-1)state._rawSchools[idx]={...state._rawSchools[idx],deleted:true,deletedAt,deletedBy};
+    deriveSchools();
     saveClustersLocal();
     recomputeDispatched();
     renderAllViews();
-    showInAppNotif('Cluster removed');
+    showInAppNotif('Cluster moved to Trash');
   }
   openClusterAdmin();
+}
+async function restoreCluster(id){
+  const idx=state._rawSchools.findIndex(x=>x.id===id);
+  if(idx===-1)return;
+  if(fbReady()){
+    updateSyncBadge('saving');
+    try{
+      await db.collection('clusters').doc(String(id)).update({deleted:false,deletedAt:null,deletedBy:null});
+      updateSyncBadge('connected');
+      state._rawSchools[idx]={...state._rawSchools[idx],deleted:false,deletedAt:null,deletedBy:null};
+      deriveSchools();
+      recomputeDispatched();
+      renderAllViews();
+      showInAppNotif('Cluster restored');
+    }catch(e){
+      console.warn('Firestore cluster restore failed:',e.message);
+      updateSyncBadge('error');
+      showInAppNotif(`⚠️ Could not restore — the shared database rejected this (${e.message}).`);
+    }
+  } else {
+    state._rawSchools[idx]={...state._rawSchools[idx],deleted:false,deletedAt:null,deletedBy:null};
+    deriveSchools();
+    saveClustersLocal();
+    recomputeDispatched();
+    renderAllViews();
+    showInAppNotif('Cluster restored');
+  }
+  renderTrash();
+}
+
+// ─── TRASH / RECOVERY ─────────────────────────────────────────────────────────
+function openTrash(){
+  renderTrash();
+  document.getElementById('trash-modal').classList.remove('hidden');
+}
+function renderTrash(){
+  const cEl=document.getElementById('trash-clusters-list');
+  const dEl=document.getElementById('trash-dispatches-list');
+  if(!cEl||!dEl)return;
+  const deletedClusters=state._rawSchools.filter(s=>s.deleted).sort((a,b)=>new Date(b.deletedAt||0)-new Date(a.deletedAt||0));
+  cEl.innerHTML=deletedClusters.length?deletedClusters.map(s=>`
+    <tr>
+      <td><strong>${esc(s.cluster)}</strong></td>
+      <td style="font-size:12px">${esc(s.city)}</td>
+      <td style="font-size:11px;color:var(--tx3)">${fmtD(s.deletedAt)}${s.deletedBy?` by ${esc(s.deletedBy)}`:''}</td>
+      <td><button class="btn btn-s" onclick="restoreCluster(${s.id})"><i class="ti ti-rotate"></i> Restore</button></td>
+    </tr>`).join(''):`<tr><td colspan="4" style="font-size:12px;color:var(--tx3);text-align:center;padding:1rem">No deleted clusters.</td></tr>`;
+  const deletedDispatches=state.dispatches.filter(d=>d.deleted).sort((a,b)=>new Date(b.deletedAt||0)-new Date(a.deletedAt||0));
+  dEl.innerHTML=deletedDispatches.length?deletedDispatches.map(d=>`
+    <tr>
+      <td style="font-size:12px">${esc(d.cluster||'')}</td>
+      <td class="tabular">${fmt(d.qty)}</td>
+      <td style="font-size:11px;color:var(--tx3)">${fmtD(d.deletedAt)}${d.deletedBy?` by ${esc(d.deletedBy)}`:''}</td>
+      <td><button class="btn btn-s" onclick="restoreDispatch('${d.id}')"><i class="ti ti-rotate"></i> Restore</button></td>
+    </tr>`).join(''):`<tr><td colspan="4" style="font-size:12px;color:var(--tx3);text-align:center;padding:1rem">No deleted dispatches.</td></tr>`;
+}
+function openSiteMap(){
+  document.getElementById('sitemap-modal').classList.remove('hidden');
 }
 
 // ─── LIVE SCHOOL HEADS (Google Sheet) ────────────────────────────────────────
@@ -1056,7 +1181,7 @@ function timeAgo(iso){
 }
 function renderActivityFeed(){
   const el=document.getElementById('d-activity');if(!el)return;
-  const items=state.dispatches.filter(d=>!d.imported).sort((a,b)=>new Date(b.createdAt||b.date||0)-new Date(a.createdAt||a.date||0)).slice(0,10);
+  const items=state.dispatches.filter(d=>!d.imported&&!d.deleted).sort((a,b)=>new Date(b.createdAt||b.date||0)-new Date(a.createdAt||a.date||0)).slice(0,10);
   if(!items.length){el.innerHTML=`<div style="text-align:center;padding:1rem">${saplingSvg(40)}<div style="font-size:13px;color:var(--tx3)">No manually logged dispatches yet — activity will show up here as your team logs them.</div></div>`;return;}
   el.innerHTML=items.map(d=>{
     const name=(d.by||'—').trim();
@@ -1158,7 +1283,7 @@ function showClusterDetail(id){
   const st=gst(s);const pc=pct(s);
   const speciesList=(s.species||'').split(',').map(x=>x.trim()).filter(Boolean);
   const speciesHtml=speciesList.length?speciesList.map(sp=>`<span class="species-chip">${esc(sp)}</span>`).join(''):'<span style="font-size:12px;color:var(--tx3)">No species list recorded yet.</span>';
-  const history=state.dispatches.filter(d=>String(d.schoolId)===String(s.id)).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  const history=state.dispatches.filter(d=>String(d.schoolId)===String(s.id)&&!d.deleted).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
   const historyHtml=history.length?history.map(d=>`
     <div class="cd-tl-item${d.imported?' imported':''}">
       <div style="font-size:11px;color:var(--tx3)">${fmtD(d.date)}</div>
@@ -1191,7 +1316,7 @@ function showClusterDetail(id){
 
 // ─── DISPATCH LOG ─────────────────────────────────────────────────────────────
 function rDispatch(){
-  const has=state.dispatches.length>0;
+  const has=state.dispatches.some(d=>!d.deleted);
   document.getElementById('de').classList.toggle('hidden',has);
   if(!has){
     document.getElementById('de').innerHTML=`${saplingSvg(48)}<div>No dispatches logged yet</div><div style="font-size:11px;color:var(--tx3);margin-top:2px">Log your first one to start the trail</div>`;
@@ -1199,7 +1324,7 @@ function rDispatch(){
     document.getElementById('dt-pager').innerHTML='';
     return;
   }
-  const all=state.dispatches.slice().reverse();
+  const all=state.dispatches.filter(d=>!d.deleted).slice().reverse();
   const totalPages=Math.max(1,Math.ceil(all.length/PAGE_SIZE));
   if(dispatchPage>=totalPages)dispatchPage=totalPages-1;
   if(dispatchPage<0)dispatchPage=0;
@@ -1491,17 +1616,36 @@ async function saveDispatch(){
 function askDel(id){delTarget=id;document.getElementById('delm').classList.remove('hidden');}
 async function doDelete(){
   const id=delTarget;closeMo();
+  const deletedAt=new Date().toISOString(),deletedBy=currentUserEmail();
   if(fbReady()){
     updateSyncBadge('saving');
     try{
-      await db.collection('dispatches').doc(id).delete();
+      await db.collection('dispatches').doc(id).update({deleted:true,deletedAt,deletedBy});
       updateSyncBadge('connected');
       pushDigestSnapshot();
     }catch(e){console.warn('Firestore delete failed:',e.message);updateSyncBadge('error');}
   } else {
-    state.dispatches=state.dispatches.filter(d=>d.id!==id);
+    const d=state.dispatches.find(d=>d.id===id);
+    if(d){d.deleted=true;d.deletedAt=deletedAt;d.deletedBy=deletedBy;}
     recomputeDispatched();save();rDash();rDispatch();rAlerts();rClusters();rNearby();renderPlan();updateBadge();
   }
+}
+async function restoreDispatch(id){
+  if(fbReady()){
+    updateSyncBadge('saving');
+    try{
+      await db.collection('dispatches').doc(id).update({deleted:false,deletedAt:null,deletedBy:null});
+      updateSyncBadge('connected');
+      pushDigestSnapshot();
+      showInAppNotif('Dispatch restored');
+    }catch(e){console.warn('Firestore restore failed:',e.message);updateSyncBadge('error');}
+  } else {
+    const d=state.dispatches.find(d=>d.id===id);
+    if(d){d.deleted=false;d.deletedAt=null;d.deletedBy=null;}
+    recomputeDispatched();save();rDash();rDispatch();rAlerts();rClusters();rNearby();renderPlan();updateBadge();
+    showInAppNotif('Dispatch restored');
+  }
+  renderTrash();
 }
 
 // ─── BULK DISPATCH ENTRY (one truck, split across clusters) ──────────────────
@@ -1812,6 +1956,7 @@ function listenDispatches(){
     if(document.getElementById('pane-nearby').classList.contains('active'))rNearby();
     if(document.getElementById('pane-alerts').classList.contains('active'))rAlerts();
     if(document.getElementById('pane-plan').classList.contains('active'))renderPlan();
+    if(!document.getElementById('trash-modal').classList.contains('hidden'))renderTrash();
   },err=>{console.warn('dispatches listener error:',err.message);updateSyncBadge('error');});
 }
 function pulseSyncBadge(){
@@ -1849,10 +1994,12 @@ function listenClusters(){
   if(_clustersUnsub)_clustersUnsub();
   _clustersUnsub=db.collection('clusters').onSnapshot(snap=>{
     if(snap.empty)return; // let seedClustersIfNeeded populate it first
-    state.schools=snap.docs.map(doc=>({...doc.data(),id:parseInt(doc.data().id),dispatched:0}));
+    state._rawSchools=snap.docs.map(doc=>({...doc.data(),id:parseInt(doc.data().id),dispatched:0}));
+    deriveSchools();
     recomputeDispatched();
     renderAllViews();
     if(!document.getElementById('cluster-admin-modal').classList.contains('hidden'))renderClusterAdminList();
+    if(!document.getElementById('trash-modal').classList.contains('hidden'))renderTrash();
   },err=>{
     console.warn('clusters listener error:',err.message);
     showInAppNotif(`⚠️ Cluster sync is not working (${err.message}). If you've connected Firebase, make sure the Firestore rules in Settings — they now include a "clusters" collection — have been re-published in the Firebase Console.`);
