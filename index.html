@@ -173,11 +173,8 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
 <div class="sc">
   <div style="font-size:32px;margin-bottom:.75rem">🌱</div>
   <h2>BSS Plantation Drive</h2>
-  <p>Beaconhouse School System · 2026 · Pre-loaded with all tracking data. Sign in with your @bh.edu.pk Google account to sync live with your team, or skip to use it locally on this device.</p>
-  <div class="fr"><label>Firebase config <span style="font-weight:400;color:var(--tx3)">(needed once, only if signing in — paste the JSON snippet from your Firebase project settings)</span></label><textarea id="sk" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea></div>
-  <div style="font-size:11px;color:var(--tx3);margin-bottom:1.25rem">Stored only in your browser · Get this from <a href="https://console.firebase.google.com" target="_blank" style="color:var(--gr)">console.firebase.google.com</a> → Project settings → Your apps</div>
-  <button class="btn btn-p" onclick="bootWithGoogle()" style="width:100%;justify-content:center;margin-bottom:8px"><i class="ti ti-brand-google"></i> Sign in with Google</button>
-  <button class="btn" onclick="bootLocalOnly()" style="width:100%;justify-content:center">Skip — use locally on this device</button>
+  <p style="margin-bottom:1.5rem">Beaconhouse School System · 2026 · Pre-loaded with all tracking data. Sign in with your @bh.edu.pk Google account to continue.</p>
+  <button class="btn btn-p" onclick="bootWithGoogle()" style="width:100%;justify-content:center"><i class="ti ti-brand-google"></i> Sign in with Google</button>
 </div>
 </div>
 
@@ -372,14 +369,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
   <div>
     <div class="sec-t">Live team sync (Firebase)</div>
     <div class="info-box" style="font-size:12px">
-      <strong>One-time setup (~4 min, free, no credit card):</strong><br>
-      1. Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--bl-d)">console.firebase.google.com</a> → Add project → give it any name<br>
-      2. In the project, click Build → Firestore Database → Create database → Start in <em>test mode</em><br>
-      3. Click Build → Authentication → Get started → Sign-in method → enable <em>Google</em><br>
-      4. Same section → Settings tab → Authorized domains → add the domain this app is hosted on<br>
-      5. Click the gear icon → Project settings → scroll to "Your apps" → Add app → Web (&lt;/&gt;) → register it<br>
-      6. Copy the <code>firebaseConfig</code> object shown → paste it below → Connect<br>
-      7. In Firestore → Rules tab, paste the rules below → Publish
+      This app already points at its shared project — your teammates don't need to configure anything. They just open the app and click <strong>"Sign in with Google"</strong> with their own @bh.edu.pk account.
     </div>
     <div class="info-box" style="font-size:12px;background:var(--gr-l);color:var(--gr-d);border-color:#5DCAA5">
       <strong>Access is restricted to @bh.edu.pk accounts</strong>, enforced two ways: the app rejects and signs out any other Google account immediately, and — this is the part that actually matters for security — the Firestore rules below check the signed-in email's domain server-side, so someone couldn't bypass the app and hit your database directly with an unauthorized account.
@@ -410,7 +400,7 @@ service cloud.firestore {
 }</textarea>
         <button class="btn btn-s" style="margin-top:6px" onclick="navigator.clipboard.writeText(document.getElementById('rules-snippet').value).then(()=>this.textContent='Copied ✓')"><i class="ti ti-copy"></i> Copy rules</button>
       </div>
-      <div class="fr"><label>Firebase config <span style="font-weight:400;color:var(--tx3)">(paste the whole JSON object)</span></label><textarea id="s-fb-config" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea></div>
+      <div class="fr"><label>Advanced: point at a different Firebase project <span style="font-weight:400;color:var(--tx3)">(optional — leave blank to use this app's default shared project)</span></label><textarea id="s-fb-config" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-p" onclick="connectFirebase()"><i class="ti ti-plug"></i>Connect</button>
         <button class="btn btn-d" onclick="disconnectFirebase()" style="font-size:12px"><i class="ti ti-unlink"></i>Disconnect</button>
@@ -1602,12 +1592,16 @@ function saveSettings(){
 }
 
 // ─── FIREBASE ─────────────────────────────────────────────────────────────────
+// This project's config — not a secret (Firebase's own docs confirm this is meant to be
+// public in client-side code; real security comes from the Firestore rules, not from
+// hiding this). Baked in so teammates just sign in, with nothing to paste or configure.
+const FIREBASE_CONFIG={"apiKey":"AIzaSyDZRXAp7dtis0c7Ke226hwGEKaLN-Hisc8","authDomain":"bss-plantation-drive-2026.firebaseapp.com","projectId":"bss-plantation-drive-2026","storageBucket":"bss-plantation-drive-2026.firebasestorage.app","messagingSenderId":"658095271151","appId":"1:658095271151:web:42a4863951320138083f1a","measurementId":"G-0RZ42XRMJ8"};
 let fbApp=null, db=null, fbAuthReady=false;
 function fbReady(){return !!db && fbAuthReady;}
 
 function updateFbStatus(){
   const el=document.getElementById('fb-status');if(!el)return;
-  el.textContent=fbReady()?'✓ Connected':(state.settings.fbConfigRaw?'Saved, not yet connected':'Not connected');
+  el.textContent=fbReady()?'✓ Connected':'Not connected';
   el.style.color=fbReady()?'var(--gr-d)':'var(--tx3)';
 }
 // ─── THEME TOGGLE (dark/light, overrides system preference) ──────────────────
@@ -1694,16 +1688,18 @@ function updateSyncBadge(status){
   else{icon.className='ti ti-cloud-off';icon.style.color='var(--tx3)';text.textContent='Local only — connect Firebase to share';text.style.color='var(--tx3)';}
 }
 
-function initFirebaseApp(configRaw){
-  let config;
-  try{config=JSON.parse(configRaw);}catch(e){alert('That doesn\'t look like valid JSON. Paste the whole firebaseConfig object, including the curly braces.');return false;}
+function initFirebaseApp(configRaw,silent){
+  let config=FIREBASE_CONFIG;
+  if(configRaw){
+    try{config=JSON.parse(configRaw);}catch(e){if(!silent)alert('That doesn\'t look like valid JSON. Paste the whole firebaseConfig object, including the curly braces.');return false;}
+  }
   try{
     if(!fbApp)fbApp=firebase.initializeApp(config);
     db=firebase.firestore();
     return true;
   }catch(e){
     console.warn('Firebase init failed:',e.message);
-    alert('Could not connect to Firebase.\n\nError: '+e.message+'\n\nCheck that the config was pasted correctly.');
+    if(!silent)alert('Could not connect to Firebase.\n\nError: '+e.message+'\n\nCheck that the config was pasted correctly.');
     return false;
   }
 }
@@ -1745,12 +1741,11 @@ async function signInWithGoogleDomain(){
 
 async function connectFirebase(){
   const raw=document.getElementById('s-fb-config').value.trim();
-  if(!raw){alert('Paste your Firebase config first.');return;}
   if(!initFirebaseApp(raw))return;
-  state.settings.fbConfigRaw=raw;save();
+  if(raw){state.settings.fbConfigRaw=raw;save();}
   const ok=await signInWithGoogleDomain();
   updateFbStatus();
-  if(ok)alert('✅ Signed in! Dispatches will now sync live with your team.\n\nShare the same Firebase config with your teammates — each of them signs in with their own @bh.edu.pk Google account.');
+  if(ok)alert('✅ Signed in! Dispatches will now sync live with your team.\n\nYour teammates don\'t need to paste anything — they just open the app and click "Sign in with Google" with their own @bh.edu.pk account.');
 }
 function disconnectFirebase(){
   if(!confirm('Disconnect from Firebase? (Your local data stays safe, but you\'ll stop syncing with your team.)'))return;
@@ -2038,28 +2033,19 @@ function render2025Table(){
 
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 async function bootWithGoogle(){
-  const raw=document.getElementById('sk').value.trim()||state.settings.fbConfigRaw;
-  if(!raw){alert('Paste your Firebase config above first — this tells the app which shared project to sign in to.');return;}
-  if(!initFirebaseApp(raw))return;
-  state.settings.fbConfigRaw=raw;save();
-  document.getElementById('setup').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  rDash();updateBadge();
-  await signInWithGoogleDomain();
-  fetchLiveHeads();
-}
-function bootLocalOnly(){
-  document.getElementById('setup').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  rDash();updateBadge();
-  updateSyncBadge('local');
-  fetchLiveHeads();
-}
-// If a Firebase config was already saved from a previous visit and Firebase Auth still has
-// a valid, domain-matching session, resume straight into the dashboard — no repeat sign-in.
-async function tryResumeSession(){
-  if(!state.settings.fbConfigRaw)return;
   if(!initFirebaseApp(state.settings.fbConfigRaw))return;
+  const ok=await signInWithGoogleDomain();
+  if(!ok)return; // stay on the setup screen — don't reveal the app for a cancelled or rejected sign-in
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  rDash();updateBadge();
+  fetchLiveHeads();
+}
+// Firebase Auth persists a signed-in session on its own — if this browser already has a
+// valid, domain-matching Google session from a previous visit, resume straight into the
+// dashboard instead of asking for another sign-in click.
+async function tryResumeSession(){
+  if(!initFirebaseApp(state.settings.fbConfigRaw,true))return;
   firebase.auth().onAuthStateChanged(async user=>{
     if(fbAuthReady)return;
     if(user&&isAllowedEmail(user.email)){
@@ -2078,10 +2064,7 @@ document.getElementById('ct').addEventListener('keydown',clusterTableKeyNav);
 
 loadState();
 initDoneTracking();
-if(state.settings.fbConfigRaw){
-  document.getElementById('sk').value=state.settings.fbConfigRaw;
-  tryResumeSession();
-}
+tryResumeSession();
 </script>
 </body>
 </html>
