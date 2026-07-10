@@ -144,6 +144,8 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
 .plan-item{cursor:grab}.plan-item.dragging{opacity:.4}
 .plan-load.drag-over{background:var(--gr-l);outline:1.5px dashed var(--gr)}
 .presence-bar{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx3);margin-bottom:10px}
+.presence-btn{display:flex;align-items:center;gap:6px;background:none;border:none;padding:0;font:inherit;color:inherit;cursor:pointer;border-radius:6px}
+.presence-btn:hover{color:var(--tx2)}
 .presence-stack{display:flex}
 .presence-avatar{width:20px;height:20px;border-radius:50%;background:var(--gr-l);color:var(--gr-d);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);margin-left:-6px}
 .presence-avatar:first-child{margin-left:0}
@@ -636,6 +638,15 @@ service cloud.firestore {
       </tbody>
     </table>
   </div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
+</div>
+</div>
+
+<!-- Presence list modal -->
+<div class="mo hidden" id="presence-modal">
+<div class="md" style="width:360px">
+  <h3><i class="ti ti-users" style="color:var(--gr)"></i> Who's online</h3>
+  <div id="presence-list" style="max-height:340px;overflow-y:auto"></div>
   <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
 </div>
 </div>
@@ -1937,12 +1948,21 @@ function disconnectFirebase(){
 
 // ─── LIVE PRESENCE (who's viewing the dashboard right now) ───────────────────
 let _presenceId=null,_presenceInterval=null,_presenceUnsub=null;
+function presenceDisplayName(){
+  try{
+    const user=firebase.auth&&firebase.auth().currentUser;
+    if(user&&user.displayName)return user.displayName;
+    if(user&&user.email)return user.email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  }catch(e){}
+  return 'Someone';
+}
 function startPresence(){
   if(!fbReady()||_presenceId)return;
   _presenceId='p_'+Math.random().toString(36).slice(2)+Date.now();
   const heartbeat=()=>{
-    const name=(localStorage.getItem('bhs_by')||'Someone').trim()||'Someone';
-    db.collection('presence').doc(_presenceId).set({name,lastSeen:Date.now()}).catch(()=>{});
+    const name=presenceDisplayName();
+    const email=currentUserEmail();
+    db.collection('presence').doc(_presenceId).set({name,email,lastSeen:Date.now()}).catch(()=>{});
   };
   heartbeat();
   _presenceInterval=setInterval(heartbeat,20000);
@@ -1964,15 +1984,31 @@ function listenPresence(){
     renderPresence(active);
   },err=>console.warn('presence listener error:',err.message));
 }
+let _presenceActive=[];
 function renderPresence(active){
+  _presenceActive=active;
   const el=document.getElementById('presence-bar');if(!el)return;
   if(active.length<2){el.classList.add('hidden');el.innerHTML='';return;}
-  const initials=active.slice(0,5).map(p=>{
-    const n=(p.name||'?').trim();
-    return esc(n.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase());
+  const avatars=active.slice(0,5).map(p=>{
+    const n=(p.name||'Someone').trim();
+    const initials=esc(n.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase());
+    return `<span class="presence-avatar" title="${esc(n)}">${initials}</span>`;
   });
   el.classList.remove('hidden');
-  el.innerHTML=`<div class="presence-stack">${initials.map(i=>`<span class="presence-avatar" title="Online now">${i}</span>`).join('')}</div><span>${active.length} online now</span>`;
+  el.innerHTML=`<button class="presence-btn" onclick="openPresenceList()"><div class="presence-stack">${avatars.join('')}</div><span>${active.length} online now</span></button>`;
+  if(!document.getElementById('presence-modal').classList.contains('hidden'))renderPresenceList();
+}
+function openPresenceList(){
+  renderPresenceList();
+  document.getElementById('presence-modal').classList.remove('hidden');
+}
+function renderPresenceList(){
+  const el=document.getElementById('presence-list');if(!el)return;
+  el.innerHTML=_presenceActive.length?_presenceActive.map(p=>{
+    const n=esc((p.name||'Someone').trim());
+    const initials=esc((p.name||'?').trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase());
+    return `<div class="stat-row"><div style="display:flex;align-items:center;gap:10px"><span class="presence-avatar" style="margin-left:0">${initials}</span><div><strong>${n}</strong>${p.email?`<br><span style="font-size:11px;color:var(--tx3)">${esc(p.email)}</span>`:''}</div></div><span class="badge b-done">Online</span></div>`;
+  }).join(''):`<div class="empty">No one else is online right now.</div>`;
 }
 
 let _dispatchesUnsub=null, _settingsUnsub=null;
