@@ -26,7 +26,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sb-section-label{padding:.5rem 1.25rem .15rem;font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
 .nav{display:flex;align-items:center;gap:10px;padding:9px 1.25rem;cursor:pointer;color:var(--tx2);font-size:13px;font-weight:400;transition:all .15s;border-left:2px solid transparent}
 .nav:hover{background:var(--bg2);color:var(--tx)}.nav.active{color:var(--gr-d);background:var(--gr-l);border-left-color:var(--gr);font-weight:500}
-.nav i{font-size:17px}.bc{background:var(--re);color:#fff;font-size:10px;padding:1px 5px;border-radius:8px;margin-left:auto}
+.nav i{font-size:17px}.nav-ic{width:17px;height:17px;flex-shrink:0}.bc{background:var(--re);color:#fff;font-size:10px;padding:1px 5px;border-radius:8px;margin-left:auto}
 .sb-bottom{margin-top:auto;padding:1.25rem;border-top:.5px solid var(--bd)}
 .sb-backdrop{display:none}
 #setup{position:fixed;inset:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;z-index:1000;padding:2rem;overflow:hidden}
@@ -158,8 +158,13 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
   .mobile-bar{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:var(--bg);border-bottom:.5px solid var(--bd);position:sticky;top:0;z-index:300}
   .mobile-bar h1{font-size:15px;font-weight:600}
   .mobile-bar button{background:none;border:none;font-size:22px;color:var(--tx);cursor:pointer;padding:4px 8px}
-  .sb{display:none;position:fixed;top:0;left:0;height:100vh;width:78vw;max-width:280px;z-index:500;box-shadow:2px 0 16px rgba(0,0,0,.2)}
+  .sb{display:none;position:fixed;top:0;left:0;height:100vh;width:78vw;max-width:280px;z-index:500;box-shadow:2px 0 16px rgba(0,0,0,.2);padding:.75rem 0}
   .sb.open{display:flex}.sb-backdrop.open{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:400}
+  .sb .sb-logo{padding:0 1rem .85rem;margin-bottom:.4rem}
+  .sb .nav{padding:7px 1rem;font-size:12.5px}
+  .sb .sb-section-label{padding:.4rem 1rem .1rem}
+  .sb .sb-bottom{padding:.85rem 1rem}
+  .sb .sb-bottom .btn{padding:8px 10px;font-size:12.5px}
   .main{margin-left:0;padding:1rem}.metrics{grid-template-columns:1fr 1fr}
   .cg{grid-template-columns:1fr}.fg2{grid-template-columns:1fr}
   .yr-grid{grid-template-columns:1fr 1fr}#plantation-map{height:320px}
@@ -180,7 +185,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
 
 <div class="app hidden" id="app">
 <div class="mobile-bar">
-  <button onclick="toggleSidebar()" aria-label="Open menu"><i class="ti ti-menu-2"></i></button>
+  <button onclick="toggleSidebar()" aria-label="Open menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
   <h1 id="mobile-title">🌱 BSS Plantation Drive</h1>
   <span style="width:30px"></span>
 </div>
@@ -193,17 +198,17 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
     </div>
   </div>
   <div class="sb-section-label">Overview</div>
-  <div class="nav active" onclick="go('dashboard');closeSidebar()" id="nav-dashboard"><i class="ti ti-dashboard" aria-hidden="true"></i><span>Dashboard</span></div>
+  <div class="nav active" onclick="go('dashboard');closeSidebar()" id="nav-dashboard"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></div>
   <div class="sb-section-label">Operations</div>
-  <div class="nav" onclick="go('clusters');closeSidebar()" id="nav-clusters"><i class="ti ti-building-school" aria-hidden="true"></i><span>All Clusters</span></div>
-  <div class="nav" onclick="go('dispatch');closeSidebar()" id="nav-dispatch"><i class="ti ti-truck-delivery" aria-hidden="true"></i><span>Dispatch Log</span></div>
-  <div class="nav" onclick="go('nearby');closeSidebar()" id="nav-nearby"><i class="ti ti-map-pins" aria-hidden="true"></i><span>Nearby Clusters</span></div>
-  <div class="nav" onclick="go('alerts');closeSidebar()" id="nav-alerts"><i class="ti ti-bell" aria-hidden="true"></i><span>Alerts</span><span class="bc hidden" id="abc">0</span></div>
-  <div class="nav" onclick="go('plan');closeSidebar()" id="nav-plan"><i class="ti ti-route" aria-hidden="true"></i><span>Dispatch Plan</span></div>
+  <div class="nav" onclick="go('clusters');closeSidebar()" id="nav-clusters"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 21V10l8-6 8 6v11"/><path d="M9 21v-7h6v7"/><path d="M4 21h16"/></svg><span>All Clusters</span></div>
+  <div class="nav" onclick="go('dispatch');closeSidebar()" id="nav-dispatch"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="11" height="9" rx="1"/><path d="M13 10h4l3 3v3h-7z"/><circle cx="6.5" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg><span>Dispatch Log</span></div>
+  <div class="nav" onclick="go('nearby');closeSidebar()" id="nav-nearby"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Nearby Clusters</span></div>
+  <div class="nav" onclick="go('alerts');closeSidebar()" id="nav-alerts"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M9.5 19a2.5 2.5 0 0 0 5 0"/></svg><span>Alerts</span><span class="bc hidden" id="abc">0</span></div>
+  <div class="nav" onclick="go('plan');closeSidebar()" id="nav-plan"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="18" r="2.3"/><circle cx="18" cy="6" r="2.3"/><path d="M8 17c4-1 5-6 8-10"/></svg><span>Dispatch Plan</span></div>
   <div class="sb-section-label">Data</div>
-  <div class="nav" onclick="go('lastyear');closeSidebar()" id="nav-lastyear"><i class="ti ti-plant-2" aria-hidden="true"></i><span>2025 Initiative</span></div>
+  <div class="nav" onclick="go('lastyear');closeSidebar()" id="nav-lastyear"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-9"/><path d="M12 13c0-4-3-6-7-6 0 4 3 7 7 6z"/><path d="M12 13c0-5 3-8 8-8 0 5-3 9-8 8z"/></svg><span>2025 Initiative</span></div>
   <div class="sb-section-label">Configure</div>
-  <div class="nav" onclick="go('settings');closeSidebar()" id="nav-settings"><i class="ti ti-settings" aria-hidden="true"></i><span>Settings</span></div>
+  <div class="nav" onclick="go('settings');closeSidebar()" id="nav-settings"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.97 7.97 0 0 0 0-2l2-1.5-2-3.5-2.4 1a8 8 0 0 0-1.7-1L15 3h-4l-.3 2a8 8 0 0 0-1.7 1l-2.4-1-2 3.5L6.6 11a7.97 7.97 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 1.7 1L11 21h4l.3-2a8 8 0 0 0 1.7-1l2.4 1 2-3.5z"/></svg><span>Settings</span></div>
   <div class="sb-bottom">
     <div class="presence-bar hidden" id="presence-bar"></div>
     <button class="btn btn-p" onclick="openDM(null)" style="width:100%;justify-content:center;margin-bottom:8px"><i class="ti ti-plus"></i>Log Dispatch</button>
@@ -1120,7 +1125,13 @@ function go(p){
   if(p==='settings')loadSettingsForm();
   if(p==='lastyear'){render2025Summary();try{renderMap();}catch(e){console.warn('Map unavailable (blocked or offline):',e.message);}render2025Table();}
 }
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-backdrop').classList.toggle('open');}
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const opening=!sb.classList.contains('open');
+  sb.classList.toggle('open');
+  document.getElementById('sb-backdrop').classList.toggle('open');
+  if(opening)sb.scrollTop=0;
+}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-backdrop').classList.remove('open');}
 function closeMo(){document.querySelectorAll('.mo').forEach(x=>x.classList.add('hidden'));}
 
