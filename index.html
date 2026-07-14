@@ -1406,7 +1406,7 @@ function rNearby(){
 }
 
 // ─── DISPATCH PLAN ────────────────────────────────────────────────────────────
-let CMIN=12000,CMAX=15000;
+let CMIN=12000,CMAX=20000;
 const ZONES=[
   {id:"NR-1",name:"Islamabad Core",region:"North",color:"b-n",
    desc:"F-7/F-8/Margalla · Bahria Enclave · PWD · I-9/E-11/H-11 · F-9 Greenbelt",
@@ -1541,11 +1541,12 @@ function packContainers(zone){
 
 function renderPlan(){
   const totalRem=state.schools.reduce((a,s)=>a+Math.max(0,remaining(s)),0);
-  const loads=Math.ceil(totalRem/13000);
+  const capAvg=Math.round((CMIN+CMAX)/2);
+  const loads=Math.ceil(totalRem/capAvg);
   document.getElementById('plan-summary').innerHTML=`
     <div class="metrics" style="margin-bottom:1rem">
       <div class="metric"><div class="mlabel">Total remaining</div><div class="mval" style="color:var(--am)">${fmt(totalRem)}</div><div class="msub">plants to dispatch</div></div>
-      <div class="metric"><div class="mlabel">Est. container loads</div><div class="mval">${loads}</div><div class="msub">at avg 13,000/load</div></div>
+      <div class="metric"><div class="mlabel">Est. container loads</div><div class="mval">${loads}</div><div class="msub">at avg ${fmt(capAvg)}/load</div></div>
       <div class="metric"><div class="mlabel">Active zones</div><div class="mval">${ZONES.filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;})).length}</div><div class="msub">with pending clusters</div></div>
       <div class="metric"><div class="mlabel">Container range</div><div class="mval" style="font-size:16px">${fmt(CMIN)}–${fmt(CMAX)}</div><div class="msub">plants per load</div></div>
     </div>`;
