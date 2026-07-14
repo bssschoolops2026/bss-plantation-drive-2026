@@ -17,9 +17,9 @@
 :root[data-theme="dark"]{--gr:#34C77B;--gr-l:#123B2C;--gr-d:#7FE3B4;--am:#F0B23A;--am-l:#3D2E0F;--am-d:#FFD98A;--re:#E86259;--re-l:#3B1614;--re-d:#FF9990;--bl:#4FA3EA;--bl-l:#122B3D;--bl-d:#9CCBF2;--mg:#E0559A;--mg-l:#3A1225;--mg-d:#F5A8CB;--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--bd:rgba(255,255,255,.1);--bd2:rgba(255,255,255,.18)}
 :root[data-theme="light"]{--gr:#1FAE7E;--gr-l:#DFF5EC;--gr-d:#0B6B4D;--am:#E0A020;--am-l:#FCEFD4;--am-d:#8A5A0A;--re:#D6483F;--re-l:#FBEAE8;--re-d:#9C2F28;--bl:#2D8FE0;--bl-l:#E3F1FC;--bl-d:#1B5E96;--mg:#C42D6B;--mg-l:#FBE7EF;--mg-d:#8A1F4B;--bg:#fff;--bg2:#f8f8f6;--bg3:#f1efe8;--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--bd:rgba(0,0,0,.12);--bd2:rgba(0,0,0,.2)}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--tx);font-size:14px;min-height:100vh}
-.app{display:flex;min-height:100vh}
-.sb{width:226px;background:var(--bg);border-right:.5px solid var(--bd);padding:1.5rem 0;flex-shrink:0;position:fixed;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--tx);font-size:14px;min-height:100vh;min-height:100dvh}
+.app{display:flex;min-height:100vh;min-height:100dvh}
+.sb{width:226px;background:var(--bg);border-right:.5px solid var(--bd);padding:1.5rem 0;flex-shrink:0;position:fixed;height:100vh;height:100dvh;overflow-y:auto;display:flex;flex-direction:column}
 .main{margin-left:226px;padding:2rem;flex:1;max-width:1140px}
 .sb-logo{padding:0 1.25rem 1.25rem;border-bottom:.5px solid var(--bd);margin-bottom:.75rem}
 .sb-logo h1{font-size:15px;font-weight:600}.sb-logo p{font-size:11px;color:var(--tx3);margin-top:2px}
@@ -160,7 +160,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
   .mobile-bar{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:var(--bg);border-bottom:.5px solid var(--bd);position:sticky;top:0;z-index:300}
   .mobile-bar h1{font-size:15px;font-weight:600}
   .mobile-bar button{background:none;border:none;font-size:22px;color:var(--tx);cursor:pointer;padding:4px 8px}
-  .sb{display:none;position:fixed;top:0;left:0;height:100vh;width:78vw;max-width:280px;z-index:500;box-shadow:2px 0 16px rgba(0,0,0,.2);padding:.75rem 0}
+  .sb{display:none;position:fixed;top:0;left:0;height:100vh;height:100dvh;width:78vw;max-width:280px;z-index:500;box-shadow:2px 0 16px rgba(0,0,0,.2);padding:.75rem 0}
   .sb.open{display:flex}.sb-backdrop.open{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:400}
   .sb .sb-logo{padding:0 1rem .85rem;margin-bottom:.4rem}
   .sb .nav{padding:7px 1rem;font-size:12.5px}
@@ -1173,7 +1173,7 @@ function closeMo(){document.querySelectorAll('.mo').forEach(x=>x.classList.add('
 function rDash(){
   const tot=state.schools.reduce((a,s)=>a+s.required,0);
   const dis=state.schools.reduce((a,s)=>a+s.dispatched,0);
-  const rem=tot-dis;
+  const rem=state.schools.reduce((a,s)=>a+remaining(s),0);
   const p=tot>0?Math.round(dis/tot*100):0;
   animateCount('m1',tot);
   animateCount('m2',dis);
@@ -1410,8 +1410,8 @@ function rNearby(){
   state.schools.forEach(s=>{s.city.split('/').map(c=>c.trim()).forEach(c=>{if(!cm[c])cm[c]=[];cm[c].push(s);});});
   const groups=Object.entries(cm).filter(([,ss])=>ss.length>1).sort((a,b)=>b[1].length-a[1].length);
   document.getElementById('ng').innerHTML=groups.map(([city,ss])=>{
-    const tot=ss.reduce((a,s)=>a+s.required,0);const dis=ss.reduce((a,s)=>a+s.dispatched,0);const p=Math.min(100,Math.round(dis/tot*100));
-    return`<div class="cc"><h4><i class="ti ti-map-pin" style="color:var(--gr)"></i>${city} <span style="font-weight:400;font-size:12px;color:var(--tx3)">${ss.length} clusters · ${fmt(tot)} plants</span></h4>${sproutBar(p)}<div style="font-size:11px;color:var(--tx3);margin:4px 0 6px">${p}% dispatched · ${fmt(Math.max(0,tot-dis))} remaining</div><div class="stags">${ss.map(s=>`<span class="stag">${s.cluster} · ${fmt(remaining(s))} rem</span>`).join('')}</div></div>`;}).join('');
+    const tot=ss.reduce((a,s)=>a+s.required,0);const dis=ss.reduce((a,s)=>a+s.dispatched,0);const rem=ss.reduce((a,s)=>a+remaining(s),0);const p=Math.min(100,Math.round(dis/tot*100));
+    return`<div class="cc"><h4><i class="ti ti-map-pin" style="color:var(--gr)"></i>${city} <span style="font-weight:400;font-size:12px;color:var(--tx3)">${ss.length} clusters · ${fmt(tot)} plants</span></h4>${sproutBar(p)}<div style="font-size:11px;color:var(--tx3);margin:4px 0 6px">${p}% dispatched · ${fmt(rem)} remaining</div><div class="stags">${ss.map(s=>`<span class="stag">${s.cluster} · ${fmt(remaining(s))} rem</span>`).join('')}</div></div>`;}).join('');
   requestAnimationFrame(()=>requestAnimationFrame(animateBars));
 }
 
@@ -2121,13 +2121,14 @@ async function seedClustersIfNeeded(){
 // ─── WEEKLY DIGEST SNAPSHOT (read by the GitHub Actions job) ─────────────────
 function fmtDigestEmail(){
   const tot=state.schools.reduce((a,s)=>a+s.required,0);const dis=state.schools.reduce((a,s)=>a+s.dispatched,0);
+  const rem=state.schools.reduce((a,s)=>a+remaining(s),0);
   const thisWeek=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>=0&&d<=7&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
   const next7=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>7&&d<=14&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
   const overdue=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<0&&gst(s)!=='done';});
   const top5=state.schools.filter(s=>gst(s)!=='done').sort((a,b)=>remaining(b)-remaining(a)).slice(0,5);
 
   let body=`🌱 WEEKLY PLANTATION DRIVE UPDATE\n${'='.repeat(36)}\nWeek of ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}\n\n`;
-  body+=`OVERALL PROGRESS\n${'─'.repeat(20)}\nTotal ordered:  ${fmt(tot)}\nDispatched:     ${fmt(dis)} (${Math.round(dis/tot*100)}%)\nRemaining:      ${fmt(tot-dis)}\nClusters done:  ${state.schools.filter(s=>gst(s)==='done').length} of ${state.schools.length}\n\n`;
+  body+=`OVERALL PROGRESS\n${'─'.repeat(20)}\nTotal ordered:  ${fmt(tot)}\nDispatched:     ${fmt(dis)} (${Math.round(dis/tot*100)}%)\nRemaining:      ${fmt(rem)}\nClusters done:  ${state.schools.filter(s=>gst(s)==='done').length} of ${state.schools.length}\n\n`;
   if(overdue.length){body+=`⚠️  OVERDUE (missed planting date)\n${'─'.repeat(36)}\n`;overdue.forEach(s=>{const d=Math.abs(du(s.plantingDate));body+=`• ${s.cluster} (${s.city}) — ${fmt(remaining(s))} plants — ${d}d overdue\n`;});body+='\n';}
   if(thisWeek.length){body+=`📅 THIS WEEK'S DISPATCHES (0–7 days)\n${'─'.repeat(36)}\n`;thisWeek.forEach(s=>{const d=du(s.plantingDate);body+=`• ${s.cluster} (${s.city}) — ${fmt(remaining(s))} plants — Planting ${fmtD(s.plantingDate)} (${d===0?'today':d===1?'tomorrow':d+'d'})\n  Contact: ${getConvenor(s)} · ${s.contact}\n`;});body+='\n';}
   else{body+=`✅  No planting dates this week.\n\n`;}
