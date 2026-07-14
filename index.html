@@ -1485,15 +1485,33 @@ function planDragEnd(e){e.currentTarget.classList.remove('dragging');}
 function planDrop(e,zoneId,targetIdx){
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
-  if(!_planDrag||_planDrag.zoneId!==zoneId||_planDrag.containerIdx===targetIdx){_planDrag=null;return;}
-  const zone=ZONES.find(z=>z.id===zoneId);
-  const containers=getContainers(zone).map(c=>({...c,items:[...c.items]}));
-  const [moved]=containers[_planDrag.containerIdx].items.splice(_planDrag.itemIdx,1);
-  _planDrag=null;
-  if(!moved)return;
-  containers[targetIdx].items.push(moved);
-  containers.forEach(c=>{c.total=c.items.reduce((a,i)=>a+i.take,0);c.belowMin=c.total<CMIN;});
-  _planOverrides[zoneId]=containers.filter(c=>c.items.length>0);
+  if(!_planDrag)return;
+  const srcZoneId=_planDrag.zoneId;
+  if(srcZoneId===zoneId&&_planDrag.containerIdx===targetIdx){_planDrag=null;return;}
+  if(srcZoneId===zoneId){
+    const zone=ZONES.find(z=>z.id===zoneId);
+    const containers=getContainers(zone).map(c=>({...c,items:[...c.items]}));
+    const [moved]=containers[_planDrag.containerIdx].items.splice(_planDrag.itemIdx,1);
+    _planDrag=null;
+    if(!moved)return;
+    containers[targetIdx].items.push(moved);
+    containers.forEach(c=>{c.total=c.items.reduce((a,i)=>a+i.take,0);c.belowMin=c.total<CMIN;});
+    _planOverrides[zoneId]=containers.filter(c=>c.items.length>0);
+  } else {
+    // Cross-zone move — e.g. combining an under-minimum load with a nearby zone's load.
+    const srcZone=ZONES.find(z=>z.id===srcZoneId);
+    const srcContainers=getContainers(srcZone).map(c=>({...c,items:[...c.items]}));
+    const [moved]=srcContainers[_planDrag.containerIdx].items.splice(_planDrag.itemIdx,1);
+    _planDrag=null;
+    if(!moved)return;
+    srcContainers.forEach(c=>{c.total=c.items.reduce((a,i)=>a+i.take,0);c.belowMin=c.total<CMIN;});
+    _planOverrides[srcZoneId]=srcContainers.filter(c=>c.items.length>0);
+    const tgtZone=ZONES.find(z=>z.id===zoneId);
+    const tgtContainers=getContainers(tgtZone).map(c=>({...c,items:[...c.items]}));
+    tgtContainers[targetIdx].items.push(moved);
+    tgtContainers.forEach(c=>{c.total=c.items.reduce((a,i)=>a+i.take,0);c.belowMin=c.total<CMIN;});
+    _planOverrides[zoneId]=tgtContainers.filter(c=>c.items.length>0);
+  }
   renderPlan();
 }
 function resetAndRenderPlan(){_planOverrides={};renderPlan();}
