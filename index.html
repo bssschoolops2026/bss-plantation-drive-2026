@@ -1679,7 +1679,6 @@ async function saveDispatch(){
     try{
       await db.collection('dispatches').add(newDispatch);
       updateSyncBadge('connected');
-      pushDigestSnapshot();
     }catch(e){console.warn('Firestore add failed:',e.message);updateSyncBadge('error');showInAppNotif('⚠️ Could not sync to shared database — check your connection.');}
   } else {
     state.dispatches.push(newDispatch);
@@ -1695,7 +1694,6 @@ async function doDelete(){
     try{
       await db.collection('dispatches').doc(id).update({deleted:true,deletedAt,deletedBy});
       updateSyncBadge('connected');
-      pushDigestSnapshot();
     }catch(e){console.warn('Firestore delete failed:',e.message);updateSyncBadge('error');}
   } else {
     const d=state.dispatches.find(d=>d.id===id);
@@ -1709,7 +1707,6 @@ async function restoreDispatch(id){
     try{
       await db.collection('dispatches').doc(id).update({deleted:false,deletedAt:null,deletedBy:null});
       updateSyncBadge('connected');
-      pushDigestSnapshot();
       showInAppNotif('Dispatch restored');
     }catch(e){console.warn('Firestore restore failed:',e.message);updateSyncBadge('error');}
   } else {
@@ -1769,7 +1766,6 @@ async function saveBulkDispatch(){
       entries.forEach(rec=>batch.set(db.collection('dispatches').doc(rec.id),rec));
       await batch.commit();
       updateSyncBadge('connected');
-      pushDigestSnapshot();
     }catch(e){console.warn('Firestore bulk add failed:',e.message);updateSyncBadge('error');showInAppNotif('⚠️ Could not sync to shared database — check your connection.');}
   } else {
     state.dispatches.push(...entries);
@@ -2115,33 +2111,6 @@ async function seedClustersIfNeeded(){
     batch.set(db.collection('meta').doc('seedClusters'),{done:true,at:new Date().toISOString()});
     await batch.commit();
   }catch(e){console.warn('cluster seed check failed:',e.message);}
-}
-
-// ─── WEEKLY DIGEST SNAPSHOT (read by the GitHub Actions job) ─────────────────
-function fmtDigestEmail(){
-  const tot=state.schools.reduce((a,s)=>a+s.required,0);const dis=state.schools.reduce((a,s)=>a+s.dispatched,0);
-  const rem=state.schools.reduce((a,s)=>a+remaining(s),0);
-  const thisWeek=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>=0&&d<=7&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
-  const next7=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d>7&&d<=14&&gst(s)!=='done';}).sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate));
-  const overdue=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<0&&gst(s)!=='done';});
-  const top5=state.schools.filter(s=>gst(s)!=='done').sort((a,b)=>remaining(b)-remaining(a)).slice(0,5);
-
-  let body=`🌱 WEEKLY PLANTATION DRIVE UPDATE\n${'='.repeat(36)}\nWeek of ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}\n\n`;
-  body+=`OVERALL PROGRESS\n${'─'.repeat(20)}\nTotal ordered:  ${fmt(tot)}\nDispatched:     ${fmt(dis)} (${Math.round(dis/tot*100)}%)\nRemaining:      ${fmt(rem)}\nClusters done:  ${state.schools.filter(s=>gst(s)==='done').length} of ${state.schools.length}\n\n`;
-  if(overdue.length){body+=`⚠️  OVERDUE (missed planting date)\n${'─'.repeat(36)}\n`;overdue.forEach(s=>{const d=Math.abs(du(s.plantingDate));body+=`• ${s.cluster} (${s.city}) — ${fmt(remaining(s))} plants — ${d}d overdue\n`;});body+='\n';}
-  if(thisWeek.length){body+=`📅 THIS WEEK'S DISPATCHES (0–7 days)\n${'─'.repeat(36)}\n`;thisWeek.forEach(s=>{const d=du(s.plantingDate);body+=`• ${s.cluster} (${s.city}) — ${fmt(remaining(s))} plants — Planting ${fmtD(s.plantingDate)} (${d===0?'today':d===1?'tomorrow':d+'d'})\n  Contact: ${getConvenor(s)} · ${s.contact}\n`;});body+='\n';}
-  else{body+=`✅  No planting dates this week.\n\n`;}
-  if(next7.length){body+=`🗓️  UPCOMING (8–14 days)\n${'─'.repeat(36)}\n`;next7.forEach(s=>{body+=`• ${s.cluster} (${s.city}) — ${fmt(remaining(s))} plants — ${fmtD(s.plantingDate)}\n`;});body+='\n';}
-  body+=`TOP 5 PENDING (by quantity)\n${'─'.repeat(36)}\n`;
-  top5.forEach((s,i)=>{body+=`${i+1}. ${s.cluster} (${s.city}) — ${fmt(remaining(s))} plants remaining\n`;});
-  body+=`\nPrepared by: ${state.settings.projectName||'Plantation Drive'} System`;
-  return body;
-}
-function pushDigestSnapshot(){
-  if(!fbReady())return;
-  const subject=`🌱 ${state.settings.projectName||'Plantation Drive'} Weekly Update — ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long'})}`;
-  const bodyText=fmtDigestEmail();
-  db.collection('meta').doc('digest').set({subject,body:bodyText,updatedAt:new Date().toISOString()},{merge:true}).catch(e=>console.warn('digest push failed:',e.message));
 }
 
 function showInAppNotif(msg){
