@@ -1737,6 +1737,7 @@ function renderPlan(){
         </div>`;
       if(zone.note){html+=`<div style="font-size:12px;color:var(--bl-d);background:var(--bl-l);border-radius:var(--r);padding:6px 10px;margin-bottom:10px;border:.5px solid #85B7EB"><i class="ti ti-bulb" style="font-size:13px;margin-right:4px" aria-hidden="true"></i>${zone.note}</div>`;}
       if(zoneTot<CMIN){html+=`<div class="alert aw" style="margin-bottom:10px;font-size:12px"><i class="ti ti-alert-triangle"></i><div><strong>Zone total (${fmt(zoneTot)} plants) is below the 12,000 minimum truck load.</strong><br>Club this zone with a nearby zone in the same trip to meet minimum load requirement for OTIF.</div></div>`;}
+      const clusterCumTake={};
       containers.forEach((c,ci)=>{
         html+=`<div class="plan-load" ondragover="event.preventDefault();event.currentTarget.classList.add('drag-over')" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="planDrop(event,'${zone.id}',${ci})" style="border:.5px solid var(--bd);border-radius:var(--r);margin-top:8px;overflow:hidden">
           <div style="background:var(--bg2);padding:6px 12px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
@@ -1748,6 +1749,9 @@ function renderPlan(){
           const pd=item.plantingDate?du(item.plantingDate):null;
           const otifColor2=pd===null?'var(--tx3)':pd<=0?'var(--re-d)':pd<=7?'var(--am-d)':'var(--gr-d)';
           const otifLbl=pd===null?'No date set':pd<0?`Planting overdue by ${Math.abs(pd)} days — URGENT`:pd===0?'Planting TODAY':pd<=7?`Planting in ${pd} days — prepare now`:`Planting ${fmtD(item.plantingDate)} (${pd}d)`;
+          clusterCumTake[item.id]=(clusterCumTake[item.id]||0)+item.take;
+          const remAfterThisLoad=Math.max(0,item.rem-clusterCumTake[item.id]);
+          const isPartialLoad=remAfterThisLoad>0;
 
           html+=`<div class="plan-item" draggable="true" ondragstart="planDragStart(event,'${zone.id}',${ci},${ii})" ondragend="planDragEnd(event)" style="padding:8px 12px;border-top:.5px solid var(--bd)" title="Drag to move this cluster to a different load">
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -1755,7 +1759,7 @@ function renderPlan(){
                 <i class="ti ti-grip-vertical" style="color:var(--tx3);font-size:13px;margin-right:4px" aria-hidden="true"></i>
                 <strong style="font-size:13px">${item.cluster}</strong>
                 <span style="font-size:12px;color:var(--tx3);margin-left:8px">${item.city}</span>
-                ${item.partial?`<span class="badge" style="background:var(--am-l);color:var(--am-d);margin-left:6px;font-size:10px">Partial — ${fmt(item.rem-item.take)} to next load</span>`:''}
+                ${isPartialLoad?`<span class="badge" style="background:var(--am-l);color:var(--am-d);margin-left:6px;font-size:10px">Partial — ${fmt(remAfterThisLoad)} to next load</span>`:''}
                 ${pd!==null&&pd<=0?`<span class="badge b-pending" style="margin-left:6px;font-size:10px">OVERDUE</span>`:''}
               </div>
               <span style="white-space:nowrap"><strong style="font-size:14px;color:var(--tx)">${fmt(item.take)} plants</strong> ${isSettingsAdmin()?`<button class="btn btn-s" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();openPlanQtyEdit('${zone.id}',${ci},${ii})" title="Edit exact quantity for this load"><i class="ti ti-pencil"></i> Edit qty</button>`:''}</span>
@@ -1780,11 +1784,14 @@ function exportPlan(){
     if(!c.length)return;
     txt+=`\n${zone.id}: ${zone.name} (${zone.region})\n${'─'.repeat(50)}\n${zone.desc}\n`;
     if(zone.note)txt+=`NOTE: ${zone.note}\n`;
+    const clusterCumTake={};
     c.forEach((load,i)=>{
       txt+=`\n  Load ${i+1}: ${fmt(load.total)} plants\n`;
       load.items.forEach(item=>{
         const sp=item.species||'TBD';
-        txt+=`    • ${item.cluster} (${item.city}): ${fmt(item.take)} plants${item.partial?' [PARTIAL]':''}\n      Species: ${sp}\n`;
+        clusterCumTake[item.id]=(clusterCumTake[item.id]||0)+item.take;
+        const isPartialLoad=(item.rem-clusterCumTake[item.id])>0;
+        txt+=`    • ${item.cluster} (${item.city}): ${fmt(item.take)} plants${isPartialLoad?' [PARTIAL]':''}\n      Species: ${sp}\n`;
       });
     });
     txt+='\n';
