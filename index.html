@@ -405,7 +405,7 @@ service cloud.firestore {
     }
     match /meta/{docId} {
       allow read: if isAllowed();
-      allow write: if isAllowed() && (docId != 'settings' || isAdmin());
+      allow write: if isAllowed() && ((docId != 'settings' && docId != 'routeCosts') || isAdmin());
     }
     match /presence/{id} {
       allow read, write: if isAllowed();
@@ -430,6 +430,12 @@ service cloud.firestore {
     <div class="card">
       <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">Add, edit, or remove clusters — no more editing source code. Changes sync live to your team when Firebase is connected, or stay saved on this device otherwise.</p>
       <button class="btn btn-p" onclick="openClusterAdmin()"><i class="ti ti-building-school"></i>Manage clusters</button>
+    </div>
+
+    <div class="sec-t">Manage route costs</div>
+    <div class="card">
+      <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">Set an estimated cost per truckload for each route in the Dispatch Plan, so the team can see a rough logistics cost per load — and a running total — before committing to a route.</p>
+      <button class="btn btn-p" onclick="openRouteCostAdmin()"><i class="ti ti-currency-rupee"></i>Manage route costs</button>
     </div>
 
     <div class="sec-t">Trash</div>
@@ -571,6 +577,30 @@ service cloud.firestore {
 </div>
 </div>
 
+<!-- Manage Route Costs modal -->
+<div class="mo hidden" id="route-cost-modal">
+<div class="md" style="width:640px">
+  <h3><i class="ti ti-currency-rupee" style="color:var(--gr)"></i> Manage Route Costs</h3>
+  <p style="font-size:12px;color:var(--tx3);margin:-8px 0 12px">Estimated cost per truckload (PKR), by route. Leave blank for routes you haven't estimated yet — they'll show as "not set" in the Dispatch Plan instead of a made-up number.</p>
+  <div class="tw" style="max-height:420px;overflow-y:auto"><table>
+    <thead><tr><th>Route</th><th>Name</th><th>Rgn</th><th>Est. cost / load (PKR)</th></tr></thead>
+    <tbody id="route-cost-admin-list"></tbody>
+  </table></div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-p" onclick="saveRouteCostAdmin()"><i class="ti ti-check"></i>Save all</button></div>
+</div>
+</div>
+
+<!-- Dispatch Plan: edit exact quantity for a load -->
+<div class="mo hidden" id="plan-qty-modal">
+<div class="md" style="width:380px">
+  <h3><i class="ti ti-pencil" style="color:var(--gr)"></i> Edit quantity</h3>
+  <p id="plan-qty-context" style="font-size:12px;color:var(--tx3);margin:-8px 0 12px"></p>
+  <div class="fr"><label>Quantity in this load</label><input type="number" id="plan-qty-input" min="1"></div>
+  <p id="plan-qty-hint" style="font-size:11px;color:var(--tx3);margin-top:-6px"></p>
+  <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-p" onclick="savePlanQtyEdit()"><i class="ti ti-check"></i>Save</button></div>
+</div>
+</div>
+
 <!-- Cluster add/edit form modal -->
 <div class="mo hidden" id="cluster-form-modal">
 <div class="md">
@@ -631,6 +661,7 @@ service cloud.firestore {
         <tr><td><strong>2025 Initiative</strong></td><td>Sidebar → 2025 Initiative</td><td>Reference data from last year's drive.</td></tr>
         <tr><td><strong>Settings</strong></td><td>Sidebar → Settings</td><td>Firebase sync status, Firestore rules, alert/digest preferences, manual actions.</td></tr>
         <tr><td>&nbsp;&nbsp;↳ Manage clusters</td><td>Settings → Manage clusters button</td><td>Add, edit, or remove clusters — no source-code edits needed.</td></tr>
+        <tr><td>&nbsp;&nbsp;↳ Manage route costs</td><td>Settings → Manage route costs button</td><td>Set an estimated cost per truckload for each route — shown in the Dispatch Plan.</td></tr>
         <tr><td>&nbsp;&nbsp;↳ Trash</td><td>Settings → Trash button</td><td>Restore any dispatch or cluster that was deleted by mistake.</td></tr>
         <tr><td>&nbsp;&nbsp;↳ Weekly digest setup</td><td>Settings → Weekly email digest card</td><td>One-time GitHub Actions setup so the team gets an emailed summary every week.</td></tr>
         <tr><td>&nbsp;&nbsp;↳ Export CSV</td><td>Settings → Manual actions, or sidebar bottom</td><td>Download the current cluster roster as a spreadsheet.</td></tr>
@@ -794,6 +825,7 @@ function loadState(){
   state._rawSchools=savedClusters?JSON.parse(savedClusters).map(s=>({...s,dispatched:0})):SD.map(mkSchool);
   deriveSchools();
   recomputeDispatched();
+  loadRouteCostsLocal();
 }
 function mkSchool(sd){
   return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:0,plantingDate:sd[6],convenor:sd[7],contact:sd[8],species:CSP[sd[0]]||''};
@@ -1484,6 +1516,71 @@ let _planOverrides={};
 function getContainers(zone){
   return _planOverrides[zone.id]||packContainers(zone);
 }
+
+// ─── ROUTE COSTS (estimated cost per truckload, per route) ───────────────────
+let _routeCosts={};
+function fmtPKR(n){return 'PKR '+fmt(n);}
+function routeCostPerLoad(zoneId){
+  const v=_routeCosts[zoneId];
+  return (v!=null&&v!=='')?Number(v):null;
+}
+function saveRouteCostsLocal(){
+  localStorage.setItem('bhs_route_costs_v1',JSON.stringify(_routeCosts));
+}
+function loadRouteCostsLocal(){
+  try{_routeCosts=JSON.parse(localStorage.getItem('bhs_route_costs_v1')||'{}');}catch(e){_routeCosts={};}
+}
+let _routeCostsUnsub=null;
+function listenRouteCosts(){
+  if(_routeCostsUnsub)_routeCostsUnsub();
+  _routeCostsUnsub=db.collection('meta').doc('routeCosts').onSnapshot(doc=>{
+    _routeCosts=(doc.exists&&doc.data().costs)||{};
+    if(document.getElementById('pane-plan').classList.contains('active'))renderPlan();
+    if(!document.getElementById('route-cost-modal').classList.contains('hidden'))renderRouteCostAdmin();
+  },err=>console.warn('route costs listener error:',err.message));
+}
+async function saveRouteCosts(newCosts){
+  _routeCosts=newCosts;
+  if(fbReady()){
+    updateSyncBadge('saving');
+    try{
+      await db.collection('meta').doc('routeCosts').set({costs:newCosts,updatedAt:new Date().toISOString()},{merge:true});
+      updateSyncBadge('connected');
+      showInAppNotif('Route costs saved');
+    }catch(e){
+      console.warn('Route costs save failed:',e.message);
+      updateSyncBadge('error');
+      showInAppNotif(`⚠️ Could not save — the shared database rejected this (${e.message}).`);
+    }
+  } else {
+    saveRouteCostsLocal();
+    showInAppNotif('Route costs saved');
+  }
+  if(document.getElementById('pane-plan').classList.contains('active'))renderPlan();
+}
+function openRouteCostAdmin(){
+  renderRouteCostAdmin();
+  document.getElementById('route-cost-modal').classList.remove('hidden');
+}
+function renderRouteCostAdmin(){
+  const el=document.getElementById('route-cost-admin-list');if(!el)return;
+  el.innerHTML=ZONES.map(z=>`
+    <tr>
+      <td><strong>${esc(z.id)}</strong></td>
+      <td style="font-size:12px">${esc(z.name)}</td>
+      <td>${rgBadge(z.region==='North'?'N':z.region==='Center'?'C':'S')}</td>
+      <td><input type="number" min="0" step="500" class="route-cost-input" data-zone="${esc(z.id)}" value="${routeCostPerLoad(z.id)??''}" placeholder="Not set" style="width:120px"></td>
+    </tr>`).join('');
+}
+function saveRouteCostAdmin(){
+  const newCosts={};
+  document.querySelectorAll('.route-cost-input').forEach(inp=>{
+    const v=inp.value.trim();
+    if(v!=='')newCosts[inp.dataset.zone]=Number(v);
+  });
+  saveRouteCosts(newCosts);
+  closeMo();
+}
 let _planDrag=null;
 function planDragStart(e,zoneId,containerIdx,itemIdx){
   _planDrag={zoneId,containerIdx,itemIdx};
@@ -1526,6 +1623,50 @@ function planDrop(e,zoneId,targetIdx){
 }
 function resetAndRenderPlan(){_planOverrides={};renderPlan();}
 
+// ─── EDIT EXACT QUANTITY FOR A LOAD ───────────────────────────────────────────
+let _planQtyEdit=null;
+function openPlanQtyEdit(zoneId,containerIdx,itemIdx){
+  if(!isSettingsAdmin()){showInAppNotif('Only the plantation drive admin can edit load quantities.');return;}
+  const zone=ZONES.find(z=>z.id===zoneId);
+  const containers=getContainers(zone);
+  const item=containers[containerIdx].items[itemIdx];
+  _planQtyEdit={zoneId,containerIdx,itemIdx};
+  document.getElementById('plan-qty-context').textContent=`${item.cluster} (${item.city}) — Load ${containerIdx+1} of ${containers.length}, ${zone.id}`;
+  document.getElementById('plan-qty-input').value=item.take;
+  const elsewhere=containers.reduce((a,c,ci)=>ci===containerIdx?a:a+c.items.filter(i=>i.id===item.id).reduce((b,i)=>b+i.take,0),0);
+  document.getElementById('plan-qty-hint').textContent=`Cluster's total remaining requirement: ${fmt(item.rem)}${elsewhere>0?` (${fmt(elsewhere)} allocated elsewhere in this route — increasing/decreasing this will adjust that automatically)`:' — this is its only allocation in this route, so it can\'t be rebalanced here; use drag-and-drop to move part of it to another load instead.'}`;
+  document.getElementById('plan-qty-modal').classList.remove('hidden');
+}
+function savePlanQtyEdit(){
+  const {zoneId,containerIdx,itemIdx}=_planQtyEdit;
+  const newQty=parseInt(document.getElementById('plan-qty-input').value);
+  if(!newQty||newQty<=0){alert('Enter a quantity greater than 0.');return;}
+  const zone=ZONES.find(z=>z.id===zoneId);
+  const containers=getContainers(zone).map(c=>({...c,items:c.items.map(i=>({...i}))}));
+  const item=containers[containerIdx].items[itemIdx];
+  const delta=newQty-item.take;
+  if(delta!==0){
+    let sibling=null,siblingContainerIdx=-1,siblingItemIdx=-1;
+    containers.forEach((c,ci)=>{
+      if(ci===containerIdx)return;
+      c.items.forEach((i,ii)=>{if(i.id===item.id){sibling=i;siblingContainerIdx=ci;siblingItemIdx=ii;}});
+    });
+    if(!sibling){
+      alert('This cluster only has one allocation in this route, so there\'s nothing to rebalance against. Use drag-and-drop to move part of it to another load first.');
+      return;
+    }
+    const newSiblingQty=sibling.take-delta;
+    if(newSiblingQty<1){alert(`That would leave less than 1 plant in the other load (${fmt(sibling.take)} currently there). Reduce the change and try again.`);return;}
+    containers[siblingContainerIdx].items[siblingItemIdx]={...sibling,take:newSiblingQty,partial:newSiblingQty<sibling.rem};
+  }
+  containers[containerIdx].items[itemIdx]={...item,take:newQty,partial:newQty<item.rem};
+  containers.forEach(c=>{c.total=c.items.reduce((a,i)=>a+i.take,0);c.belowMin=c.total<CMIN;});
+  _planOverrides[zoneId]=containers.filter(c=>c.items.length>0);
+  closeMo();
+  renderPlan();
+  showInAppNotif('Quantity updated');
+}
+
 function packContainers(zone){
   const pending=zone.cids.map(id=>state.schools.find(s=>s.id===id))
     .filter(s=>s&&(remaining(s))>0)
@@ -1553,12 +1694,20 @@ function renderPlan(){
   const totalRem=state.schools.reduce((a,s)=>a+Math.max(0,remaining(s)),0);
   const capAvg=Math.round((CMIN+CMAX)/2);
   const loads=Math.ceil(totalRem/capAvg);
+  const activeZones=ZONES.filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
+  let estCostTotal=0,zonesMissingCost=0;
+  activeZones.forEach(z=>{
+    const containers=getContainers(z);
+    const cost=routeCostPerLoad(z.id);
+    if(cost==null){zonesMissingCost++;return;}
+    estCostTotal+=cost*containers.length;
+  });
   document.getElementById('plan-summary').innerHTML=`
     <div class="metrics" style="margin-bottom:1rem">
       <div class="metric"><div class="mlabel">Total remaining</div><div class="mval" style="color:var(--am)">${fmt(totalRem)}</div><div class="msub">plants to dispatch</div></div>
       <div class="metric"><div class="mlabel">Est. container loads</div><div class="mval">${loads}</div><div class="msub">at avg ${fmt(capAvg)}/load</div></div>
-      <div class="metric"><div class="mlabel">Active zones</div><div class="mval">${ZONES.filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;})).length}</div><div class="msub">with pending clusters</div></div>
-      <div class="metric"><div class="mlabel">Container range</div><div class="mval" style="font-size:16px">${fmt(CMIN)}–${fmt(CMAX)}</div><div class="msub">plants per load</div></div>
+      <div class="metric"><div class="mlabel">Active zones</div><div class="mval">${activeZones.length}</div><div class="msub">with pending clusters</div></div>
+      <div class="metric"><div class="mlabel">Est. logistics cost</div><div class="mval" style="font-size:16px">${estCostTotal>0?fmtPKR(estCostTotal):'—'}</div><div class="msub">${zonesMissingCost>0?`${zonesMissingCost} route${zonesMissingCost>1?'s':''} not yet estimated`:'across all active routes'}</div></div>
     </div>`;
 
   let html='';
@@ -1572,6 +1721,8 @@ function renderPlan(){
       const containers=getContainers(zone);
       if(!containers.length)return;
       const zoneTot=containers.reduce((a,c)=>a+c.total,0);
+      const zoneCost=routeCostPerLoad(zone.id);
+      const costLine=zoneCost!=null?`Est. ${fmtPKR(zoneCost)}/load · ${fmtPKR(zoneCost*containers.length)} total`:'Cost not set';
       html+=`<div class="card" style="margin-bottom:.75rem;padding:1rem 1.25rem">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
@@ -1581,6 +1732,7 @@ function renderPlan(){
           <div style="text-align:right;flex-shrink:0;margin-left:1rem">
             <div style="font-size:18px;font-weight:600;color:var(--am)">${fmt(zoneTot)}</div>
             <div style="font-size:11px;color:var(--tx3)">${containers.length} load${containers.length>1?'s':''}</div>
+            <div style="font-size:11px;color:${zoneCost!=null?'var(--gr-d)':'var(--tx3)'}">${costLine}</div>
           </div>
         </div>`;
       if(zone.note){html+=`<div style="font-size:12px;color:var(--bl-d);background:var(--bl-l);border-radius:var(--r);padding:6px 10px;margin-bottom:10px;border:.5px solid #85B7EB"><i class="ti ti-bulb" style="font-size:13px;margin-right:4px" aria-hidden="true"></i>${zone.note}</div>`;}
@@ -1606,7 +1758,7 @@ function renderPlan(){
                 ${item.partial?`<span class="badge" style="background:var(--am-l);color:var(--am-d);margin-left:6px;font-size:10px">Partial — ${fmt(item.rem-item.take)} to next load</span>`:''}
                 ${pd!==null&&pd<=0?`<span class="badge b-pending" style="margin-left:6px;font-size:10px">OVERDUE</span>`:''}
               </div>
-              <strong style="font-size:14px;color:var(--tx);white-space:nowrap">${fmt(item.take)} plants</strong>
+              <span style="white-space:nowrap"><strong style="font-size:14px;color:var(--tx)">${fmt(item.take)} plants</strong> ${isSettingsAdmin()?`<button class="btn btn-s" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();openPlanQtyEdit('${zone.id}',${ci},${ii})" title="Edit exact quantity for this load"><i class="ti ti-pencil"></i> Edit qty</button>`:''}</span>
             </div>
             <div style="font-size:11px;color:${otifColor2};margin-top:3px"><i class="ti ti-clock" style="font-size:11px" aria-hidden="true"></i> OTIF: ${otifLbl}</div>
             <div style="font-size:11px;color:var(--tx3);margin-top:1px"><i class="ti ti-leaf" style="font-size:11px" aria-hidden="true"></i> ${sp}</div>
@@ -1925,6 +2077,7 @@ async function onAuthUserReady(){
   listenClusters();
   seedClustersIfNeeded();
   startPresence();
+  listenRouteCosts();
   updateSyncBadge('connected');
   applySettingsAccess();
 }
