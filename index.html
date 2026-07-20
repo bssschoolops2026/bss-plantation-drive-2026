@@ -826,6 +826,7 @@ function loadState(){
   deriveSchools();
   recomputeDispatched();
   loadRouteCostsLocal();
+  loadPlanOverridesLocal();
 }
 function mkSchool(sd){
   return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:0,plantingDate:sd[6],convenor:sd[7],contact:sd[8],species:CSP[sd[0]]||''};
@@ -1516,6 +1517,35 @@ let _planOverrides={};
 function getContainers(zone){
   return _planOverrides[zone.id]||packContainers(zone);
 }
+function savePlanOverridesLocal(){
+  localStorage.setItem('bhs_plan_overrides_v1',JSON.stringify(_planOverrides));
+}
+function loadPlanOverridesLocal(){
+  try{_planOverrides=JSON.parse(localStorage.getItem('bhs_plan_overrides_v1')||'{}');}catch(e){_planOverrides={};}
+}
+let _planOverridesUnsub=null;
+function listenPlanOverrides(){
+  if(_planOverridesUnsub)_planOverridesUnsub();
+  _planOverridesUnsub=db.collection('meta').doc('planOverrides').onSnapshot(doc=>{
+    _planOverrides=(doc.exists&&doc.data().overrides)||{};
+    if(document.getElementById('pane-plan').classList.contains('active'))renderPlan();
+  },err=>console.warn('plan overrides listener error:',err.message));
+}
+async function persistPlanOverrides(){
+  if(fbReady()){
+    try{
+      await db.collection('meta').doc('planOverrides').set({overrides:_planOverrides,updatedAt:new Date().toISOString()},{merge:true});
+    }catch(e){
+      console.warn('Plan overrides save failed:',e.message);
+      showInAppNotif(`⚠️ Could not save load changes — the shared database rejected this (${e.message}).`);
+      savePlanOverridesLocal();
+      return;
+    }
+  } else {
+    savePlanOverridesLocal();
+  }
+  showInAppNotif('Load changes saved');
+}
 
 // ─── ROUTE COSTS (estimated cost per truckload, per route) ───────────────────
 let _routeCosts={};
@@ -1620,8 +1650,14 @@ function planDrop(e,zoneId,targetIdx){
     _planOverrides[zoneId]=tgtContainers.filter(c=>c.items.length>0);
   }
   renderPlan();
+  persistPlanOverrides();
 }
-function resetAndRenderPlan(){_planOverrides={};renderPlan();}
+function resetAndRenderPlan(){
+  if(Object.keys(_planOverrides).length&&!confirm('This will undo all manual load changes (drag-and-drop moves and edited quantities) and reset every route back to the automatic split. This cannot be undone. Continue?'))return;
+  _planOverrides={};
+  renderPlan();
+  persistPlanOverrides();
+}
 
 // ─── EDIT EXACT QUANTITY FOR A LOAD ───────────────────────────────────────────
 let _planQtyEdit=null;
@@ -1664,7 +1700,7 @@ function savePlanQtyEdit(){
   _planOverrides[zoneId]=containers.filter(c=>c.items.length>0);
   closeMo();
   renderPlan();
-  showInAppNotif('Quantity updated');
+  persistPlanOverrides();
 }
 
 function packContainers(zone){
@@ -2085,6 +2121,7 @@ async function onAuthUserReady(){
   seedClustersIfNeeded();
   startPresence();
   listenRouteCosts();
+  listenPlanOverrides();
   updateSyncBadge('connected');
   applySettingsAccess();
 }
