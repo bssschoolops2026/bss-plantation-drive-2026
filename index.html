@@ -616,7 +616,7 @@ service cloud.firestore {
     <div class="fr"><label>Planting date</label><input type="date" id="cf-date"></div>
   </div>
   <div class="fg2">
-    <div class="fr"><label>Convenor name</label><input type="text" id="cf-convenor" placeholder="e.g. Ayesha Khan"></div>
+    <div class="fr"><label>Convenor name override</label><input type="text" id="cf-convenor" placeholder="Leave blank to use the name from the tracking sheet"><div id="cf-convenor-hint" style="font-size:11px;color:var(--tx3);margin-top:3px"></div></div>
     <div class="fr"><label>Contact</label><input type="text" id="cf-contact" placeholder="e.g. 03001234567"></div>
   </div>
   <div class="fr"><label>Species requested (optional)</label><textarea id="cf-species" placeholder="Kachnar, Neem, Sheesham..."></textarea></div>
@@ -832,7 +832,7 @@ function mkSchool(sd){
   return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:0,plantingDate:sd[6],convenor:sd[7],contact:sd[8],species:CSP[sd[0]]||''};
 }
 function saveClustersLocal(){
-  localStorage.setItem('bhs_clusters_v1',JSON.stringify(state._rawSchools.map(s=>({id:s.id,cluster:s.cluster,city:s.city,region:s.region,required:s.required,plantingDate:s.plantingDate,convenor:s.convenor,contact:s.contact,species:s.species||'',lastEditedBy:s.lastEditedBy||null,lastEditedAt:s.lastEditedAt||null,deleted:s.deleted||false,deletedAt:s.deletedAt||null,deletedBy:s.deletedBy||null}))));
+  localStorage.setItem('bhs_clusters_v1',JSON.stringify(state._rawSchools.map(s=>({id:s.id,cluster:s.cluster,city:s.city,region:s.region,required:s.required,plantingDate:s.plantingDate,convenor:s.convenor,convenorOverride:s.convenorOverride||null,contact:s.contact,species:s.species||'',lastEditedBy:s.lastEditedBy||null,lastEditedAt:s.lastEditedAt||null,deleted:s.deleted||false,deletedAt:s.deletedAt||null,deletedBy:s.deletedBy||null}))));
 }
 function save(){localStorage.setItem('bhs_v4',JSON.stringify({dispatches:state.dispatches,settings:{...state.settings,fbConfig:undefined}}));}
 
@@ -863,7 +863,7 @@ function renderClusterAdminList(){
       <td style="font-size:12px">${esc(s.city)}</td>
       <td>${rgBadge(s.region)}</td>
       <td class="tabular">${fmt(s.required)}</td>
-      <td style="font-size:12px;color:var(--tx2)">${esc(s.convenor)}</td>
+      <td style="font-size:12px;color:var(--tx2)">${esc(getConvenor(s))}${s.convenorOverride?' <span class="badge" style="font-size:9px">manual</span>':''}</td>
       <td style="font-size:11px;color:var(--tx3)">${s.lastEditedBy?`${esc(s.lastEditedBy)}<br>${fmtD(s.lastEditedAt)}`:'—'}</td>
       <td style="white-space:nowrap"><button class="btn btn-s" onclick="openClusterForm(${s.id})" title="Edit"><i class="ti ti-pencil"></i> Edit</button> <button class="btn btn-s btn-d" onclick="confirmDeleteCluster(${s.id})" title="Delete"><i class="ti ti-trash"></i> Delete</button></td>
     </tr>`).join('');
@@ -880,7 +880,9 @@ function openClusterForm(id){
   document.getElementById('cf-region').value=s?s.region:'N';
   document.getElementById('cf-required').value=s?s.required:'';
   document.getElementById('cf-date').value=s&&s.plantingDate?s.plantingDate:'';
-  document.getElementById('cf-convenor').value=s?s.convenor||'':'';
+  document.getElementById('cf-convenor').value=s?s.convenorOverride||'':'';
+  const autoConvenor=s&&_liveConvenors&&_liveConvenors[(s.cluster||'').trim().toUpperCase()];
+  document.getElementById('cf-convenor-hint').textContent=autoConvenor?`Auto (from tracking sheet): ${autoConvenor}`:s&&s.convenor?`No sheet match — falling back to: ${s.convenor}`:'';
   document.getElementById('cf-contact').value=s?s.contact||'':'';
   document.getElementById('cf-species').value=s?s.species||'':'';
   document.getElementById('cluster-form-modal').classList.remove('hidden');
@@ -893,12 +895,13 @@ async function saveClusterForm(){
   const required=parseInt(document.getElementById('cf-required').value)||0;
   if(!cluster||!city||required<=0){alert('Cluster name, city, and a required quantity greater than 0 are needed.');return;}
   const plantingDate=document.getElementById('cf-date').value||null;
-  const convenor=document.getElementById('cf-convenor').value.trim();
+  const convenorOverride=document.getElementById('cf-convenor').value.trim();
   const contact=document.getElementById('cf-contact').value.trim();
   const species=document.getElementById('cf-species').value.trim();
   const isEdit=!!idRaw;
   const id=isEdit?parseInt(idRaw):Date.now();
-  const record={id,cluster,city,region,required,plantingDate,convenor,contact,species,lastEditedBy:currentUserEmail(),lastEditedAt:new Date().toISOString()};
+  const existing=isEdit?state.schools.find(x=>x.id===id):null;
+  const record={id,cluster,city,region,required,plantingDate,convenor:existing?existing.convenor||'':'',convenorOverride,contact,species,lastEditedBy:currentUserEmail(),lastEditedAt:new Date().toISOString()};
   closeMo();
   if(fbReady()){
     updateSyncBadge('saving');
@@ -1027,7 +1030,43 @@ function openSiteMap(){
 const SCHOOL_HEADS_URL='https://docs.google.com/spreadsheets/d/1-RNYLZARZHWgPw6siRJJfK27FbHAfd1OjtTwuIC1xCY/export?format=csv';
 let _liveHeads=null,_headsLoading=false;
 function getConvenor(s){
-  return s.convenor;
+  if(s.convenorOverride&&s.convenorOverride.trim())return s.convenorOverride.trim();
+  const auto=_liveConvenors&&_liveConvenors[(s.cluster||'').trim().toUpperCase()];
+  return auto||s.convenor||'—';
+}
+
+// ─── LIVE CLUSTER CONVENORS (Google Sheet, 2nd tab: col A = cluster code, col F = convenor) ──
+const CLUSTER_CONVENORS_URL='https://docs.google.com/spreadsheets/d/1-RNYLZARZHWgPw6siRJJfK27FbHAfd1OjtTwuIC1xCY/export?format=csv&gid=577012220';
+let _liveConvenors=null,_convenorsLoading=false;
+async function fetchLiveConvenors(){
+  if(_liveConvenors||_convenorsLoading)return;
+  const cached=localStorage.getItem('bhs_live_convenors');
+  const cachedTime=parseInt(localStorage.getItem('bhs_live_convenors_time')||'0');
+  if(cached&&(Date.now()-cachedTime)<3600000){_liveConvenors=JSON.parse(cached);refreshClusterViewsIfActive();return;}
+  _convenorsLoading=true;
+  try{
+    const resp=await fetch(CLUSTER_CONVENORS_URL+'&t='+Date.now());
+    if(!resp.ok){_convenorsLoading=false;return;}
+    const csv=await resp.text();
+    _liveConvenors=parseConvenorsCSV(csv);
+    localStorage.setItem('bhs_live_convenors',JSON.stringify(_liveConvenors));
+    localStorage.setItem('bhs_live_convenors_time',String(Date.now()));
+  }catch(e){console.warn('Could not load live cluster convenors:',e.message);}
+  _convenorsLoading=false;
+  refreshClusterViewsIfActive();
+}
+function parseConvenorsCSV(csv){
+  const lines=csv.split('\n');
+  const result={};
+  lines.slice(1).forEach(line=>{
+    if(!line.trim())return;
+    const cols=splitCSVLine(line);
+    const cluster=(cols[0]||'').trim().toUpperCase();
+    const name=(cols[5]||'').trim();
+    if(!cluster||!name)return;
+    result[cluster]=name;
+  });
+  return result;
 }
 async function fetchLiveHeads(){
   if(_liveHeads||_headsLoading)return;
@@ -2452,6 +2491,7 @@ async function bootWithGoogle(){
   document.getElementById('app').classList.remove('hidden');
   rDash();updateBadge();
   fetchLiveHeads();
+  fetchLiveConvenors();
 }
 // Firebase Auth persists a signed-in session on its own — if this browser already has a
 // valid, domain-matching Google session from a previous visit, resume straight into the
@@ -2466,6 +2506,7 @@ async function tryResumeSession(){
       rDash();updateBadge();
       await onAuthUserReady();
       fetchLiveHeads();
+      fetchLiveConvenors();
     } else if(user){
       await firebase.auth().signOut();
     }
