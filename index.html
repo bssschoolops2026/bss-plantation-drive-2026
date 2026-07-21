@@ -180,7 +180,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
 <div class="sc">
   <div style="font-size:32px;margin-bottom:.75rem">🌱</div>
   <h2>BSS Plantation Drive</h2>
-  <p style="margin-bottom:1.5rem">Beaconhouse School System · 2026 · Pre-loaded with all tracking data. Sign in with your @bh.edu.pk or @beaconhouse.net Google account to continue.</p>
+  <p style="margin-bottom:1.5rem">Beaconhouse School System · 2026 · Pre-loaded with all tracking data. Sign in with your @bh.edu.pk, @beaconhouse.net, or @bic.edu.pk Google account to continue.</p>
   <button class="btn btn-p" onclick="bootWithGoogle()" style="width:100%;justify-content:center"><i class="ti ti-brand-google"></i> Sign in with Google</button>
 </div>
 </div>
@@ -378,10 +378,10 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
   <div>
     <div class="sec-t">Live team sync (Firebase)</div>
     <div class="info-box" style="font-size:12px">
-      This app already points at its shared project — your teammates don't need to configure anything. They just open the app and click <strong>"Sign in with Google"</strong> with their own @bh.edu.pk or @beaconhouse.net account.
+      This app already points at its shared project — your teammates don't need to configure anything. They just open the app and click <strong>"Sign in with Google"</strong> with their own @bh.edu.pk, @beaconhouse.net, or @bic.edu.pk account.
     </div>
     <div class="info-box" style="font-size:12px;background:var(--gr-l);color:var(--gr-d);border-color:#5DCAA5">
-      <strong>Access is restricted to @bh.edu.pk and @beaconhouse.net accounts</strong>, enforced two ways: the app rejects and signs out any other Google account immediately, and — this is the part that actually matters for security — the Firestore rules below check the signed-in email's domain server-side, so someone couldn't bypass the app and hit your database directly with an unauthorized account.
+      <strong>Access is restricted to @bh.edu.pk, @beaconhouse.net, and @bic.edu.pk accounts</strong>, enforced two ways: the app rejects and signs out any other Google account immediately, and — this is the part that actually matters for security — the Firestore rules below check the signed-in email's domain server-side, so someone couldn't bypass the app and hit your database directly with an unauthorized account.
     </div>
     <div class="info-box" style="font-size:12px;background:var(--gr-l);color:var(--gr-d);border-color:#5DCAA5">
       <strong>Settings is further restricted to one admin account</strong> (mahnoor.safdar@bh.edu.pk). Everyone else can't see the Settings tab at all, and — enforced the same server-side way — the rules below also block anyone but that account from editing clusters or the alert/digest preferences, even if they tried to hit the database directly.
@@ -394,7 +394,7 @@ service cloud.firestore {
     function isAllowed() {
       return request.auth != null
         && request.auth.token.email != null
-        && request.auth.token.email.lower().matches('.*@(bh[.]edu[.]pk|beaconhouse[.]net)$');
+        && request.auth.token.email.lower().matches('.*@(bh[.]edu[.]pk|beaconhouse[.]net|bic[.]edu[.]pk)$');
     }
     function isAdmin() {
       return isAllowed()
@@ -2111,7 +2111,7 @@ function initFirebaseApp(configRaw,silent){
     return false;
   }
 }
-function isAllowedEmail(email){return !!email&&/@(bh\.edu\.pk|beaconhouse\.net)$/i.test(email.trim());}
+function isAllowedEmail(email){return !!email&&/@(bh\.edu\.pk|beaconhouse\.net|bic\.edu\.pk)$/i.test(email.trim());}
 async function onAuthUserReady(){
   fbAuthReady=true;
   listenDispatches();
@@ -2134,7 +2134,7 @@ async function signInWithGoogleDomain(){
     if(!isAllowedEmail(email)){
       await firebase.auth().signOut();
       updateSyncBadge('error');
-      alert(`Only @bh.edu.pk or @beaconhouse.net email addresses can sign in to shared data.\n\n"${email||'That account'}" isn't one — please try again with your school Google account.`);
+      alert(`Only @bh.edu.pk, @beaconhouse.net, or @bic.edu.pk email addresses can sign in to shared data.\n\n"${email||'That account'}" isn't one — please try again with your school Google account.`);
       return false;
     }
     await onAuthUserReady();
@@ -2155,7 +2155,7 @@ async function connectFirebase(){
   if(raw){state.settings.fbConfigRaw=raw;save();}
   const ok=await signInWithGoogleDomain();
   updateFbStatus();
-  if(ok)alert('✅ Signed in! Dispatches will now sync live with your team.\n\nYour teammates don\'t need to paste anything — they just open the app and click "Sign in with Google" with their own @bh.edu.pk or @beaconhouse.net account.');
+  if(ok)alert('✅ Signed in! Dispatches will now sync live with your team.\n\nYour teammates don\'t need to paste anything — they just open the app and click "Sign in with Google" with their own @bh.edu.pk, @beaconhouse.net, or @bic.edu.pk account.');
 }
 function disconnectFirebase(){
   if(!confirm('Disconnect from Firebase? (Your local data stays safe, but you\'ll stop syncing with your team.)'))return;
