@@ -405,7 +405,7 @@ service cloud.firestore {
     }
     match /meta/{docId} {
       allow read: if isAllowed();
-      allow write: if isAllowed() && ((docId != 'settings' && docId != 'routeCosts') || isAdmin());
+      allow write: if isAllowed() && ((docId != 'settings' && docId != 'routeCosts' && docId != 'splitRoutes') || isAdmin());
     }
     match /presence/{id} {
       allow read, write: if isAllowed();
@@ -827,6 +827,7 @@ function loadState(){
   recomputeDispatched();
   loadRouteCostsLocal();
   loadPlanOverridesLocal();
+  loadSplitRoutesLocal();
 }
 function mkSchool(sd){
   return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:0,plantingDate:sd[6],convenor:sd[7],contact:sd[8],species:CSP[sd[0]]||''};
@@ -1586,6 +1587,85 @@ async function persistPlanOverrides(){
   showInAppNotif('Load changes saved');
 }
 
+// ─── SPLIT ROUTES (manually pull a cluster out of a clubbed zone into its own route) ──
+let _customZones=[]; // {id,name,region,color,desc,note,cids,parentZoneId}
+let _zoneExclusions={}; // zoneId -> [clusterIds already split out into a custom zone]
+function allZones(){return ZONES.concat(_customZones);}
+function saveSplitRoutesLocal(){
+  localStorage.setItem('bhs_split_routes_v1',JSON.stringify({customZones:_customZones,exclusions:_zoneExclusions}));
+}
+function loadSplitRoutesLocal(){
+  try{
+    const d=JSON.parse(localStorage.getItem('bhs_split_routes_v1')||'{}');
+    _customZones=d.customZones||[];
+    _zoneExclusions=d.exclusions||{};
+  }catch(e){_customZones=[];_zoneExclusions={};}
+}
+let _splitRoutesUnsub=null;
+function listenSplitRoutes(){
+  if(_splitRoutesUnsub)_splitRoutesUnsub();
+  _splitRoutesUnsub=db.collection('meta').doc('splitRoutes').onSnapshot(doc=>{
+    const d=doc.exists?doc.data():{};
+    _customZones=d.customZones||[];
+    _zoneExclusions=d.exclusions||{};
+    if(document.getElementById('pane-plan').classList.contains('active'))renderPlan();
+  },err=>console.warn('split routes listener error:',err.message));
+}
+async function persistSplitRoutes(){
+  if(fbReady()){
+    try{
+      await db.collection('meta').doc('splitRoutes').set({customZones:_customZones,exclusions:_zoneExclusions,updatedAt:new Date().toISOString()},{merge:true});
+    }catch(e){
+      console.warn('Split routes save failed:',e.message);
+      showInAppNotif(`⚠️ Could not save route split — the shared database rejected this (${e.message}).`);
+      saveSplitRoutesLocal();
+      return;
+    }
+  } else {
+    saveSplitRoutesLocal();
+  }
+  showInAppNotif('Route split saved');
+}
+function splitClusterOutOfZone(zoneId,clusterId){
+  if(!isSettingsAdmin()){showInAppNotif('Only the plantation drive admin can split routes.');return;}
+  const zone=allZones().find(z=>z.id===zoneId);
+  const activeIds=zone.cids.filter(id=>!(_zoneExclusions[zoneId]||[]).includes(id));
+  if(activeIds.length<=1){alert('This route only has one cluster left in it — nothing to split out.');return;}
+  const cluster=state.schools.find(s=>s.id===clusterId);
+  if(!cluster)return;
+  if(!confirm(`Split ${cluster.cluster} (${cluster.city}) out of ${zone.id} into its own separate route?\n\nIt'll get its own card in the Dispatch Plan with its own cost estimate. You can merge it back later from its new card.`))return;
+  let n=1,newId=`${zone.id}-SPLIT${n}`;
+  while(allZones().some(z=>z.id===newId)){n++;newId=`${zone.id}-SPLIT${n}`;}
+  _customZones.push({id:newId,name:`${cluster.cluster} (split from ${zone.id})`,region:zone.region,color:zone.color,desc:`${cluster.cluster} — ${cluster.city}`,note:'',cids:[clusterId],parentZoneId:zoneId});
+  if(!_zoneExclusions[zoneId])_zoneExclusions[zoneId]=[];
+  _zoneExclusions[zoneId].push(clusterId);
+  // Strip this cluster's items out of any existing manual load overrides for the source zone so nothing stale lingers.
+  if(_planOverrides[zoneId]){
+    const cleaned=_planOverrides[zoneId].map(c=>({...c,items:c.items.filter(i=>i.id!==clusterId)})).filter(c=>c.items.length>0);
+    cleaned.forEach(c=>{c.total=c.items.reduce((a,i)=>a+i.take,0);c.belowMin=c.total<CMIN;});
+    if(cleaned.length)_planOverrides[zoneId]=cleaned;else delete _planOverrides[zoneId];
+  }
+  delete _planOverrides[newId];
+  renderPlan();
+  persistSplitRoutes();
+  persistPlanOverrides();
+}
+function mergeZoneBack(customZoneId){
+  if(!isSettingsAdmin()){showInAppNotif('Only the plantation drive admin can merge routes back.');return;}
+  const zone=_customZones.find(z=>z.id===customZoneId);
+  if(!zone)return;
+  if(!confirm(`Merge ${zone.name} back into ${zone.parentZoneId}? It'll rejoin the original route and any cost estimate set just for this split route will be lost.`))return;
+  _customZones=_customZones.filter(z=>z.id!==customZoneId);
+  if(_zoneExclusions[zone.parentZoneId])_zoneExclusions[zone.parentZoneId]=_zoneExclusions[zone.parentZoneId].filter(id=>!zone.cids.includes(id));
+  delete _planOverrides[customZoneId];
+  delete _planOverrides[zone.parentZoneId];
+  const newCosts={..._routeCosts};delete newCosts[customZoneId];
+  renderPlan();
+  persistSplitRoutes();
+  persistPlanOverrides();
+  saveRouteCosts(newCosts);
+}
+
 // ─── ROUTE COSTS (estimated cost per truckload, per route) ───────────────────
 let _routeCosts={};
 function fmtPKR(n){return 'PKR '+fmt(n);}
@@ -1633,7 +1713,7 @@ function openRouteCostAdmin(){
 }
 function renderRouteCostAdmin(){
   const el=document.getElementById('route-cost-admin-list');if(!el)return;
-  el.innerHTML=ZONES.map(z=>`
+  el.innerHTML=allZones().map(z=>`
     <tr>
       <td><strong>${esc(z.id)}</strong></td>
       <td style="font-size:12px">${esc(z.name)}</td>
@@ -1665,7 +1745,7 @@ function planDrop(e,zoneId,targetIdx){
   const srcZoneId=_planDrag.zoneId;
   if(srcZoneId===zoneId&&_planDrag.containerIdx===targetIdx){_planDrag=null;return;}
   if(srcZoneId===zoneId){
-    const zone=ZONES.find(z=>z.id===zoneId);
+    const zone=allZones().find(z=>z.id===zoneId);
     const containers=getContainers(zone).map(c=>({...c,items:[...c.items]}));
     const [moved]=containers[_planDrag.containerIdx].items.splice(_planDrag.itemIdx,1);
     _planDrag=null;
@@ -1675,14 +1755,14 @@ function planDrop(e,zoneId,targetIdx){
     _planOverrides[zoneId]=containers.filter(c=>c.items.length>0);
   } else {
     // Cross-zone move — e.g. combining an under-minimum load with a nearby zone's load.
-    const srcZone=ZONES.find(z=>z.id===srcZoneId);
+    const srcZone=allZones().find(z=>z.id===srcZoneId);
     const srcContainers=getContainers(srcZone).map(c=>({...c,items:[...c.items]}));
     const [moved]=srcContainers[_planDrag.containerIdx].items.splice(_planDrag.itemIdx,1);
     _planDrag=null;
     if(!moved)return;
     srcContainers.forEach(c=>{c.total=c.items.reduce((a,i)=>a+i.take,0);c.belowMin=c.total<CMIN;});
     _planOverrides[srcZoneId]=srcContainers.filter(c=>c.items.length>0);
-    const tgtZone=ZONES.find(z=>z.id===zoneId);
+    const tgtZone=allZones().find(z=>z.id===zoneId);
     const tgtContainers=getContainers(tgtZone).map(c=>({...c,items:[...c.items]}));
     tgtContainers[targetIdx].items.push(moved);
     tgtContainers.forEach(c=>{c.total=c.items.reduce((a,i)=>a+i.take,0);c.belowMin=c.total<CMIN;});
@@ -1702,7 +1782,7 @@ function resetAndRenderPlan(){
 let _planQtyEdit=null;
 function openPlanQtyEdit(zoneId,containerIdx,itemIdx){
   if(!isSettingsAdmin()){showInAppNotif('Only the plantation drive admin can edit load quantities.');return;}
-  const zone=ZONES.find(z=>z.id===zoneId);
+  const zone=allZones().find(z=>z.id===zoneId);
   const containers=getContainers(zone);
   const item=containers[containerIdx].items[itemIdx];
   _planQtyEdit={zoneId,containerIdx,itemIdx};
@@ -1716,7 +1796,7 @@ function savePlanQtyEdit(){
   const {zoneId,containerIdx,itemIdx}=_planQtyEdit;
   const newQty=parseInt(document.getElementById('plan-qty-input').value);
   if(!newQty||newQty<=0){alert('Enter a quantity greater than 0.');return;}
-  const zone=ZONES.find(z=>z.id===zoneId);
+  const zone=allZones().find(z=>z.id===zoneId);
   const containers=getContainers(zone).map(c=>({...c,items:c.items.map(i=>({...i}))}));
   const item=containers[containerIdx].items[itemIdx];
   const delta=newQty-item.take;
@@ -1743,7 +1823,8 @@ function savePlanQtyEdit(){
 }
 
 function packContainers(zone){
-  const pending=zone.cids.map(id=>state.schools.find(s=>s.id===id))
+  const excluded=new Set(_zoneExclusions[zone.id]||[]);
+  const pending=zone.cids.filter(id=>!excluded.has(id)).map(id=>state.schools.find(s=>s.id===id))
     .filter(s=>s&&(remaining(s))>0)
     .map(s=>({...s,rem:remaining(s)}));
   if(!pending.length)return[];
@@ -1769,7 +1850,7 @@ function renderPlan(){
   const totalRem=state.schools.reduce((a,s)=>a+Math.max(0,remaining(s)),0);
   const capAvg=Math.round((CMIN+CMAX)/2);
   const loads=Math.ceil(totalRem/capAvg);
-  const activeZones=ZONES.filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
+  const activeZones=allZones().filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
   let estCostTotal=0,zonesMissingCost=0;
   activeZones.forEach(z=>{
     const containers=getContainers(z);
@@ -1788,7 +1869,7 @@ function renderPlan(){
   let html='';
   const regionOrder=['North','Center','South'];
   regionOrder.forEach(rgn=>{
-    const zones=ZONES.filter(z=>z.region===rgn);
+    const zones=allZones().filter(z=>z.region===rgn);
     const anyPending=zones.some(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
     if(!anyPending)return;
     html+=`<div style="font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin:1.5rem 0 .75rem">${rgn} Region</div>`;
@@ -1803,6 +1884,7 @@ function renderPlan(){
           <div>
             <div style="font-weight:600;font-size:14px">${zone.id} &nbsp;<span class="badge ${zone.color}">${zone.region}</span> &nbsp;${zone.name}</div>
             <div style="font-size:12px;color:var(--tx3);margin-top:2px">${zone.desc}</div>
+            ${zone.parentZoneId?`<div style="font-size:11px;color:var(--tx3);margin-top:4px"><i class="ti ti-arrow-back-up" style="font-size:11px" aria-hidden="true"></i> Split out of ${zone.parentZoneId}${isSettingsAdmin()?` — <a href="#" onclick="event.preventDefault();mergeZoneBack('${zone.id}')" style="color:var(--bl-d)">Merge back</a>`:''}</div>`:''}
           </div>
           <div style="text-align:right;flex-shrink:0;margin-left:1rem">
             <div style="font-size:18px;font-weight:600;color:var(--am)">${fmt(zoneTot)}</div>
@@ -1813,6 +1895,7 @@ function renderPlan(){
       if(zone.note){html+=`<div style="font-size:12px;color:var(--bl-d);background:var(--bl-l);border-radius:var(--r);padding:6px 10px;margin-bottom:10px;border:.5px solid #85B7EB"><i class="ti ti-bulb" style="font-size:13px;margin-right:4px" aria-hidden="true"></i>${zone.note}</div>`;}
       if(zoneTot<CMIN){html+=`<div class="alert aw" style="margin-bottom:10px;font-size:12px"><i class="ti ti-alert-triangle"></i><div><strong>Zone total (${fmt(zoneTot)} plants) is below the 12,000 minimum truck load.</strong><br>Club this zone with a nearby zone in the same trip to meet minimum load requirement for OTIF.</div></div>`;}
       const clusterCumTake={};
+      const activeClusterIds=new Set(containers.flatMap(c=>c.items.map(i=>i.id)));
       containers.forEach((c,ci)=>{
         html+=`<div class="plan-load" ondragover="event.preventDefault();event.currentTarget.classList.add('drag-over')" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="planDrop(event,'${zone.id}',${ci})" style="border:.5px solid var(--bd);border-radius:var(--r);margin-top:8px;overflow:hidden">
           <div style="background:var(--bg2);padding:6px 12px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
@@ -1837,7 +1920,7 @@ function renderPlan(){
                 ${isPartialLoad?`<span class="badge" style="background:var(--am-l);color:var(--am-d);margin-left:6px;font-size:10px">Partial — ${fmt(remAfterThisLoad)} to next load</span>`:''}
                 ${pd!==null&&pd<=0?`<span class="badge b-pending" style="margin-left:6px;font-size:10px">OVERDUE</span>`:''}
               </div>
-              <span style="white-space:nowrap"><strong style="font-size:14px;color:var(--tx)">${fmt(item.take)} plants</strong> ${isSettingsAdmin()?`<button class="btn btn-s" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();openPlanQtyEdit('${zone.id}',${ci},${ii})" title="Edit exact quantity for this load"><i class="ti ti-pencil"></i> Edit qty</button>`:''}</span>
+              <span style="white-space:nowrap"><strong style="font-size:14px;color:var(--tx)">${fmt(item.take)} plants</strong> ${isSettingsAdmin()?`<button class="btn btn-s" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();openPlanQtyEdit('${zone.id}',${ci},${ii})" title="Edit exact quantity for this load"><i class="ti ti-pencil"></i> Edit qty</button>`:''}${isSettingsAdmin()&&activeClusterIds.size>1?` <button class="btn btn-s" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();splitClusterOutOfZone('${zone.id}',${item.id})" title="Pull this cluster out into its own separate route"><i class="ti ti-arrow-fork"></i> Split out</button>`:''}</span>
             </div>
             <div style="font-size:11px;color:${otifColor2};margin-top:3px"><i class="ti ti-clock" style="font-size:11px" aria-hidden="true"></i> OTIF: ${otifLbl}</div>
             <div style="font-size:11px;color:var(--tx3);margin-top:1px"><i class="ti ti-leaf" style="font-size:11px" aria-hidden="true"></i> ${sp}</div>
@@ -1854,7 +1937,7 @@ function renderPlan(){
 
 function exportPlan(){
   let txt=`PLANTATION DISPATCH PLAN\n${'='.repeat(50)}\nGenerated: ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}\n\n`;
-  ZONES.forEach(zone=>{
+  allZones().forEach(zone=>{
     const c=getContainers(zone);
     if(!c.length)return;
     txt+=`\n${zone.id}: ${zone.name} (${zone.region})\n${'─'.repeat(50)}\n${zone.desc}\n`;
@@ -2161,6 +2244,7 @@ async function onAuthUserReady(){
   startPresence();
   listenRouteCosts();
   listenPlanOverrides();
+  listenSplitRoutes();
   updateSyncBadge('connected');
   applySettingsAccess();
 }
