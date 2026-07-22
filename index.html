@@ -405,7 +405,7 @@ service cloud.firestore {
     }
     match /meta/{docId} {
       allow read: if isAllowed();
-      allow write: if isAllowed() && ((docId != 'settings' && docId != 'routeCosts' && docId != 'splitRoutes') || isAdmin());
+      allow write: if isAllowed() && ((docId != 'settings' && docId != 'routeCosts' && docId != 'splitRoutes' && docId != 'zoneNotes') || isAdmin());
     }
     match /presence/{id} {
       allow read, write: if isAllowed();
@@ -828,6 +828,7 @@ function loadState(){
   loadRouteCostsLocal();
   loadPlanOverridesLocal();
   loadSplitRoutesLocal();
+  loadZoneNotesLocal();
 }
 function mkSchool(sd){
   return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:0,plantingDate:sd[6],convenor:sd[7],contact:sd[8],species:CSP[sd[0]]||''};
@@ -1666,6 +1667,53 @@ function mergeZoneBack(customZoneId){
   saveRouteCosts(newCosts);
 }
 
+// ─── ZONE ROUTING NOTES (editable — the hardcoded planning note can go stale once
+// some of a route's clusters finish dispatching, so let the admin correct/clear it) ──
+let _zoneNoteOverrides={};
+function effectiveNote(zone){
+  const o=_zoneNoteOverrides[zone.id];
+  return o!=null?o:(zone.note||'');
+}
+function saveZoneNotesLocal(){
+  localStorage.setItem('bhs_zone_notes_v1',JSON.stringify(_zoneNoteOverrides));
+}
+function loadZoneNotesLocal(){
+  try{_zoneNoteOverrides=JSON.parse(localStorage.getItem('bhs_zone_notes_v1')||'{}');}catch(e){_zoneNoteOverrides={};}
+}
+let _zoneNotesUnsub=null;
+function listenZoneNotes(){
+  if(_zoneNotesUnsub)_zoneNotesUnsub();
+  _zoneNotesUnsub=db.collection('meta').doc('zoneNotes').onSnapshot(doc=>{
+    _zoneNoteOverrides=(doc.exists&&doc.data().notes)||{};
+    if(document.getElementById('pane-plan').classList.contains('active'))renderPlan();
+  },err=>console.warn('zone notes listener error:',err.message));
+}
+async function persistZoneNotes(){
+  if(fbReady()){
+    try{
+      await db.collection('meta').doc('zoneNotes').set({notes:_zoneNoteOverrides,updatedAt:new Date().toISOString()},{merge:true});
+    }catch(e){
+      console.warn('Zone notes save failed:',e.message);
+      showInAppNotif(`⚠️ Could not save the note — the shared database rejected this (${e.message}).`);
+      saveZoneNotesLocal();
+      return;
+    }
+  } else {
+    saveZoneNotesLocal();
+  }
+  showInAppNotif('Note saved');
+}
+function editZoneNote(zoneId){
+  if(!isSettingsAdmin()){showInAppNotif('Only the plantation drive admin can edit routing notes.');return;}
+  const zone=allZones().find(z=>z.id===zoneId);
+  const current=effectiveNote(zone);
+  const next=prompt(`Routing note for ${zoneId} (leave blank to remove it):`,current);
+  if(next===null)return; // cancelled
+  _zoneNoteOverrides[zoneId]=next.trim();
+  renderPlan();
+  persistZoneNotes();
+}
+
 // ─── ROUTE COSTS (estimated cost per truckload, per route) ───────────────────
 let _routeCosts={};
 function fmtPKR(n){return 'PKR '+fmt(n);}
@@ -1879,11 +1927,14 @@ function renderPlan(){
       const zoneTot=containers.reduce((a,c)=>a+c.total,0);
       const zoneCost=routeCostPerLoad(zone.id);
       const costLine=zoneCost!=null?`Est. ${fmtPKR(zoneCost)}/load · ${fmtPKR(zoneCost*containers.length)} total`:'Cost not set';
+      const seenIds=new Set();
+      const liveDesc=containers.flatMap(c=>c.items).filter(i=>{if(seenIds.has(i.id))return false;seenIds.add(i.id);return true;}).map(i=>`${i.cluster} (${i.city})`).join(' · ');
+      const note=effectiveNote(zone);
       html+=`<div class="card" style="margin-bottom:.75rem;padding:1rem 1.25rem">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
             <div style="font-weight:600;font-size:14px">${zone.id} &nbsp;<span class="badge ${zone.color}">${zone.region}</span> &nbsp;${zone.name}</div>
-            <div style="font-size:12px;color:var(--tx3);margin-top:2px">${zone.desc}</div>
+            <div style="font-size:12px;color:var(--tx3);margin-top:2px">${liveDesc}</div>
             ${zone.parentZoneId?`<div style="font-size:11px;color:var(--tx3);margin-top:4px"><i class="ti ti-arrow-back-up" style="font-size:11px" aria-hidden="true"></i> Split out of ${zone.parentZoneId}${isSettingsAdmin()?` — <a href="#" onclick="event.preventDefault();mergeZoneBack('${zone.id}')" style="color:var(--bl-d)">Merge back</a>`:''}</div>`:''}
           </div>
           <div style="text-align:right;flex-shrink:0;margin-left:1rem">
@@ -1892,7 +1943,8 @@ function renderPlan(){
             <div style="font-size:11px;color:${zoneCost!=null?'var(--gr-d)':'var(--tx3)'}">${costLine}</div>
           </div>
         </div>`;
-      if(zone.note){html+=`<div style="font-size:12px;color:var(--bl-d);background:var(--bl-l);border-radius:var(--r);padding:6px 10px;margin-bottom:10px;border:.5px solid #85B7EB"><i class="ti ti-bulb" style="font-size:13px;margin-right:4px" aria-hidden="true"></i>${zone.note}</div>`;}
+      if(note){html+=`<div style="font-size:12px;color:var(--bl-d);background:var(--bl-l);border-radius:var(--r);padding:6px 10px;margin-bottom:10px;border:.5px solid #85B7EB;display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><span><i class="ti ti-bulb" style="font-size:13px;margin-right:4px" aria-hidden="true"></i>${esc(note)}</span>${isSettingsAdmin()?`<button class="btn btn-s" style="padding:1px 6px;font-size:10px;flex-shrink:0" onclick="editZoneNote('${zone.id}')" title="Edit or clear this note"><i class="ti ti-pencil"></i></button>`:''}</div>`;}
+      else if(isSettingsAdmin()){html+=`<div style="margin-bottom:10px"><button class="btn btn-s" style="font-size:11px" onclick="editZoneNote('${zone.id}')"><i class="ti ti-plus"></i> Add a routing note</button></div>`;}
       if(zoneTot<CMIN){html+=`<div class="alert aw" style="margin-bottom:10px;font-size:12px"><i class="ti ti-alert-triangle"></i><div><strong>Zone total (${fmt(zoneTot)} plants) is below the 12,000 minimum truck load.</strong><br>Club this zone with a nearby zone in the same trip to meet minimum load requirement for OTIF.</div></div>`;}
       const clusterCumTake={};
       const activeClusterIds=new Set(containers.flatMap(c=>c.items.map(i=>i.id)));
@@ -1940,8 +1992,11 @@ function exportPlan(){
   allZones().forEach(zone=>{
     const c=getContainers(zone);
     if(!c.length)return;
-    txt+=`\n${zone.id}: ${zone.name} (${zone.region})\n${'─'.repeat(50)}\n${zone.desc}\n`;
-    if(zone.note)txt+=`NOTE: ${zone.note}\n`;
+    const seenIds=new Set();
+    const liveDesc=c.flatMap(x=>x.items).filter(i=>{if(seenIds.has(i.id))return false;seenIds.add(i.id);return true;}).map(i=>`${i.cluster} (${i.city})`).join(' · ');
+    txt+=`\n${zone.id}: ${zone.name} (${zone.region})\n${'─'.repeat(50)}\n${liveDesc}\n`;
+    const note=effectiveNote(zone);
+    if(note)txt+=`NOTE: ${note}\n`;
     const clusterCumTake={};
     c.forEach((load,i)=>{
       txt+=`\n  Load ${i+1}: ${fmt(load.total)} plants\n`;
@@ -2245,6 +2300,7 @@ async function onAuthUserReady(){
   listenRouteCosts();
   listenPlanOverrides();
   listenSplitRoutes();
+  listenZoneNotes();
   updateSyncBadge('connected');
   applySettingsAccess();
 }
