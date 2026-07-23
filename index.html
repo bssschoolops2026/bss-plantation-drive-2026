@@ -320,11 +320,16 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
 <!-- DISPATCH PLAN -->
 <div class="pane" id="pane-plan">
   <div class="ph-row ph">
-    <div><h2>Suggested Dispatch Plan</h2><p>Container loads of 12,000–15,000 saplings · Grouped by proximity · Drag a cluster card between loads to rearrange</p></div>
+    <div><h2>Suggested Dispatch Plan</h2><p>Container loads of 12,000–15,000 saplings · Drag a cluster card between loads to rearrange</p></div>
     <div style="display:flex;gap:8px">
       <button class="btn" onclick="resetAndRenderPlan()"><i class="ti ti-refresh"></i>Refresh</button>
       <button class="btn btn-p" onclick="exportPlan()"><i class="ti ti-download"></i>Export plan</button>
     </div>
+  </div>
+  <div style="display:flex;gap:6px;align-items:center;margin:-4px 0 12px">
+    <span style="font-size:12px;color:var(--tx3)">View:</span>
+    <button class="btn btn-s" id="sort-mode-region" onclick="setPlanSortMode('region')"><i class="ti ti-map-pin"></i> By region</button>
+    <button class="btn btn-s" id="sort-mode-trip" onclick="setPlanSortMode('trip')"><i class="ti ti-route"></i> Trip order</button>
   </div>
   <div id="plan-summary"></div>
   <div id="plan-zones"></div>
@@ -405,7 +410,7 @@ service cloud.firestore {
     }
     match /meta/{docId} {
       allow read: if isAllowed();
-      allow write: if isAllowed() && ((docId != 'settings' && docId != 'routeCosts' && docId != 'splitRoutes' && docId != 'zoneNotes') || isAdmin());
+      allow write: if isAllowed() && ((docId != 'settings' && docId != 'routeCosts' && docId != 'splitRoutes' && docId != 'zoneNotes' && docId != 'tripOrder') || isAdmin());
     }
     match /presence/{id} {
       allow read, write: if isAllowed();
@@ -829,6 +834,7 @@ function loadState(){
   loadPlanOverridesLocal();
   loadSplitRoutesLocal();
   loadZoneNotesLocal();
+  loadTripOrderLocal();
 }
 function mkSchool(sd){
   return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:0,plantingDate:sd[6],convenor:sd[7],contact:sd[8],species:CSP[sd[0]]||''};
@@ -1592,6 +1598,79 @@ async function persistPlanOverrides(){
 let _customZones=[]; // {id,name,region,color,desc,note,cids,parentZoneId}
 let _zoneExclusions={}; // zoneId -> [clusterIds already split out into a custom zone]
 function allZones(){return ZONES.concat(_customZones);}
+
+// ─── TRIP ORDER (custom dispatch sequence, independent of region grouping) ──
+let _tripOrderList=[]; // ordered array of zone ids — the admin's chosen dispatch sequence
+let _planSortMode='region'; // 'region' | 'trip'
+function setPlanSortMode(mode){
+  _planSortMode=mode;
+  document.getElementById('sort-mode-region').classList.toggle('btn-p',mode==='region');
+  document.getElementById('sort-mode-trip').classList.toggle('btn-p',mode==='trip');
+  renderPlan();
+}
+function currentTripOrder(activeZones){
+  const known=_tripOrderList.filter(id=>activeZones.some(z=>z.id===id));
+  const rest=activeZones.filter(z=>!known.includes(z.id)).map(z=>z.id);
+  return known.concat(rest);
+}
+function saveTripOrderLocal(){
+  localStorage.setItem('bhs_trip_order_v1',JSON.stringify(_tripOrderList));
+}
+function loadTripOrderLocal(){
+  try{_tripOrderList=JSON.parse(localStorage.getItem('bhs_trip_order_v1')||'[]');}catch(e){_tripOrderList=[];}
+}
+let _tripOrderUnsub=null;
+function listenTripOrder(){
+  if(_tripOrderUnsub)_tripOrderUnsub();
+  _tripOrderUnsub=db.collection('meta').doc('tripOrder').onSnapshot(doc=>{
+    _tripOrderList=(doc.exists&&doc.data().order)||[];
+    if(document.getElementById('pane-plan').classList.contains('active'))renderPlan();
+  },err=>console.warn('trip order listener error:',err.message));
+}
+async function persistTripOrder(){
+  if(fbReady()){
+    try{
+      await db.collection('meta').doc('tripOrder').set({order:_tripOrderList,updatedAt:new Date().toISOString()},{merge:true});
+    }catch(e){
+      console.warn('Trip order save failed:',e.message);
+      showInAppNotif(`⚠️ Could not save trip order — the shared database rejected this (${e.message}).`);
+      saveTripOrderLocal();
+      return;
+    }
+  } else {
+    saveTripOrderLocal();
+  }
+  showInAppNotif('Trip order saved');
+}
+function setTripNumber(zoneId,posInput){
+  if(!isSettingsAdmin())return;
+  const activeZones=allZones().filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
+  const order=currentTripOrder(activeZones).filter(id=>id!==zoneId);
+  let pos=parseInt(posInput);
+  if(!pos||pos<1)pos=1;
+  if(pos>order.length+1)pos=order.length+1;
+  order.splice(pos-1,0,zoneId);
+  _tripOrderList=order;
+  renderPlan();
+  persistTripOrder();
+}
+let _tripDrag=null;
+function tripDragStart(e,zoneId){_tripDrag=zoneId;e.dataTransfer.effectAllowed='move';e.currentTarget.classList.add('dragging');}
+function tripDragEnd(e){e.currentTarget.classList.remove('dragging');}
+function tripDrop(e,targetZoneId){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(!_tripDrag||_tripDrag===targetZoneId){_tripDrag=null;return;}
+  if(!isSettingsAdmin()){_tripDrag=null;return;}
+  const activeZones=allZones().filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
+  const order=currentTripOrder(activeZones).filter(id=>id!==_tripDrag);
+  const targetIdx=order.indexOf(targetZoneId);
+  order.splice(targetIdx,0,_tripDrag);
+  _tripOrderList=order;
+  _tripDrag=null;
+  renderPlan();
+  persistTripOrder();
+}
 function saveSplitRoutesLocal(){
   localStorage.setItem('bhs_split_routes_v1',JSON.stringify({customZones:_customZones,exclusions:_zoneExclusions}));
 }
@@ -1914,77 +1993,102 @@ function renderPlan(){
       <div class="metric"><div class="mlabel">Est. logistics cost</div><div class="mval" style="font-size:16px">${estCostTotal>0?fmtPKR(estCostTotal):'—'}</div><div class="msub">${zonesMissingCost>0?`${zonesMissingCost} route${zonesMissingCost>1?'s':''} not yet estimated`:'across all active routes'}</div></div>
     </div>`;
 
-  let html='';
-  const regionOrder=['North','Center','South'];
-  regionOrder.forEach(rgn=>{
-    const zones=allZones().filter(z=>z.region===rgn);
-    const anyPending=zones.some(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
-    if(!anyPending)return;
-    html+=`<div style="font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin:1.5rem 0 .75rem">${rgn} Region</div>`;
-    zones.forEach(zone=>{
-      const containers=getContainers(zone);
-      if(!containers.length)return;
-      const zoneTot=containers.reduce((a,c)=>a+c.total,0);
-      const zoneCost=routeCostPerLoad(zone.id);
-      const costLine=zoneCost!=null?`Est. ${fmtPKR(zoneCost)}/load · ${fmtPKR(zoneCost*containers.length)} total`:'Cost not set';
-      const seenIds=new Set();
-      const liveDesc=containers.flatMap(c=>c.items).filter(i=>{if(seenIds.has(i.id))return false;seenIds.add(i.id);return true;}).map(i=>`${i.cluster} (${i.city})`).join(' · ');
-      const note=effectiveNote(zone);
-      html+=`<div class="card" style="margin-bottom:.75rem;padding:1rem 1.25rem">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-          <div>
-            <div style="font-weight:600;font-size:14px">${zone.id} &nbsp;<span class="badge ${zone.color}">${zone.region}</span> &nbsp;${zone.name}</div>
-            <div style="font-size:12px;color:var(--tx3);margin-top:2px">${liveDesc}</div>
-            ${zone.parentZoneId?`<div style="font-size:11px;color:var(--tx3);margin-top:4px"><i class="ti ti-arrow-back-up" style="font-size:11px" aria-hidden="true"></i> Split out of ${zone.parentZoneId}${isSettingsAdmin()?` — <a href="#" onclick="event.preventDefault();mergeZoneBack('${zone.id}')" style="color:var(--bl-d)">Merge back</a>`:''}</div>`:''}
-          </div>
-          <div style="text-align:right;flex-shrink:0;margin-left:1rem">
-            <div style="font-size:18px;font-weight:600;color:var(--am)">${fmt(zoneTot)}</div>
-            <div style="font-size:11px;color:var(--tx3)">${containers.length} load${containers.length>1?'s':''}</div>
-            <div style="font-size:11px;color:${zoneCost!=null?'var(--gr-d)':'var(--tx3)'}">${costLine}</div>
-          </div>
-        </div>`;
-      if(note){html+=`<div style="font-size:12px;color:var(--bl-d);background:var(--bl-l);border-radius:var(--r);padding:6px 10px;margin-bottom:10px;border:.5px solid #85B7EB;display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><span><i class="ti ti-bulb" style="font-size:13px;margin-right:4px" aria-hidden="true"></i>${esc(note)}</span>${isSettingsAdmin()?`<button class="btn btn-s" style="padding:1px 6px;font-size:10px;flex-shrink:0;white-space:nowrap" onclick="editZoneNote('${zone.id}')" title="Edit or clear this note"><i class="ti ti-pencil"></i> Edit note</button>`:''}</div>`;}
-      else if(isSettingsAdmin()){html+=`<div style="margin-bottom:10px"><button class="btn btn-s" style="font-size:11px" onclick="editZoneNote('${zone.id}')"><i class="ti ti-plus"></i> Add a routing note</button></div>`;}
-      if(zoneTot<CMIN){html+=`<div class="alert aw" style="margin-bottom:10px;font-size:12px"><i class="ti ti-alert-triangle"></i><div><strong>Zone total (${fmt(zoneTot)} plants) is below the 12,000 minimum truck load.</strong><br>Club this zone with a nearby zone in the same trip to meet minimum load requirement for OTIF.</div></div>`;}
-      const clusterCumTake={};
-      const activeClusterIds=new Set(containers.flatMap(c=>c.items.map(i=>i.id)));
-      containers.forEach((c,ci)=>{
-        html+=`<div class="plan-load" ondragover="event.preventDefault();event.currentTarget.classList.add('drag-over')" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="planDrop(event,'${zone.id}',${ci})" style="border:.5px solid var(--bd);border-radius:var(--r);margin-top:8px;overflow:hidden">
-          <div style="background:var(--bg2);padding:6px 12px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
-            <span><i class="ti ti-truck-delivery" style="font-size:13px;margin-right:5px;color:var(--gr)" aria-hidden="true"></i>Load ${ci+1} of ${containers.length}</span>
-            <span style="color:${c.total<CMIN?'var(--re-d)':'var(--gr)'}"><i class="ti ti-${c.total>=CMIN?'circle-check':'alert-triangle'}" style="font-size:12px;margin-right:3px"></i>${fmt(c.total)} plants${c.total<CMIN?' — BELOW 12,000 MIN: combine with another load':' (min load met ✓)'}</span>
-          </div>`;
-        c.items.forEach((item,ii)=>{
-          const sp=esc(item.species)||'Species to be confirmed';
-          const pd=item.plantingDate?du(item.plantingDate):null;
-          const otifColor2=pd===null?'var(--tx3)':pd<=0?'var(--re-d)':pd<=7?'var(--am-d)':'var(--gr-d)';
-          const otifLbl=pd===null?'No date set':pd<0?`Planting overdue by ${Math.abs(pd)} days — URGENT`:pd===0?'Planting TODAY':pd<=7?`Planting in ${pd} days — prepare now`:`Planting ${fmtD(item.plantingDate)} (${pd}d)`;
-          clusterCumTake[item.id]=(clusterCumTake[item.id]||0)+item.take;
-          const remAfterThisLoad=Math.max(0,item.rem-clusterCumTake[item.id]);
-          const isPartialLoad=remAfterThisLoad>0;
+  document.getElementById('sort-mode-region').classList.toggle('btn-p',_planSortMode==='region');
+  document.getElementById('sort-mode-trip').classList.toggle('btn-p',_planSortMode==='trip');
 
-          html+=`<div class="plan-item" draggable="true" ondragstart="planDragStart(event,'${zone.id}',${ci},${ii})" ondragend="planDragEnd(event)" style="padding:8px 12px;border-top:.5px solid var(--bd)" title="Drag to move this cluster to a different load">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start">
-              <div>
-                <i class="ti ti-grip-vertical" style="color:var(--tx3);font-size:13px;margin-right:4px" aria-hidden="true"></i>
-                <strong style="font-size:13px">${item.cluster}</strong>
-                <span style="font-size:12px;color:var(--tx3);margin-left:8px">${item.city}</span>
-                ${isPartialLoad?`<span class="badge" style="background:var(--am-l);color:var(--am-d);margin-left:6px;font-size:10px">Partial — ${fmt(remAfterThisLoad)} to next load</span>`:''}
-                ${pd!==null&&pd<=0?`<span class="badge b-pending" style="margin-left:6px;font-size:10px">OVERDUE</span>`:''}
-              </div>
-              <span style="white-space:nowrap"><strong style="font-size:14px;color:var(--tx)">${fmt(item.take)} plants</strong> ${isSettingsAdmin()?`<button class="btn btn-s" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();openPlanQtyEdit('${zone.id}',${ci},${ii})" title="Edit exact quantity for this load"><i class="ti ti-pencil"></i> Edit qty</button>`:''}${isSettingsAdmin()&&activeClusterIds.size>1?` <button class="btn btn-s" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();splitClusterOutOfZone('${zone.id}',${item.id})" title="Pull this cluster out into its own separate route"><i class="ti ti-arrow-fork"></i> Split out</button>`:''}</span>
-            </div>
-            <div style="font-size:11px;color:${otifColor2};margin-top:3px"><i class="ti ti-clock" style="font-size:11px" aria-hidden="true"></i> OTIF: ${otifLbl}</div>
-            <div style="font-size:11px;color:var(--tx3);margin-top:1px"><i class="ti ti-leaf" style="font-size:11px" aria-hidden="true"></i> ${sp}</div>
-            <div style="font-size:11px;color:var(--tx3);margin-top:1px"><i class="ti ti-clipboard-list" style="font-size:11px" aria-hidden="true"></i> Cluster's total remaining requirement: <strong>${fmt(item.rem)}</strong></div>
-          </div>`;
-        });
-        html+='</div>';
-      });
-      html+='</div>';
+  let html='';
+  if(_planSortMode==='trip'){
+    const orderedIds=currentTripOrder(activeZones);
+    const orderedZones=orderedIds.map(id=>activeZones.find(z=>z.id===id)).filter(Boolean);
+    orderedZones.forEach((zone,idx)=>{
+      const tripNum=idx+1;
+      const dragAttrs=isSettingsAdmin()?`draggable="true" ondragstart="tripDragStart(event,'${zone.id}')" ondragend="tripDragEnd(event)" ondragover="event.preventDefault();event.currentTarget.classList.add('drag-over')" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="tripDrop(event,'${zone.id}')"`:'';
+      html+=`<div ${dragAttrs} style="margin-bottom:.75rem;${isSettingsAdmin()?'cursor:grab':''}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:-6px;position:relative;z-index:1">
+          ${isSettingsAdmin()?`<i class="ti ti-grip-vertical" style="color:var(--tx3)" aria-hidden="true"></i>`:''}
+          <span class="badge b-n" style="background:var(--tx);color:var(--bg);font-weight:700">Trip #${tripNum}</span>
+          ${isSettingsAdmin()?`<input type="number" min="1" max="${orderedZones.length}" value="${tripNum}" onchange="setTripNumber('${zone.id}',this.value)" title="Jump this route to a specific trip number" style="width:52px;font-size:11px;padding:2px 4px;border-radius:var(--r);border:.5px solid var(--bd)">`:''}
+        </div>
+        ${zoneCardHtml(zone)}
+      </div>`;
     });
-  });
+  } else {
+    const regionOrder=['North','Center','South'];
+    regionOrder.forEach(rgn=>{
+      const zones=allZones().filter(z=>z.region===rgn);
+      const anyPending=zones.some(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
+      if(!anyPending)return;
+      html+=`<div style="font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin:1.5rem 0 .75rem">${rgn} Region</div>`;
+      zones.forEach(zone=>{
+        const card=zoneCardHtml(zone);
+        if(card)html+=`<div style="margin-bottom:.75rem">${card}</div>`;
+      });
+    });
+  }
   document.getElementById('plan-zones').innerHTML=html||'<div class="empty"><i class="ti ti-check"></i>All clusters fully dispatched!</div>';
+}
+function zoneCardHtml(zone){
+  const containers=getContainers(zone);
+  if(!containers.length)return'';
+  const zoneTot=containers.reduce((a,c)=>a+c.total,0);
+  const zoneCost=routeCostPerLoad(zone.id);
+  const costLine=zoneCost!=null?`Est. ${fmtPKR(zoneCost)}/load · ${fmtPKR(zoneCost*containers.length)} total`:'Cost not set';
+  const seenIds=new Set();
+  const liveDesc=containers.flatMap(c=>c.items).filter(i=>{if(seenIds.has(i.id))return false;seenIds.add(i.id);return true;}).map(i=>`${i.cluster} (${i.city})`).join(' · ');
+  const note=effectiveNote(zone);
+  let html=`<div class="card" style="padding:1rem 1.25rem">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div>
+        <div style="font-weight:600;font-size:14px">${zone.id} &nbsp;<span class="badge ${zone.color}">${zone.region}</span> &nbsp;${zone.name}</div>
+        <div style="font-size:12px;color:var(--tx3);margin-top:2px">${liveDesc}</div>
+        ${zone.parentZoneId?`<div style="font-size:11px;color:var(--tx3);margin-top:4px"><i class="ti ti-arrow-back-up" style="font-size:11px" aria-hidden="true"></i> Split out of ${zone.parentZoneId}${isSettingsAdmin()?` — <a href="#" onclick="event.preventDefault();mergeZoneBack('${zone.id}')" style="color:var(--bl-d)">Merge back</a>`:''}</div>`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:1rem">
+        <div style="font-size:18px;font-weight:600;color:var(--am)">${fmt(zoneTot)}</div>
+        <div style="font-size:11px;color:var(--tx3)">${containers.length} load${containers.length>1?'s':''}</div>
+        <div style="font-size:11px;color:${zoneCost!=null?'var(--gr-d)':'var(--tx3)'}">${costLine}</div>
+      </div>
+    </div>`;
+  if(note){html+=`<div style="font-size:12px;color:var(--bl-d);background:var(--bl-l);border-radius:var(--r);padding:6px 10px;margin-bottom:10px;border:.5px solid #85B7EB;display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><span><i class="ti ti-bulb" style="font-size:13px;margin-right:4px" aria-hidden="true"></i>${esc(note)}</span>${isSettingsAdmin()?`<button class="btn btn-s" style="padding:1px 6px;font-size:10px;flex-shrink:0;white-space:nowrap" onclick="editZoneNote('${zone.id}')" title="Edit or clear this note"><i class="ti ti-pencil"></i> Edit note</button>`:''}</div>`;}
+  else if(isSettingsAdmin()){html+=`<div style="margin-bottom:10px"><button class="btn btn-s" style="font-size:11px" onclick="editZoneNote('${zone.id}')"><i class="ti ti-plus"></i> Add a routing note</button></div>`;}
+  if(zoneTot<CMIN){html+=`<div class="alert aw" style="margin-bottom:10px;font-size:12px"><i class="ti ti-alert-triangle"></i><div><strong>Zone total (${fmt(zoneTot)} plants) is below the 12,000 minimum truck load.</strong><br>Club this zone with a nearby zone in the same trip to meet minimum load requirement for OTIF.</div></div>`;}
+  const clusterCumTake={};
+  const activeClusterIds=new Set(containers.flatMap(c=>c.items.map(i=>i.id)));
+  containers.forEach((c,ci)=>{
+    html+=`<div class="plan-load" ondragover="event.preventDefault();event.currentTarget.classList.add('drag-over')" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="planDrop(event,'${zone.id}',${ci})" style="border:.5px solid var(--bd);border-radius:var(--r);margin-top:8px;overflow:hidden">
+      <div style="background:var(--bg2);padding:6px 12px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
+        <span><i class="ti ti-truck-delivery" style="font-size:13px;margin-right:5px;color:var(--gr)" aria-hidden="true"></i>Load ${ci+1} of ${containers.length}</span>
+        <span style="color:${c.total<CMIN?'var(--re-d)':'var(--gr)'}"><i class="ti ti-${c.total>=CMIN?'circle-check':'alert-triangle'}" style="font-size:12px;margin-right:3px"></i>${fmt(c.total)} plants${c.total<CMIN?' — BELOW 12,000 MIN: combine with another load':' (min load met ✓)'}</span>
+      </div>`;
+    c.items.forEach((item,ii)=>{
+      const sp=esc(item.species)||'Species to be confirmed';
+      const pd=item.plantingDate?du(item.plantingDate):null;
+      const otifColor2=pd===null?'var(--tx3)':pd<=0?'var(--re-d)':pd<=7?'var(--am-d)':'var(--gr-d)';
+      const otifLbl=pd===null?'No date set':pd<0?`Planting overdue by ${Math.abs(pd)} days — URGENT`:pd===0?'Planting TODAY':pd<=7?`Planting in ${pd} days — prepare now`:`Planting ${fmtD(item.plantingDate)} (${pd}d)`;
+      clusterCumTake[item.id]=(clusterCumTake[item.id]||0)+item.take;
+      const remAfterThisLoad=Math.max(0,item.rem-clusterCumTake[item.id]);
+      const isPartialLoad=remAfterThisLoad>0;
+
+      html+=`<div class="plan-item" draggable="true" ondragstart="planDragStart(event,'${zone.id}',${ci},${ii})" ondragend="planDragEnd(event)" style="padding:8px 12px;border-top:.5px solid var(--bd)" title="Drag to move this cluster to a different load">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <i class="ti ti-grip-vertical" style="color:var(--tx3);font-size:13px;margin-right:4px" aria-hidden="true"></i>
+            <strong style="font-size:13px">${item.cluster}</strong>
+            <span style="font-size:12px;color:var(--tx3);margin-left:8px">${item.city}</span>
+            ${isPartialLoad?`<span class="badge" style="background:var(--am-l);color:var(--am-d);margin-left:6px;font-size:10px">Partial — ${fmt(remAfterThisLoad)} to next load</span>`:''}
+            ${pd!==null&&pd<=0?`<span class="badge b-pending" style="margin-left:6px;font-size:10px">OVERDUE</span>`:''}
+          </div>
+          <span style="white-space:nowrap"><strong style="font-size:14px;color:var(--tx)">${fmt(item.take)} plants</strong> ${isSettingsAdmin()?`<button class="btn btn-s" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();openPlanQtyEdit('${zone.id}',${ci},${ii})" title="Edit exact quantity for this load"><i class="ti ti-pencil"></i> Edit qty</button>`:''}${isSettingsAdmin()&&activeClusterIds.size>1?` <button class="btn btn-s" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();splitClusterOutOfZone('${zone.id}',${item.id})" title="Pull this cluster out into its own separate route"><i class="ti ti-arrow-fork"></i> Split out</button>`:''}</span>
+        </div>
+        <div style="font-size:11px;color:${otifColor2};margin-top:3px"><i class="ti ti-clock" style="font-size:11px" aria-hidden="true"></i> OTIF: ${otifLbl}</div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:1px"><i class="ti ti-leaf" style="font-size:11px" aria-hidden="true"></i> ${sp}</div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:1px"><i class="ti ti-clipboard-list" style="font-size:11px" aria-hidden="true"></i> Cluster's total remaining requirement: <strong>${fmt(item.rem)}</strong></div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  html+='</div>';
+  return html;
 }
 
 function exportPlan(){
@@ -2301,6 +2405,7 @@ async function onAuthUserReady(){
   listenPlanOverrides();
   listenSplitRoutes();
   listenZoneNotes();
+  listenTripOrder();
   updateSyncBadge('connected');
   applySettingsAccess();
 }
