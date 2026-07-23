@@ -1644,7 +1644,7 @@ async function persistTripOrder(){
 }
 function setTripNumber(zoneId,posInput){
   if(!isSettingsAdmin())return;
-  const activeZones=allZones().filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
+  const activeZones=allZones().filter(z=>getContainers(z).length>0);
   const order=currentTripOrder(activeZones).filter(id=>id!==zoneId);
   let pos=parseInt(posInput);
   if(!pos||pos<1)pos=1;
@@ -1662,7 +1662,7 @@ function tripDrop(e,targetZoneId){
   e.currentTarget.classList.remove('drag-over');
   if(!_tripDrag||_tripDrag===targetZoneId){_tripDrag=null;return;}
   if(!isSettingsAdmin()){_tripDrag=null;return;}
-  const activeZones=allZones().filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
+  const activeZones=allZones().filter(z=>getContainers(z).length>0);
   const order=currentTripOrder(activeZones).filter(id=>id!==_tripDrag);
   const targetIdx=order.indexOf(targetZoneId);
   order.splice(targetIdx,0,_tripDrag);
@@ -1977,7 +1977,7 @@ function renderPlan(){
   const totalRem=state.schools.reduce((a,s)=>a+Math.max(0,remaining(s)),0);
   const capAvg=Math.round((CMIN+CMAX)/2);
   const loads=Math.ceil(totalRem/capAvg);
-  const activeZones=allZones().filter(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
+  const activeZones=allZones().filter(z=>getContainers(z).length>0);
   let estCostTotal=0,zonesMissingCost=0;
   activeZones.forEach(z=>{
     const containers=getContainers(z);
@@ -2016,7 +2016,7 @@ function renderPlan(){
     const regionOrder=['North','Center','South'];
     regionOrder.forEach(rgn=>{
       const zones=allZones().filter(z=>z.region===rgn);
-      const anyPending=zones.some(z=>z.cids.some(id=>{const s=state.schools.find(x=>x.id===id);return s&&(remaining(s))>0;}));
+      const anyPending=zones.some(z=>activeZones.includes(z));
       if(!anyPending)return;
       html+=`<div style="font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin:1.5rem 0 .75rem">${rgn} Region</div>`;
       zones.forEach(zone=>{
