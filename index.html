@@ -1677,6 +1677,25 @@ function assignClusterToZone(clusterId,zoneId){
   persistZoneMembership();
   if(home||zoneId)persistPlanOverrides();
 }
+function createNewRoute(name,regionCode){
+  if(!isSettingsAdmin())return null;
+  let n=1,newId=`CUSTOM-${n}`;
+  while(allZones().some(z=>z.id===newId)){n++;newId=`CUSTOM-${n}`;}
+  const region=RN[regionCode]||'Center';
+  const color=`b-${(regionCode||'C').toLowerCase()}`;
+  _customZones.push({id:newId,name:name||newId,region,color,desc:'',note:'',cids:[],parentZoneId:null});
+  persistSplitRoutes();
+  return newId;
+}
+function createRouteForCluster(clusterId){
+  if(!isSettingsAdmin()){showInAppNotif('Only the plantation drive admin can create routes.');return;}
+  const s=state.schools.find(x=>x.id===clusterId);
+  if(!s)return;
+  const name=prompt(`Name for the new route (e.g. "University of Agriculture Faisalabad — dedicated route"):`,s.cluster);
+  if(name===null)return;
+  const newId=createNewRoute(name.trim()||s.cluster,s.region);
+  assignClusterToZone(clusterId,newId);
+}
 function openZoneMembershipAdmin(){
   renderZoneMembershipAdmin();
   document.getElementById('zone-membership-modal').classList.remove('hidden');
@@ -2125,7 +2144,7 @@ function renderPlan(){
   document.getElementById('sort-mode-trip').classList.toggle('btn-p',_planSortMode==='trip');
 
   const unassigned=unassignedActiveClusters();
-  if(unassigned.length){
+  if(unassigned.length&&isSettingsAdmin()){
     const zoneOptions=allZones().map(z=>`<option value="${esc(z.id)}">${esc(z.id)} — ${esc(z.name)}</option>`).join('');
     document.getElementById('plan-unassigned').innerHTML=`<div class="alert aw" style="margin-bottom:1rem">
       <i class="ti ti-alert-triangle"></i>
@@ -2134,8 +2153,10 @@ function renderPlan(){
         <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
           ${unassigned.map(s=>`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px">
             <strong>${esc(s.cluster)}</strong> <span style="color:var(--tx3)">(${esc(s.city)} · ${fmt(remaining(s))} plants)</span>
-            ${isSettingsAdmin()?`<select id="assign-zone-${s.id}" style="font-size:12px;padding:3px 5px;border-radius:var(--r);border:.5px solid var(--bd)"><option value="">Assign to…</option>${zoneOptions}</select>
-            <button class="btn btn-s" onclick="const z=document.getElementById('assign-zone-${s.id}').value;if(z)assignClusterToZone(${s.id},z);"><i class="ti ti-check"></i> Assign</button>`:'<span style="color:var(--tx3)">— contact the plantation drive admin to assign a route</span>'}
+            <select id="assign-zone-${s.id}" style="font-size:12px;padding:3px 5px;border-radius:var(--r);border:.5px solid var(--bd)"><option value="">Assign to…</option>${zoneOptions}</select>
+            <button class="btn btn-s" onclick="const z=document.getElementById('assign-zone-${s.id}').value;if(z)assignClusterToZone(${s.id},z);"><i class="ti ti-check"></i> Assign</button>
+            <span style="color:var(--tx3)">or</span>
+            <button class="btn btn-s" onclick="createRouteForCluster(${s.id})"><i class="ti ti-route"></i> Create new route for this</button>
           </div>`).join('')}
         </div>
       </div>
@@ -2242,7 +2263,7 @@ function zoneCardHtml(zone){
 function exportPlan(){
   let txt=`PLANTATION DISPATCH PLAN\n${'='.repeat(50)}\nGenerated: ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}\n\n`;
   const unassigned=unassignedActiveClusters();
-  if(unassigned.length){
+  if(unassigned.length&&isSettingsAdmin()){
     txt+=`⚠️ NOT INCLUDED BELOW — no route assigned (Settings → Manage zones):\n`;
     unassigned.forEach(s=>{txt+=`    • ${s.cluster} (${s.city}): ${fmt(remaining(s))} plants\n`;});
     txt+='\n';
