@@ -1696,6 +1696,36 @@ function createRouteForCluster(clusterId){
   const newId=createNewRoute(name.trim()||s.cluster,s.region);
   assignClusterToZone(clusterId,newId);
 }
+function renameCustomZone(oldId){
+  if(!isSettingsAdmin()){showInAppNotif('Only the plantation drive admin can rename routes.');return;}
+  const zone=_customZones.find(z=>z.id===oldId);
+  if(!zone)return;
+  const newIdRaw=prompt('Route code (short, e.g. "FSD-1" or a city name):',zone.id);
+  if(newIdRaw===null)return;
+  const newNameRaw=prompt('Route display name:',zone.name);
+  if(newNameRaw===null)return;
+  const newId=newIdRaw.trim();
+  let touchedCosts=false,touchedNotes=false,touchedTrip=false,touchedMembership=false,touchedOverrides=false;
+  if(newId&&newId!==oldId){
+    if(allZones().some(z=>z.id===newId)){alert(`"${newId}" is already used by another route. Pick a different code.`);return;}
+    zone.id=newId;
+    if(_planOverrides[oldId]){_planOverrides[newId]=_planOverrides[oldId];delete _planOverrides[oldId];touchedOverrides=true;}
+    if(_routeCosts[oldId]!=null){_routeCosts[newId]=_routeCosts[oldId];delete _routeCosts[oldId];touchedCosts=true;}
+    if(_zoneExclusions[oldId]){_zoneExclusions[newId]=_zoneExclusions[oldId];delete _zoneExclusions[oldId];}
+    if(_zoneNoteOverrides[oldId]!=null){_zoneNoteOverrides[newId]=_zoneNoteOverrides[oldId];delete _zoneNoteOverrides[oldId];touchedNotes=true;}
+    const tIdx=_tripOrderList.indexOf(oldId);if(tIdx>-1){_tripOrderList[tIdx]=newId;touchedTrip=true;}
+    Object.keys(_zoneMembershipOverrides).forEach(cid=>{if(_zoneMembershipOverrides[cid]===oldId){_zoneMembershipOverrides[cid]=newId;touchedMembership=true;}});
+    _customZones.forEach(z=>{if(z.parentZoneId===oldId)z.parentZoneId=newId;});
+  }
+  zone.name=newNameRaw.trim()||zone.name;
+  renderPlan();
+  persistSplitRoutes();
+  if(touchedOverrides)persistPlanOverrides();
+  if(touchedCosts)saveRouteCosts(_routeCosts);
+  if(touchedNotes)persistZoneNotes();
+  if(touchedTrip)persistTripOrder();
+  if(touchedMembership)persistZoneMembership();
+}
 function openZoneMembershipAdmin(){
   renderZoneMembershipAdmin();
   document.getElementById('zone-membership-modal').classList.remove('hidden');
@@ -2208,7 +2238,7 @@ function zoneCardHtml(zone){
   let html=`<div class="card" style="padding:1rem 1.25rem">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
       <div>
-        <div style="font-weight:600;font-size:14px">${zone.id} &nbsp;<span class="badge ${zone.color}">${zone.region}</span> &nbsp;${zone.name}</div>
+        <div style="font-weight:600;font-size:14px">${zone.id} &nbsp;<span class="badge ${zone.color}">${zone.region}</span> &nbsp;${zone.name} ${_customZones.includes(zone)&&isSettingsAdmin()?`<button class="btn btn-s" style="padding:1px 6px;font-size:10px" onclick="renameCustomZone('${zone.id}')" title="Rename this route's code or display name"><i class="ti ti-pencil"></i> Rename</button>`:''}</div>
         <div style="font-size:12px;color:var(--tx3);margin-top:2px">${liveDesc}</div>
         ${zone.parentZoneId?`<div style="font-size:11px;color:var(--tx3);margin-top:4px"><i class="ti ti-arrow-back-up" style="font-size:11px" aria-hidden="true"></i> Split out of ${zone.parentZoneId}${isSettingsAdmin()?` — <a href="#" onclick="event.preventDefault();mergeZoneBack('${zone.id}')" style="color:var(--bl-d)">Merge back</a>`:''}</div>`:''}
       </div>
