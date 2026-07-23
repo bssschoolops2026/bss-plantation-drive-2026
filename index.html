@@ -332,6 +332,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
     <button class="btn btn-s" id="sort-mode-trip" onclick="setPlanSortMode('trip')"><i class="ti ti-route"></i> Trip order</button>
   </div>
   <div id="plan-summary"></div>
+  <div id="plan-unassigned"></div>
   <div id="plan-zones"></div>
 </div>
 
@@ -410,7 +411,7 @@ service cloud.firestore {
     }
     match /meta/{docId} {
       allow read: if isAllowed();
-      allow write: if isAllowed() && ((docId != 'settings' && docId != 'routeCosts' && docId != 'splitRoutes' && docId != 'zoneNotes' && docId != 'tripOrder') || isAdmin());
+      allow write: if isAllowed() && ((docId != 'settings' && docId != 'routeCosts' && docId != 'splitRoutes' && docId != 'zoneNotes' && docId != 'tripOrder' && docId != 'zoneMembership') || isAdmin());
     }
     match /presence/{id} {
       allow read, write: if isAllowed();
@@ -441,6 +442,12 @@ service cloud.firestore {
     <div class="card">
       <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">Set an estimated cost per truckload for each route in the Dispatch Plan, so the team can see a rough logistics cost per load — and a running total — before committing to a route.</p>
       <button class="btn btn-p" onclick="openRouteCostAdmin()"><i class="ti ti-currency-rupee"></i>Manage route costs</button>
+    </div>
+
+    <div class="sec-t">Manage zones</div>
+    <div class="card">
+      <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">Which route each cluster is grouped into. New clusters don't get a route automatically — assign one here (or from the "Needs a route" warning in the Dispatch Plan) or its plants won't show up in the plan at all.</p>
+      <button class="btn btn-p" onclick="openZoneMembershipAdmin()"><i class="ti ti-route"></i>Manage zones</button>
     </div>
 
     <div class="sec-t">Trash</div>
@@ -592,6 +599,19 @@ service cloud.firestore {
     <tbody id="route-cost-admin-list"></tbody>
   </table></div>
   <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-p" onclick="saveRouteCostAdmin()"><i class="ti ti-check"></i>Save all</button></div>
+</div>
+</div>
+
+<!-- Manage Zones (which route each cluster is assigned to) modal -->
+<div class="mo hidden" id="zone-membership-modal">
+<div class="md" style="width:680px">
+  <h3><i class="ti ti-route" style="color:var(--gr)"></i> Manage Zones</h3>
+  <p style="font-size:12px;color:var(--tx3);margin:-8px 0 12px">Which route each cluster is grouped into for the Dispatch Plan. Every cluster needs a route assigned here, or its plants won't appear anywhere in the plan — new clusters start with none, so check back here after adding one.</p>
+  <div class="tw" style="max-height:440px;overflow-y:auto"><table>
+    <thead><tr><th>Cluster</th><th>City</th><th>Default route</th><th>Assigned route</th></tr></thead>
+    <tbody id="zone-membership-list"></tbody>
+  </table></div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-p" onclick="saveZoneMembershipAdmin()"><i class="ti ti-check"></i>Save all</button></div>
 </div>
 </div>
 
@@ -835,6 +855,7 @@ function loadState(){
   loadSplitRoutesLocal();
   loadZoneNotesLocal();
   loadTripOrderLocal();
+  loadZoneMembershipLocal();
 }
 function mkSchool(sd){
   return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:0,plantingDate:sd[6],convenor:sd[7],contact:sd[8],species:CSP[sd[0]]||''};
@@ -1599,6 +1620,114 @@ let _customZones=[]; // {id,name,region,color,desc,note,cids,parentZoneId}
 let _zoneExclusions={}; // zoneId -> [clusterIds already split out into a custom zone]
 function allZones(){return ZONES.concat(_customZones);}
 
+// ─── ZONE MEMBERSHIP (which route each cluster is routed through — editable, and
+// the safety net that guarantees every cluster ends up SOMEWHERE in the plan) ──
+let _zoneMembershipOverrides={}; // clusterId -> zoneId, overriding a cluster's baked-in zone
+function clustersForZone(zone){
+  const excluded=new Set(_zoneExclusions[zone.id]||[]);
+  const reassignedAway=new Set(Object.keys(_zoneMembershipOverrides).map(Number).filter(cid=>zone.cids.includes(cid)&&_zoneMembershipOverrides[cid]!==zone.id));
+  const reassignedIn=Object.keys(_zoneMembershipOverrides).map(Number).filter(cid=>!zone.cids.includes(cid)&&_zoneMembershipOverrides[cid]===zone.id);
+  return zone.cids.filter(id=>!excluded.has(id)&&!reassignedAway.has(id)).concat(reassignedIn);
+}
+function homeZoneFor(clusterId){
+  return allZones().find(z=>z.cids.includes(clusterId));
+}
+function unassignedActiveClusters(){
+  return state.schools.filter(s=>remaining(s)>0&&!allZones().some(z=>clustersForZone(z).includes(s.id)));
+}
+function saveZoneMembershipLocal(){
+  localStorage.setItem('bhs_zone_membership_v1',JSON.stringify(_zoneMembershipOverrides));
+}
+function loadZoneMembershipLocal(){
+  try{_zoneMembershipOverrides=JSON.parse(localStorage.getItem('bhs_zone_membership_v1')||'{}');}catch(e){_zoneMembershipOverrides={};}
+}
+let _zoneMembershipUnsub=null;
+function listenZoneMembership(){
+  if(_zoneMembershipUnsub)_zoneMembershipUnsub();
+  _zoneMembershipUnsub=db.collection('meta').doc('zoneMembership').onSnapshot(doc=>{
+    _zoneMembershipOverrides=(doc.exists&&doc.data().overrides)||{};
+    if(document.getElementById('pane-plan').classList.contains('active'))renderPlan();
+    if(!document.getElementById('zone-membership-modal').classList.contains('hidden'))renderZoneMembershipAdmin();
+  },err=>console.warn('zone membership listener error:',err.message));
+}
+async function persistZoneMembership(){
+  if(fbReady()){
+    try{
+      await db.collection('meta').doc('zoneMembership').set({overrides:_zoneMembershipOverrides,updatedAt:new Date().toISOString()},{merge:true});
+    }catch(e){
+      console.warn('Zone membership save failed:',e.message);
+      showInAppNotif(`⚠️ Could not save — the shared database rejected this (${e.message}).`);
+      saveZoneMembershipLocal();
+      return;
+    }
+  } else {
+    saveZoneMembershipLocal();
+  }
+  showInAppNotif('Route assignment saved');
+}
+function assignClusterToZone(clusterId,zoneId){
+  if(!isSettingsAdmin()){showInAppNotif('Only the plantation drive admin can assign routes.');return;}
+  if(!zoneId)return;
+  const home=homeZoneFor(clusterId);
+  if(home&&zoneId===home.id)delete _zoneMembershipOverrides[clusterId];
+  else _zoneMembershipOverrides[clusterId]=zoneId;
+  delete _planOverrides[zoneId];
+  if(home)delete _planOverrides[home.id];
+  renderPlan();
+  persistZoneMembership();
+  if(home||zoneId)persistPlanOverrides();
+}
+function openZoneMembershipAdmin(){
+  renderZoneMembershipAdmin();
+  document.getElementById('zone-membership-modal').classList.remove('hidden');
+}
+function renderZoneMembershipAdmin(){
+  const el=document.getElementById('zone-membership-list');if(!el)return;
+  const zoneOptions=allZones().map(z=>`<option value="${esc(z.id)}">${esc(z.id)} — ${esc(z.name)}</option>`).join('');
+  el.innerHTML=state.schools.slice().sort((a,b)=>a.cluster.localeCompare(b.cluster)).map(s=>{
+    const home=homeZoneFor(s.id);
+    const current=_zoneMembershipOverrides[s.id]||(home?home.id:'');
+    return `<tr>
+      <td><strong>${esc(s.cluster)}</strong></td>
+      <td style="font-size:12px">${esc(s.city)}</td>
+      <td style="font-size:11px;color:var(--tx3)">${home?esc(home.id):'<span style="color:var(--re-d)">none — unassigned</span>'}</td>
+      <td><select class="zone-membership-select" data-cluster="${s.id}" style="font-size:12px;padding:3px 5px">
+        <option value="">— No route —</option>
+        ${zoneOptions}
+      </select></td>
+    </tr>`;
+  }).join('');
+  document.querySelectorAll('.zone-membership-select').forEach(sel=>{
+    const cid=Number(sel.dataset.cluster);
+    const home=homeZoneFor(cid);
+    sel.value=_zoneMembershipOverrides[cid]||(home?home.id:'');
+  });
+}
+function saveZoneMembershipAdmin(){
+  const oldOverrides={..._zoneMembershipOverrides};
+  const newOverrides={..._zoneMembershipOverrides};
+  const affectedZoneIds=new Set();
+  document.querySelectorAll('.zone-membership-select').forEach(sel=>{
+    const cid=Number(sel.dataset.cluster);
+    const home=homeZoneFor(cid);
+    const chosen=sel.value;
+    const before=oldOverrides[cid]||(home?home.id:null);
+    if(before!==chosen){
+      if(before)affectedZoneIds.add(before);
+      if(chosen)affectedZoneIds.add(chosen);
+    }
+    if(home&&chosen===home.id)delete newOverrides[cid];
+    else if(chosen)newOverrides[cid]=chosen;
+    else if(home)newOverrides[cid]=''; // explicitly unassigned even though it has a baked-in home zone
+  });
+  _zoneMembershipOverrides=newOverrides;
+  affectedZoneIds.forEach(zid=>{delete _planOverrides[zid];});
+  renderPlan();
+  persistZoneMembership();
+  if(affectedZoneIds.size)persistPlanOverrides();
+  closeMo();
+}
+
 // ─── TRIP ORDER (custom dispatch sequence, independent of region grouping) ──
 let _tripOrderList=[]; // ordered array of zone ids — the admin's chosen dispatch sequence
 let _planSortMode='region'; // 'region' | 'trip'
@@ -1709,7 +1838,7 @@ async function persistSplitRoutes(){
 function splitClusterOutOfZone(zoneId,clusterId){
   if(!isSettingsAdmin()){showInAppNotif('Only the plantation drive admin can split routes.');return;}
   const zone=allZones().find(z=>z.id===zoneId);
-  const activeIds=zone.cids.filter(id=>!(_zoneExclusions[zoneId]||[]).includes(id));
+  const activeIds=clustersForZone(zone);
   if(activeIds.length<=1){alert('This route only has one cluster left in it — nothing to split out.');return;}
   const cluster=state.schools.find(s=>s.id===clusterId);
   if(!cluster)return;
@@ -1950,8 +2079,7 @@ function savePlanQtyEdit(){
 }
 
 function packContainers(zone){
-  const excluded=new Set(_zoneExclusions[zone.id]||[]);
-  const pending=zone.cids.filter(id=>!excluded.has(id)).map(id=>state.schools.find(s=>s.id===id))
+  const pending=clustersForZone(zone).map(id=>state.schools.find(s=>s.id===id))
     .filter(s=>s&&(remaining(s))>0)
     .map(s=>({...s,rem:remaining(s)}));
   if(!pending.length)return[];
@@ -1995,6 +2123,26 @@ function renderPlan(){
 
   document.getElementById('sort-mode-region').classList.toggle('btn-p',_planSortMode==='region');
   document.getElementById('sort-mode-trip').classList.toggle('btn-p',_planSortMode==='trip');
+
+  const unassigned=unassignedActiveClusters();
+  if(unassigned.length){
+    const zoneOptions=allZones().map(z=>`<option value="${esc(z.id)}">${esc(z.id)} — ${esc(z.name)}</option>`).join('');
+    document.getElementById('plan-unassigned').innerHTML=`<div class="alert aw" style="margin-bottom:1rem">
+      <i class="ti ti-alert-triangle"></i>
+      <div style="flex:1">
+        <strong>${unassigned.length} cluster${unassigned.length>1?'s':''} (${fmt(unassigned.reduce((a,s)=>a+remaining(s),0))} plants) ${unassigned.length>1?"don't":"doesn't"} have a route assigned</strong> — ${unassigned.length>1?'they':'it'} won't show up anywhere below or in exports until assigned.
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+          ${unassigned.map(s=>`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px">
+            <strong>${esc(s.cluster)}</strong> <span style="color:var(--tx3)">(${esc(s.city)} · ${fmt(remaining(s))} plants)</span>
+            ${isSettingsAdmin()?`<select id="assign-zone-${s.id}" style="font-size:12px;padding:3px 5px;border-radius:var(--r);border:.5px solid var(--bd)"><option value="">Assign to…</option>${zoneOptions}</select>
+            <button class="btn btn-s" onclick="const z=document.getElementById('assign-zone-${s.id}').value;if(z)assignClusterToZone(${s.id},z);"><i class="ti ti-check"></i> Assign</button>`:'<span style="color:var(--tx3)">— contact the plantation drive admin to assign a route</span>'}
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  } else {
+    document.getElementById('plan-unassigned').innerHTML='';
+  }
 
   let html='';
   if(_planSortMode==='trip'){
@@ -2093,6 +2241,12 @@ function zoneCardHtml(zone){
 
 function exportPlan(){
   let txt=`PLANTATION DISPATCH PLAN\n${'='.repeat(50)}\nGenerated: ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}\n\n`;
+  const unassigned=unassignedActiveClusters();
+  if(unassigned.length){
+    txt+=`⚠️ NOT INCLUDED BELOW — no route assigned (Settings → Manage zones):\n`;
+    unassigned.forEach(s=>{txt+=`    • ${s.cluster} (${s.city}): ${fmt(remaining(s))} plants\n`;});
+    txt+='\n';
+  }
   allZones().forEach(zone=>{
     const c=getContainers(zone);
     if(!c.length)return;
@@ -2406,6 +2560,7 @@ async function onAuthUserReady(){
   listenSplitRoutes();
   listenZoneNotes();
   listenTripOrder();
+  listenZoneMembership();
   updateSyncBadge('connected');
   applySettingsAccess();
 }
