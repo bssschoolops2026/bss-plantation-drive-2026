@@ -246,6 +246,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
     <div class="card stagger-item" id="dash-card-2"><div class="ch"><h3><i class="ti ti-chart-bar" style="color:var(--gr)"></i> Progress by region</h3></div><div id="d-regions"></div></div>
   </div>
   <div class="card stagger-item" id="dash-card-3"><div class="ch"><h3><i class="ti ti-calendar" style="color:var(--bl)"></i> Upcoming dispatches (next 30 days)</h3><button class="btn btn-s" onclick="go('alerts')">See all alerts</button></div><div id="d-upcoming"></div></div>
+  <div class="card stagger-item" id="dash-card-nursery"><div class="ch"><h3><i class="ti ti-plant-2" style="color:var(--gr)"></i> Nursery Inventory (Kasuri Farms)</h3><button class="btn btn-s" onclick="go('nursery')">View full breakdown</button></div><div id="d-nursery"></div></div>
   <div class="card stagger-item" id="dash-card-4"><div class="ch"><h3><i class="ti ti-activity" style="color:var(--gr)"></i> Recent activity</h3></div><div id="d-activity"></div></div>
 </div>
 
@@ -632,7 +633,7 @@ service cloud.firestore {
   <h3><i class="ti ti-plant-2" style="color:var(--gr)"></i> Manage Nursery Inventory</h3>
   <p style="font-size:12px;color:var(--tx3);margin:-8px 0 12px">Stock at Kasuri Farms by species. Click Edit to update a species' numbers, or add a new one entirely.</p>
   <div class="tw" style="max-height:440px;overflow-y:auto"><table>
-    <thead><tr><th>Species</th><th>Ready (3–4ft)</th><th>Dispatched</th><th>Remaining</th><th>Upcoming (6in–1ft)</th><th>Grand total</th><th></th></tr></thead>
+    <thead><tr><th>Species</th><th>Total stock (3–4ft)</th><th>Dispatched</th><th>Ready to dispatch</th><th>Upcoming (6in–1ft)</th><th>Grand total</th><th></th></tr></thead>
     <tbody id="nursery-admin-list"></tbody>
   </table></div>
   <div class="ma"><button class="btn" onclick="closeMo()">Close</button><button class="btn btn-p" onclick="openNurseryRowForm(null)"><i class="ti ti-plus"></i>Add species</button></div>
@@ -646,7 +647,7 @@ service cloud.firestore {
   <input type="hidden" id="nf-id">
   <div class="fr"><label>Plant variety *</label><input type="text" id="nf-species" placeholder="e.g. Kachnar"></div>
   <div class="fg2">
-    <div class="fr"><label>Ready to Dispatch (3–4ft)</label><input type="number" id="nf-ready" min="0"></div>
+    <div class="fr"><label>Total stock (3–4ft)</label><input type="number" id="nf-ready" min="0"></div>
     <div class="fr"><label>Total Dispatched</label><input type="number" id="nf-dispatched" min="0"></div>
   </div>
   <div class="sec-t" style="margin-top:1rem">3–4ft batch — monthly (Aug–Nov)</div>
@@ -1372,11 +1373,28 @@ function rDash(){
     return`<div class="stat-row"><div><strong>${s.cluster}</strong> — ${s.city}<br><span style="font-size:11px;color:${past?'var(--re-d)':'var(--tx3)'}">${getConvenor(s)} · Planting ${fmtD(s.plantingDate)}${past?` <strong>(overdue ${Math.abs(d)}d)</strong>`:''} · ${fmt(remaining(s))} needed</span></div><button class="btn btn-s" onclick="openDM(${s.id})">Log</button></div>`;}).join('')+
     `<div style="font-size:11px;color:var(--tx3);margin-top:8px;padding-top:8px;border-top:.5px solid var(--bd)">${upLabel} · <a href="#" onclick="go('alerts')" style="color:var(--bl-d)">View all alerts →</a></div>`;
   renderActivityFeed();
+  renderDashNursery();
   requestAnimationFrame(()=>requestAnimationFrame(animateBars));
   document.querySelectorAll('#pane-dashboard .stagger-item').forEach((el,i)=>{
     el.classList.remove('in');void el.offsetWidth;
     el.style.animationDelay=(i*70)+'ms';el.classList.add('in');
   });
+}
+function renderDashNursery(){
+  const el=document.getElementById('d-nursery');if(!el)return;
+  const rows=_nurseryInventory||[];
+  if(!rows.length){el.innerHTML=`<p style="color:var(--tx3);font-size:13px">No nursery data yet.</p>`;return;}
+  const totReady=rows.reduce((a,r)=>a+(r.readyToDispatch||0),0);
+  const totDispatched=rows.reduce((a,r)=>a+(r.totalDispatched||0),0);
+  const totRemaining=rows.reduce((a,r)=>a+nurseryRemaining(r),0);
+  const totUpcoming=rows.reduce((a,r)=>a+nurseryBatch2Total(r),0);
+  const totGrand=rows.reduce((a,r)=>a+nurseryGrandTotal(r),0);
+  el.innerHTML=`<div class="metrics">
+    <div class="metric"><div class="mlabel">Ready to dispatch</div><div class="mval">${fmt(totRemaining)}</div><div class="msub">current inventory</div></div>
+    <div class="metric"><div class="mlabel">Already dispatched</div><div class="mval" style="color:var(--gr)">${fmt(totDispatched)}</div><div class="msub">of ${fmt(totReady)} total stock</div></div>
+    <div class="metric"><div class="mlabel">Upcoming (6in–1ft)</div><div class="mval" style="color:var(--am)">${fmt(totUpcoming)}</div><div class="msub">Dec–Apr batch</div></div>
+    <div class="metric"><div class="mlabel">Grand total</div><div class="mval">${fmt(totGrand)}</div><div class="msub">${rows.length} varieties</div></div>
+  </div>`;
 }
 
 // ─── ACTIVITY FEED (real dispatch-log actions, most recent first) ────────────
@@ -2043,7 +2061,7 @@ const NURSERY_SEED=[{"species":"Kachnar","readyToDispatch":40000,"totalDispatche
 let _nurseryInventory=[];
 function nurseryRemaining(row){return Math.max(0,(row.readyToDispatch||0)-(row.totalDispatched||0));}
 function nurseryBatch2Total(row){return Object.values(row.batch2Monthly||{}).reduce((a,b)=>a+(Number(b)||0),0);}
-function nurseryGrandTotal(row){return (row.readyToDispatch||0)+nurseryBatch2Total(row);}
+function nurseryGrandTotal(row){return nurseryRemaining(row)+nurseryBatch2Total(row);}
 function saveNurseryInventoryLocal(){
   localStorage.setItem('bhs_nursery_inventory_v1',JSON.stringify(_nurseryInventory));
 }
@@ -2065,6 +2083,7 @@ function listenNurseryInventory(){
       catch(e){console.warn('nursery inventory seed failed:',e.message);}
     }
     if(document.getElementById('pane-nursery').classList.contains('active'))renderNurseryInventory();
+    if(document.getElementById('pane-dashboard').classList.contains('active'))renderDashNursery();
     if(!document.getElementById('nursery-admin-modal').classList.contains('hidden'))renderNurseryAdmin();
   },err=>console.warn('nursery inventory listener error:',err.message));
 }
@@ -2091,24 +2110,24 @@ function renderNurseryInventory(){
   const totRemaining=rows.reduce((a,r)=>a+nurseryRemaining(r),0);
   const totUpcoming=rows.reduce((a,r)=>a+nurseryBatch2Total(r),0);
   const totGrand=rows.reduce((a,r)=>a+nurseryGrandTotal(r),0);
+  const pctAll=totReady>0?Math.round(totDispatched/totReady*100):0;
   document.getElementById('nursery-summary').innerHTML=`
     <div class="metrics" style="margin-bottom:1rem">
-      <div class="metric"><div class="mlabel">Ready to dispatch (3–4ft)</div><div class="mval">${fmt(totReady)}</div><div class="msub">across ${rows.length} varieties</div></div>
-      <div class="metric"><div class="mlabel">Already dispatched</div><div class="mval" style="color:var(--gr)">${fmt(totDispatched)}</div><div class="msub">${fmt(totRemaining)} remaining</div></div>
+      <div class="metric"><div class="mlabel">Ready to dispatch (3–4ft)</div><div class="mval">${fmt(totRemaining)}</div><div class="msub">current inventory, across ${rows.length} varieties</div></div>
+      <div class="metric"><div class="mlabel">Already dispatched</div><div class="mval" style="color:var(--gr)">${fmt(totDispatched)}</div><div class="msub">${pctAll}% of total stock (${fmt(totReady)})</div></div>
       <div class="metric"><div class="mlabel">Upcoming (6in–1ft, Dec–Apr)</div><div class="mval" style="color:var(--am)">${fmt(totUpcoming)}</div><div class="msub">next growth batch</div></div>
       <div class="metric"><div class="mlabel">Grand total</div><div class="mval">${fmt(totGrand)}</div><div class="msub">both batches combined</div></div>
     </div>`;
   document.getElementById('nursery-table').innerHTML=`<div class="tw"><table>
     <thead><tr>
-      <th>Variety</th><th>Ready (3–4ft)</th><th>Dispatched</th><th>Remaining</th><th>Upcoming (6in–1ft)</th><th>Grand total</th><th></th>
+      <th>Variety</th><th>Ready to dispatch</th><th>Dispatched</th><th>Upcoming (6in–1ft)</th><th>Grand total</th><th></th>
     </tr></thead>
     <tbody>${rows.map(r=>{
       const pct=r.readyToDispatch>0?Math.min(100,Math.round(r.totalDispatched/r.readyToDispatch*100)):0;
       return `<tr tabindex="0" onclick="showNurseryDetail(${r.id})" style="cursor:pointer" title="Click for monthly breakdown">
       <td><strong class="cluster-link" style="text-decoration:underline;text-decoration-color:var(--bd2)">${esc(r.species)}</strong></td>
-      <td class="tabular">${fmt(r.readyToDispatch)}</td>
-      <td style="min-width:90px">${progBar(pct)}</td>
       <td class="tabular" style="font-weight:600">${fmt(nurseryRemaining(r))}</td>
+      <td style="min-width:90px">${progBar(pct)}</td>
       <td class="tabular" style="color:var(--am-d)">${fmt(nurseryBatch2Total(r))}</td>
       <td class="tabular" style="font-weight:600;color:var(--gr-d)">${fmt(nurseryGrandTotal(r))}</td>
       <td><button class="btn btn-s" onclick="event.stopPropagation();showNurseryDetail(${r.id})"><i class="ti ti-calendar"></i> Months</button></td>
@@ -2125,9 +2144,9 @@ function showNurseryDetail(id){
   document.getElementById('nursery-detail-body').innerHTML=`
     <h3 style="margin-bottom:1rem"><i class="ti ti-plant-2" style="color:var(--gr)"></i> ${esc(r.species)}</h3>
     <div class="metrics" style="margin-bottom:1.25rem">
-      <div class="metric"><div class="mlabel">Ready (3–4ft)</div><div class="mval">${fmt(r.readyToDispatch)}</div></div>
-      <div class="metric"><div class="mlabel">Dispatched</div><div class="mval" style="color:var(--gr)">${fmt(r.totalDispatched)}</div><div class="msub">${pct}% of ready stock</div></div>
-      <div class="metric"><div class="mlabel">Remaining</div><div class="mval">${fmt(nurseryRemaining(r))}</div></div>
+      <div class="metric"><div class="mlabel">Ready to dispatch</div><div class="mval">${fmt(nurseryRemaining(r))}</div><div class="msub">current inventory</div></div>
+      <div class="metric"><div class="mlabel">Dispatched</div><div class="mval" style="color:var(--gr)">${fmt(r.totalDispatched)}</div><div class="msub">${pct}% of total stock (${fmt(r.readyToDispatch)})</div></div>
+      <div class="metric"><div class="mlabel">Upcoming (6in–1ft)</div><div class="mval" style="color:var(--am)">${fmt(nurseryBatch2Total(r))}</div></div>
       <div class="metric"><div class="mlabel">Grand total</div><div class="mval" style="color:var(--gr-d)">${fmt(nurseryGrandTotal(r))}</div></div>
     </div>
     <div class="cd-grid">
