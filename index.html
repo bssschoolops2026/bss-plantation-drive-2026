@@ -51,7 +51,7 @@ input,select,textarea{width:100%;padding:8px 12px;border:.5px solid var(--bd2);b
 input:focus,select:focus,textarea:focus{border-color:var(--gr);box-shadow:0 0 0 3px rgba(29,158,117,.1)}
 textarea{resize:vertical;min-height:72px}
 label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px;font-weight:500}
-.fr{margin-bottom:12px}.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fr{margin-bottom:12px}.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.fg4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
 th{text-align:left;padding:8px 12px;font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;border-bottom:.5px solid var(--bd);white-space:nowrap}
@@ -168,7 +168,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
   .sb .sb-bottom{padding:.85rem 1rem}
   .sb .sb-bottom .btn{padding:8px 10px;font-size:12.5px}
   .main{margin-left:0;padding:1rem}.metrics{grid-template-columns:1fr 1fr}
-  .cg{grid-template-columns:1fr}.fg2{grid-template-columns:1fr}
+  .cg{grid-template-columns:1fr}.fg2{grid-template-columns:1fr}.fg4{grid-template-columns:1fr 1fr}
   .yr-grid{grid-template-columns:1fr 1fr}#plantation-map{height:320px}
 }
 </style>
@@ -208,6 +208,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
   <div class="nav" onclick="go('alerts');closeSidebar()" id="nav-alerts"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M9.5 19a2.5 2.5 0 0 0 5 0"/></svg><span>Alerts</span><span class="bc hidden" id="abc">0</span></div>
   <div class="nav" onclick="go('plan');closeSidebar()" id="nav-plan"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="18" r="2.3"/><circle cx="18" cy="6" r="2.3"/><path d="M8 17c4-1 5-6 8-10"/></svg><span>Dispatch Plan</span></div>
   <div class="sb-section-label">Data</div>
+  <div class="nav" onclick="go('nursery');closeSidebar()" id="nav-nursery"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21v-9"/><path d="M12 12c-3.5 0-6-2.5-6-6 3.5 0 6 2.5 6 6z"/><path d="M12 12c3.5 0 6-3 6-7-3.5 0-6 2.5-6 7z"/><path d="M8 21h8"/></svg><span>Nursery Inventory</span></div>
   <div class="nav" onclick="go('lastyear');closeSidebar()" id="nav-lastyear"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-9"/><path d="M12 13c0-4-3-6-7-6 0 4 3 7 7 6z"/><path d="M12 13c0-5 3-8 8-8 0 5-3 9-8 8z"/></svg><span>2025 Initiative</span></div>
   <div class="sb-section-label">Configure</div>
   <div class="nav" onclick="go('settings');closeSidebar()" id="nav-settings"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.97 7.97 0 0 0 0-2l2-1.5-2-3.5-2.4 1a8 8 0 0 0-1.7-1L15 3h-4l-.3 2a8 8 0 0 0-1.7 1l-2.4-1-2 3.5L6.6 11a7.97 7.97 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 1.7 1L11 21h4l.3-2a8 8 0 0 0 1.7-1l2.4 1 2-3.5z"/></svg><span>Settings</span></div>
@@ -336,6 +337,16 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
   <div id="plan-zones"></div>
 </div>
 
+<!-- NURSERY INVENTORY -->
+<div class="pane" id="pane-nursery">
+  <div class="ph-row ph">
+    <div><h2>Nursery Inventory</h2><p>Plant stock at Kasuri Farms, by species and height class</p></div>
+    <div id="nursery-admin-btn"></div>
+  </div>
+  <div id="nursery-summary"></div>
+  <div id="nursery-table"></div>
+</div>
+
 <!-- 2025 INITIATIVE -->
 <div class="pane" id="pane-lastyear">
   <div class="ph-row ph">
@@ -411,7 +422,7 @@ service cloud.firestore {
     }
     match /meta/{docId} {
       allow read: if isAllowed();
-      allow write: if isAllowed() && ((docId != 'settings' && docId != 'routeCosts' && docId != 'splitRoutes' && docId != 'zoneNotes' && docId != 'tripOrder' && docId != 'zoneMembership') || isAdmin());
+      allow write: if isAllowed() && ((docId != 'settings' && docId != 'routeCosts' && docId != 'splitRoutes' && docId != 'zoneNotes' && docId != 'tripOrder' && docId != 'zoneMembership' && docId != 'nurseryInventory') || isAdmin());
     }
     match /presence/{id} {
       allow read, write: if isAllowed();
@@ -615,6 +626,58 @@ service cloud.firestore {
 </div>
 </div>
 
+<!-- Manage Nursery Inventory: species list -->
+<div class="mo hidden" id="nursery-admin-modal">
+<div class="md" style="width:820px">
+  <h3><i class="ti ti-plant-2" style="color:var(--gr)"></i> Manage Nursery Inventory</h3>
+  <p style="font-size:12px;color:var(--tx3);margin:-8px 0 12px">Stock at Kasuri Farms by species. Click Edit to update a species' numbers, or add a new one entirely.</p>
+  <div class="tw" style="max-height:440px;overflow-y:auto"><table>
+    <thead><tr><th>Species</th><th>Ready (3–4ft)</th><th>Dispatched</th><th>Remaining</th><th>Upcoming (6in–1ft)</th><th>Grand total</th><th></th></tr></thead>
+    <tbody id="nursery-admin-list"></tbody>
+  </table></div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Close</button><button class="btn btn-p" onclick="openNurseryRowForm(null)"><i class="ti ti-plus"></i>Add species</button></div>
+</div>
+</div>
+
+<!-- Nursery Inventory: add/edit one species row -->
+<div class="mo hidden" id="nursery-row-modal">
+<div class="md" style="width:560px">
+  <h3 id="nursery-row-title"><i class="ti ti-plant-2" style="color:var(--gr)"></i> Add species</h3>
+  <input type="hidden" id="nf-id">
+  <div class="fr"><label>Plant variety *</label><input type="text" id="nf-species" placeholder="e.g. Kachnar"></div>
+  <div class="fg2">
+    <div class="fr"><label>Ready to Dispatch (3–4ft)</label><input type="number" id="nf-ready" min="0"></div>
+    <div class="fr"><label>Total Dispatched</label><input type="number" id="nf-dispatched" min="0"></div>
+  </div>
+  <div class="sec-t" style="margin-top:1rem">3–4ft batch — monthly (Aug–Nov)</div>
+  <div class="fg4">
+    <div class="fr"><label>Aug</label><input type="number" id="nf-b1-AUG" min="0"></div>
+    <div class="fr"><label>Sep</label><input type="number" id="nf-b1-SEP" min="0"></div>
+    <div class="fr"><label>Oct</label><input type="number" id="nf-b1-OCT" min="0"></div>
+    <div class="fr"><label>Nov</label><input type="number" id="nf-b1-NOV" min="0"></div>
+  </div>
+  <div class="sec-t" style="margin-top:1rem">6in–1ft batch — monthly (Dec–Apr)</div>
+  <div class="fg4">
+    <div class="fr"><label>Dec</label><input type="number" id="nf-b2-DEC" min="0"></div>
+    <div class="fr"><label>Jan</label><input type="number" id="nf-b2-JAN" min="0"></div>
+    <div class="fr"><label>Feb</label><input type="number" id="nf-b2-FEB" min="0"></div>
+    <div class="fr"><label>Mar</label><input type="number" id="nf-b2-MAR" min="0"></div>
+  </div>
+  <div class="fg4">
+    <div class="fr"><label>Apr</label><input type="number" id="nf-b2-APR" min="0"></div>
+  </div>
+  <div class="ma"><button class="btn" onclick="closeMo();openNurseryAdmin()">Cancel</button><button class="btn btn-p" onclick="saveNurseryRow()"><i class="ti ti-check"></i>Save</button></div>
+</div>
+</div>
+
+<!-- Nursery Inventory: per-species monthly breakdown (read-only detail) -->
+<div class="mo hidden" id="nursery-detail-modal">
+<div class="md" style="width:640px">
+  <div id="nursery-detail-body"></div>
+  <div class="ma"><button class="btn" onclick="closeMo()">Close</button></div>
+</div>
+</div>
+
 <!-- Dispatch Plan: edit exact quantity for a load -->
 <div class="mo hidden" id="plan-qty-modal">
 <div class="md" style="width:380px">
@@ -683,10 +746,12 @@ service cloud.firestore {
         <tr><td><strong>Nearby Clusters</strong></td><td>Sidebar → Nearby Clusters</td><td>Clusters grouped by city/region — useful for planning shared truck routes.</td></tr>
         <tr><td><strong>Alerts</strong></td><td>Sidebar → Alerts</td><td>Clusters with an upcoming or overdue planting date that still need dispatches.</td></tr>
         <tr><td><strong>Dispatch Plan</strong></td><td>Sidebar → Dispatch Plan</td><td>Drag-and-drop planner for splitting remaining stock across clusters.</td></tr>
+        <tr><td><strong>Nursery Inventory</strong></td><td>Sidebar → Nursery Inventory</td><td>Kasuri Farms stock by species and height batch, with dispatched/remaining and the upcoming 6in–1ft batch's monthly totals.</td></tr>
         <tr><td><strong>2025 Initiative</strong></td><td>Sidebar → 2025 Initiative</td><td>Reference data from last year's drive.</td></tr>
         <tr><td><strong>Settings</strong></td><td>Sidebar → Settings</td><td>Firebase sync status, Firestore rules, alert/digest preferences, manual actions.</td></tr>
         <tr><td>&nbsp;&nbsp;↳ Manage clusters</td><td>Settings → Manage clusters button</td><td>Add, edit, or remove clusters — no source-code edits needed.</td></tr>
         <tr><td>&nbsp;&nbsp;↳ Manage route costs</td><td>Settings → Manage route costs button</td><td>Set an estimated cost per truckload for each route — shown in the Dispatch Plan.</td></tr>
+        <tr><td>&nbsp;&nbsp;↳ Manage nursery inventory</td><td>Nursery Inventory → Manage nursery inventory button</td><td>Add, edit, or remove a species' stock numbers as Kasuri Farms updates you.</td></tr>
         <tr><td>&nbsp;&nbsp;↳ Trash</td><td>Settings → Trash button</td><td>Restore any dispatch or cluster that was deleted by mistake.</td></tr>
         <tr><td>&nbsp;&nbsp;↳ Weekly digest setup</td><td>Settings → Weekly email digest card</td><td>One-time GitHub Actions setup so the team gets an emailed summary every week.</td></tr>
         <tr><td>&nbsp;&nbsp;↳ Export CSV</td><td>Settings → Manual actions, or sidebar bottom</td><td>Download the current cluster roster as a spreadsheet.</td></tr>
@@ -856,6 +921,7 @@ function loadState(){
   loadZoneNotesLocal();
   loadTripOrderLocal();
   loadZoneMembershipLocal();
+  loadNurseryInventoryLocal();
 }
 function mkSchool(sd){
   return{id:sd[0],cluster:sd[1],city:sd[2],region:sd[3],required:sd[4],dispatched:0,plantingDate:sd[6],convenor:sd[7],contact:sd[8],species:CSP[sd[0]]||''};
@@ -1257,6 +1323,7 @@ function go(p){
   if(p==='nearby')rNearby();
   if(p==='alerts')rAlerts();
   if(p==='plan')renderPlan();
+  if(p==='nursery')renderNurseryInventory();
   if(p==='settings')loadSettingsForm();
   if(p==='lastyear'){render2025Summary();try{renderMap();}catch(e){console.warn('Map unavailable (blocked or offline):',e.message);}render2025Table();}
 }
@@ -1971,6 +2038,173 @@ function editZoneNote(zoneId){
   persistZoneNotes();
 }
 
+// ─── NURSERY INVENTORY (Kasuri Farms stock, by species and height batch) ─────
+const NURSERY_SEED=[{"species":"Kachnar","readyToDispatch":40000,"totalDispatched":10750,"batch1Monthly":{"AUG":7313,"SEP":7313,"OCT":7312,"NOV":7312},"batch2Monthly":{"DEC":3000,"JAN":3000,"FEB":3000,"MAR":3000,"APR":3000},"id":1},{"species":"Amaltas","readyToDispatch":40000,"totalDispatched":7775,"batch1Monthly":{"AUG":8057,"SEP":8056,"OCT":8056,"NOV":8056},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":2},{"species":"Lemon (Khati)","readyToDispatch":20000,"totalDispatched":2600,"batch1Monthly":{"AUG":4350,"SEP":4350,"OCT":4350,"NOV":4350},"batch2Monthly":{"DEC":3000,"JAN":3000,"FEB":3000,"MAR":3000,"APR":3000},"id":3},{"species":"Gul-e-Nishter","readyToDispatch":10000,"totalDispatched":1600,"batch1Monthly":{"AUG":2100,"SEP":2100,"OCT":2100,"NOV":2100},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":4},{"species":"Sukh Chayn","readyToDispatch":6000,"totalDispatched":4690,"batch1Monthly":{"AUG":328,"SEP":328,"OCT":327,"NOV":327},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":5},{"species":"Jamun","readyToDispatch":18000,"totalDispatched":4865,"batch1Monthly":{"AUG":3284,"SEP":3284,"OCT":3284,"NOV":3283},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":6},{"species":"Alstonia","readyToDispatch":30000,"totalDispatched":5830,"batch1Monthly":{"AUG":6043,"SEP":6043,"OCT":6042,"NOV":6042},"batch2Monthly":{"DEC":1600,"JAN":1600,"FEB":1600,"MAR":1600,"APR":1600},"id":7},{"species":"Moringa","readyToDispatch":50000,"totalDispatched":7800,"batch1Monthly":{"AUG":10550,"SEP":10550,"OCT":10550,"NOV":10550},"batch2Monthly":{"DEC":6000,"JAN":6000,"FEB":6000,"MAR":6000,"APR":6000},"id":8},{"species":"Gum Arabic","readyToDispatch":4425,"totalDispatched":4425,"batch1Monthly":{"AUG":0,"SEP":0,"OCT":0,"NOV":0},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":9},{"species":"Mulberry","readyToDispatch":24000,"totalDispatched":5960,"batch1Monthly":{"AUG":4510,"SEP":4510,"OCT":4510,"NOV":4510},"batch2Monthly":{"DEC":5000,"JAN":5000,"FEB":5000,"MAR":5000,"APR":5000},"id":10},{"species":"Neem/Bakain","readyToDispatch":40000,"totalDispatched":9020,"batch1Monthly":{"AUG":7745,"SEP":7745,"OCT":7745,"NOV":7745},"batch2Monthly":{"DEC":6000,"JAN":6000,"FEB":6000,"MAR":6000,"APR":6000},"id":11},{"species":"Arjun","readyToDispatch":10000,"totalDispatched":3390,"batch1Monthly":{"AUG":1653,"SEP":1653,"OCT":1652,"NOV":1652},"batch2Monthly":{"DEC":10000,"JAN":10000,"FEB":10000,"MAR":10000,"APR":10000},"id":12},{"species":"Sheesham","readyToDispatch":13000,"totalDispatched":5000,"batch1Monthly":{"AUG":2000,"SEP":2000,"OCT":2000,"NOV":2000},"batch2Monthly":{"DEC":10000,"JAN":10000,"FEB":10000,"MAR":10000,"APR":10000},"id":13},{"species":"Semal","readyToDispatch":18000,"totalDispatched":1300,"batch1Monthly":{"AUG":4175,"SEP":4175,"OCT":4175,"NOV":4175},"batch2Monthly":{"DEC":6000,"JAN":6000,"FEB":6000,"MAR":6000,"APR":6000},"id":14},{"species":"Poplar","readyToDispatch":18575,"totalDispatched":2900,"batch1Monthly":{"AUG":3919,"SEP":3919,"OCT":3919,"NOV":3918},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":15},{"species":"Gavava","readyToDispatch":20000,"totalDispatched":4400,"batch1Monthly":{"AUG":3900,"SEP":3900,"OCT":3900,"NOV":3900},"batch2Monthly":{"DEC":4000,"JAN":4000,"FEB":4000,"MAR":4000,"APR":4000},"id":16},{"species":"Sharen","readyToDispatch":1000,"totalDispatched":1000,"batch1Monthly":{"AUG":0,"SEP":0,"OCT":0,"NOV":0},"batch2Monthly":{"DEC":7400,"JAN":7400,"FEB":7400,"MAR":7400,"APR":7400},"id":17},{"species":"Beri","readyToDispatch":1000,"totalDispatched":1000,"batch1Monthly":{"AUG":0,"SEP":0,"OCT":0,"NOV":0},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":18},{"species":"Terminila","readyToDispatch":5000,"totalDispatched":500,"batch1Monthly":{"AUG":1125,"SEP":1125,"OCT":1125,"NOV":1125},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":19},{"species":"Kanar","readyToDispatch":1000,"totalDispatched":0,"batch1Monthly":{"AUG":250,"SEP":250,"OCT":250,"NOV":250},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":20},{"species":"Lasora","readyToDispatch":15000,"totalDispatched":200,"batch1Monthly":{"AUG":3700,"SEP":3700,"OCT":3700,"NOV":3700},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":21}];
+let _nurseryInventory=[];
+function nurseryRemaining(row){return Math.max(0,(row.readyToDispatch||0)-(row.totalDispatched||0));}
+function nurseryBatch2Total(row){return Object.values(row.batch2Monthly||{}).reduce((a,b)=>a+(Number(b)||0),0);}
+function nurseryGrandTotal(row){return (row.readyToDispatch||0)+nurseryBatch2Total(row);}
+function saveNurseryInventoryLocal(){
+  localStorage.setItem('bhs_nursery_inventory_v1',JSON.stringify(_nurseryInventory));
+}
+function loadNurseryInventoryLocal(){
+  try{
+    const raw=localStorage.getItem('bhs_nursery_inventory_v1');
+    _nurseryInventory=raw?JSON.parse(raw):NURSERY_SEED.map(r=>({...r}));
+  }catch(e){_nurseryInventory=NURSERY_SEED.map(r=>({...r}));}
+}
+let _nurseryInventoryUnsub=null;
+function listenNurseryInventory(){
+  if(_nurseryInventoryUnsub)_nurseryInventoryUnsub();
+  _nurseryInventoryUnsub=db.collection('meta').doc('nurseryInventory').onSnapshot(async doc=>{
+    if(doc.exists&&doc.data().rows){
+      _nurseryInventory=doc.data().rows;
+    }else{
+      _nurseryInventory=NURSERY_SEED.map(r=>({...r}));
+      try{await db.collection('meta').doc('nurseryInventory').set({rows:_nurseryInventory,updatedAt:new Date().toISOString()},{merge:true});}
+      catch(e){console.warn('nursery inventory seed failed:',e.message);}
+    }
+    if(document.getElementById('pane-nursery').classList.contains('active'))renderNurseryInventory();
+    if(!document.getElementById('nursery-admin-modal').classList.contains('hidden'))renderNurseryAdmin();
+  },err=>console.warn('nursery inventory listener error:',err.message));
+}
+async function persistNurseryInventory(){
+  if(fbReady()){
+    try{
+      await db.collection('meta').doc('nurseryInventory').set({rows:_nurseryInventory,updatedAt:new Date().toISOString()},{merge:true});
+    }catch(e){
+      console.warn('Nursery inventory save failed:',e.message);
+      showInAppNotif(`⚠️ Could not save — the shared database rejected this (${e.message}).`);
+      saveNurseryInventoryLocal();
+      return;
+    }
+  }else{
+    saveNurseryInventoryLocal();
+  }
+  showInAppNotif('Nursery inventory saved');
+}
+function renderNurseryInventory(){
+  const rows=_nurseryInventory;
+  document.getElementById('nursery-admin-btn').innerHTML=isSettingsAdmin()?`<button class="btn btn-p" onclick="openNurseryAdmin()"><i class="ti ti-plant-2"></i>Manage nursery inventory</button>`:'';
+  const totReady=rows.reduce((a,r)=>a+(r.readyToDispatch||0),0);
+  const totDispatched=rows.reduce((a,r)=>a+(r.totalDispatched||0),0);
+  const totRemaining=rows.reduce((a,r)=>a+nurseryRemaining(r),0);
+  const totUpcoming=rows.reduce((a,r)=>a+nurseryBatch2Total(r),0);
+  const totGrand=rows.reduce((a,r)=>a+nurseryGrandTotal(r),0);
+  document.getElementById('nursery-summary').innerHTML=`
+    <div class="metrics" style="margin-bottom:1rem">
+      <div class="metric"><div class="mlabel">Ready to dispatch (3–4ft)</div><div class="mval">${fmt(totReady)}</div><div class="msub">across ${rows.length} varieties</div></div>
+      <div class="metric"><div class="mlabel">Already dispatched</div><div class="mval" style="color:var(--gr)">${fmt(totDispatched)}</div><div class="msub">${fmt(totRemaining)} remaining</div></div>
+      <div class="metric"><div class="mlabel">Upcoming (6in–1ft, Dec–Apr)</div><div class="mval" style="color:var(--am)">${fmt(totUpcoming)}</div><div class="msub">next growth batch</div></div>
+      <div class="metric"><div class="mlabel">Grand total</div><div class="mval">${fmt(totGrand)}</div><div class="msub">both batches combined</div></div>
+    </div>`;
+  document.getElementById('nursery-table').innerHTML=`<div class="tw"><table>
+    <thead><tr>
+      <th>Variety</th><th>Ready (3–4ft)</th><th>Dispatched</th><th>Remaining</th><th>Upcoming (6in–1ft)</th><th>Grand total</th><th></th>
+    </tr></thead>
+    <tbody>${rows.map(r=>{
+      const pct=r.readyToDispatch>0?Math.min(100,Math.round(r.totalDispatched/r.readyToDispatch*100)):0;
+      return `<tr tabindex="0" onclick="showNurseryDetail(${r.id})" style="cursor:pointer" title="Click for monthly breakdown">
+      <td><strong class="cluster-link" style="text-decoration:underline;text-decoration-color:var(--bd2)">${esc(r.species)}</strong></td>
+      <td class="tabular">${fmt(r.readyToDispatch)}</td>
+      <td style="min-width:90px">${progBar(pct)}</td>
+      <td class="tabular" style="font-weight:600">${fmt(nurseryRemaining(r))}</td>
+      <td class="tabular" style="color:var(--am-d)">${fmt(nurseryBatch2Total(r))}</td>
+      <td class="tabular" style="font-weight:600;color:var(--gr-d)">${fmt(nurseryGrandTotal(r))}</td>
+      <td><button class="btn btn-s" onclick="event.stopPropagation();showNurseryDetail(${r.id})"><i class="ti ti-calendar"></i> Months</button></td>
+    </tr>`;}).join('')}</tbody>
+  </table></div>`;
+  requestAnimationFrame(()=>requestAnimationFrame(animateBars));
+}
+function showNurseryDetail(id){
+  const r=_nurseryInventory.find(x=>x.id===id);if(!r)return;
+  const pct=r.readyToDispatch>0?Math.min(100,Math.round(r.totalDispatched/r.readyToDispatch*100)):0;
+  const monthBar=(label,val,max,color)=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--tx3);margin-bottom:2px"><span>${label}</span><span class="tabular" style="font-weight:600;color:${color}">${fmt(val)}</span></div><div class="prog"><div class="pf" style="width:${max>0?Math.round(val/max*100):0}%;background:${color}"></div></div></div>`;
+  const b1max=Math.max(1,...Object.values(r.batch1Monthly));
+  const b2max=Math.max(1,...Object.values(r.batch2Monthly));
+  document.getElementById('nursery-detail-body').innerHTML=`
+    <h3 style="margin-bottom:1rem"><i class="ti ti-plant-2" style="color:var(--gr)"></i> ${esc(r.species)}</h3>
+    <div class="metrics" style="margin-bottom:1.25rem">
+      <div class="metric"><div class="mlabel">Ready (3–4ft)</div><div class="mval">${fmt(r.readyToDispatch)}</div></div>
+      <div class="metric"><div class="mlabel">Dispatched</div><div class="mval" style="color:var(--gr)">${fmt(r.totalDispatched)}</div><div class="msub">${pct}% of ready stock</div></div>
+      <div class="metric"><div class="mlabel">Remaining</div><div class="mval">${fmt(nurseryRemaining(r))}</div></div>
+      <div class="metric"><div class="mlabel">Grand total</div><div class="mval" style="color:var(--gr-d)">${fmt(nurseryGrandTotal(r))}</div></div>
+    </div>
+    <div class="cd-grid">
+      <div>
+        <div class="cd-label" style="margin-bottom:10px">3–4ft batch — remaining stock by month</div>
+        ${monthBar('August',r.batch1Monthly.AUG,b1max,'var(--gr)')}
+        ${monthBar('September',r.batch1Monthly.SEP,b1max,'var(--gr)')}
+        ${monthBar('October',r.batch1Monthly.OCT,b1max,'var(--gr)')}
+        ${monthBar('November',r.batch1Monthly.NOV,b1max,'var(--gr)')}
+      </div>
+      <div>
+        <div class="cd-label" style="margin-bottom:10px">6in–1ft batch — upcoming by month <span style="font-weight:400;color:var(--tx3)">(total ${fmt(nurseryBatch2Total(r))})</span></div>
+        ${monthBar('December',r.batch2Monthly.DEC,b2max,'var(--am)')}
+        ${monthBar('January',r.batch2Monthly.JAN,b2max,'var(--am)')}
+        ${monthBar('February',r.batch2Monthly.FEB,b2max,'var(--am)')}
+        ${monthBar('March',r.batch2Monthly.MAR,b2max,'var(--am)')}
+        ${monthBar('April',r.batch2Monthly.APR,b2max,'var(--am)')}
+      </div>
+    </div>`;
+  document.getElementById('nursery-detail-modal').classList.remove('hidden');
+  requestAnimationFrame(()=>requestAnimationFrame(animateBars));
+}
+function openNurseryAdmin(){
+  renderNurseryAdmin();
+  document.getElementById('nursery-admin-modal').classList.remove('hidden');
+}
+function renderNurseryAdmin(){
+  const el=document.getElementById('nursery-admin-list');if(!el)return;
+  el.innerHTML=_nurseryInventory.map(r=>`<tr>
+    <td><strong>${esc(r.species)}</strong></td>
+    <td class="tabular">${fmt(r.readyToDispatch)}</td>
+    <td class="tabular">${fmt(r.totalDispatched)}</td>
+    <td class="tabular">${fmt(nurseryRemaining(r))}</td>
+    <td class="tabular">${fmt(nurseryBatch2Total(r))}</td>
+    <td class="tabular" style="font-weight:600">${fmt(nurseryGrandTotal(r))}</td>
+    <td style="white-space:nowrap"><button class="btn btn-s" onclick="openNurseryRowForm(${r.id})"><i class="ti ti-pencil"></i> Edit</button> <button class="btn btn-s btn-d" onclick="deleteNurseryRow(${r.id})"><i class="ti ti-trash"></i> Delete</button></td>
+  </tr>`).join('');
+}
+function openNurseryRowForm(id){
+  document.getElementById('nursery-admin-modal').classList.add('hidden');
+  const r=id?_nurseryInventory.find(x=>x.id===id):null;
+  document.getElementById('nursery-row-title').innerHTML=r?`<i class="ti ti-plant-2" style="color:var(--gr)"></i> Edit ${esc(r.species)}`:`<i class="ti ti-plant-2" style="color:var(--gr)"></i> Add species`;
+  document.getElementById('nf-id').value=r?r.id:'';
+  document.getElementById('nf-species').value=r?r.species:'';
+  document.getElementById('nf-ready').value=r?r.readyToDispatch:'';
+  document.getElementById('nf-dispatched').value=r?r.totalDispatched:'';
+  ['AUG','SEP','OCT','NOV'].forEach(m=>{document.getElementById('nf-b1-'+m).value=r?r.batch1Monthly[m]:'';});
+  ['DEC','JAN','FEB','MAR','APR'].forEach(m=>{document.getElementById('nf-b2-'+m).value=r?r.batch2Monthly[m]:'';});
+  document.getElementById('nursery-row-modal').classList.remove('hidden');
+}
+function saveNurseryRow(){
+  const idRaw=document.getElementById('nf-id').value;
+  const species=document.getElementById('nf-species').value.trim();
+  if(!species){alert('Plant variety name is required.');return;}
+  const readyToDispatch=parseInt(document.getElementById('nf-ready').value)||0;
+  const totalDispatched=parseInt(document.getElementById('nf-dispatched').value)||0;
+  const batch1Monthly={};['AUG','SEP','OCT','NOV'].forEach(m=>{batch1Monthly[m]=parseInt(document.getElementById('nf-b1-'+m).value)||0;});
+  const batch2Monthly={};['DEC','JAN','FEB','MAR','APR'].forEach(m=>{batch2Monthly[m]=parseInt(document.getElementById('nf-b2-'+m).value)||0;});
+  const isEdit=!!idRaw;
+  const id=isEdit?parseInt(idRaw):(Math.max(0,..._nurseryInventory.map(r=>r.id))+1);
+  const record={id,species,readyToDispatch,totalDispatched,batch1Monthly,batch2Monthly};
+  const idx=_nurseryInventory.findIndex(r=>r.id===id);
+  if(idx>-1)_nurseryInventory[idx]=record;else _nurseryInventory.push(record);
+  closeMo();
+  renderNurseryInventory();
+  persistNurseryInventory();
+  openNurseryAdmin();
+}
+function deleteNurseryRow(id){
+  const r=_nurseryInventory.find(x=>x.id===id);
+  if(!confirm(`Remove ${r?r.species:'this species'} from nursery inventory?`))return;
+  _nurseryInventory=_nurseryInventory.filter(x=>x.id!==id);
+  renderNurseryInventory();
+  renderNurseryAdmin();
+  persistNurseryInventory();
+}
+
 // ─── ROUTE COSTS (estimated cost per truckload, per route) ───────────────────
 let _routeCosts={};
 function fmtPKR(n){return 'PKR '+fmt(n);}
@@ -2612,6 +2846,7 @@ async function onAuthUserReady(){
   listenZoneNotes();
   listenTripOrder();
   listenZoneMembership();
+  listenNurseryInventory();
   updateSyncBadge('connected');
   applySettingsAccess();
 }
