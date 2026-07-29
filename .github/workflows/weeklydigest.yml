@@ -1,9 +1,11 @@
 name: Weekly Plantation Drive Digest
 
 on:
-  schedule:
-    # 05:00 UTC every Monday (~10:00 Pakistan time). Adjust to your preferred day/time.
-    - cron: '0 5 * * 1'
+  # No GitHub-native `schedule:` trigger here on purpose — GitHub's own cron scheduler
+  # was consistently delaying this workflow by 7.5-9 hours every week (confirmed from
+  # run history), regardless of the configured time. Timing is instead driven precisely
+  # by a Claude Code Remote Routine that calls workflow_dispatch every Monday at 9:30 AM
+  # Pakistan time (04:30 UTC), sidestepping GitHub's scheduler queue entirely.
   workflow_dispatch: {}
 
 jobs:
