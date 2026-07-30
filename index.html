@@ -450,6 +450,12 @@ service cloud.firestore {
       <button class="btn btn-p" onclick="openClusterAdmin()"><i class="ti ti-building-school"></i>Manage clusters</button>
     </div>
 
+    <div class="sec-t">Data privacy</div>
+    <div class="card">
+      <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">Convenor phone numbers that were seeded into the shared database when the app first launched. Convenor names are unaffected — this only clears the phone numbers, everywhere they're stored. This can't be undone.</p>
+      <button class="btn btn-d" id="purge-contacts-btn" onclick="purgeConvenorContacts()"><i class="ti ti-shield-lock"></i>Purge phone numbers now</button>
+    </div>
+
     <div class="sec-t">Manage route costs</div>
     <div class="card">
       <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">Set an estimated cost per truckload for each route in the Dispatch Plan, so the team can see a rough logistics cost per load — and a running total — before committing to a route.</p>
@@ -778,57 +784,57 @@ service cloud.firestore {
 // ─── CLUSTER DATA ─────────────────────────────────────────────────────────────
 // [id, cluster, city, region(N/C/S), required, dispatched_baseline, plantingDate, convenor, contact, baselineDispatchDate]
 const SD=[
-[1,"N-02","Islamabad","N",234,0,null,"Ayesha Sohail","03008501614",null],
-[2,"N-03","Islamabad","N",7000,4033,"2026-04-08","Ayesha Shams","03204097661","2026-03-28"],
-[3,"N-04","Rawalpindi/Attock/Wah","N",9800,0,null,"Nabila Khalid","03068752180",null],
-[4,"N-06 (Bahria)","Islamabad","N",2400,0,null,"Nighat Javed","03215566630",null],
-[5,"N-06 (PWD)","Islamabad","N",1200,0,null,"Nighat Javed","03215566630",null],
-[6,"N-07 (multi-city)","Chakwal/ISL/Pindi","N",31000,4000,null,"Ayesha Ansar","03008589945","2026-03-28"],
-[7,"N-07 (Chakwal only)","Chakwal","N",3200,0,"2026-04-29","Ayesha Ansar","03335554706",null],
-[8,"N-08","Gujrat","N",4000,0,"2026-05-23","Kashif Hussain","03009510657",null],
-[9,"N-09","Peshawar","N",3000,0,"2026-05-12","Sadia Yousaf","03005980595",null],
-[10,"N-11","Abbottabad","N",1000,0,"2026-06-01","Zainab Jamil","03335202397",null],
-[11,"N-12","Mandi Bahauddin","N",6000,0,"2026-05-21","Saima Bhatti","03006269061",null],
-[12,"RON-HO (Swabi Uni)","Islamabad","N",16500,8000,null,"Iffat Ashhad","03075122223","2026-03-21"],
-[13,"RON-HO (QAU)","Islamabad","N",16000,0,null,"Iffat Ashhad","03075122223",null],
-[14,"RON-HO (Mardan Women Uni)","Islamabad","N",17000,8000,null,"Iffat Ashhad","03075122223","2026-03-21"],
-[15,"RON-HO (F-9/ISB Greenbelts)","Islamabad","N",4000,2730,null,"Iffat Ashhad","03075122223","2026-03-17"],
-[16,"C-02","Lahore","C",3000,3000,"2026-04-04","Naila Khalid","03334379599","2026-04-01"],
-[17,"C-03","Lahore","C",10000,3000,"2026-04-04","Tehmina Naeem","03008409856","2026-04-01"],
-[18,"C-04","Lahore","C",5000,5000,"2026-04-05","Fariha Najam","03164480006","2026-04-03"],
-[19,"C-05","Lahore","C",5000,5000,"2026-04-10","M. Irshad Barkat","03004164491","2026-04-03"],
+[1,"N-02","Islamabad","N",234,0,null,"Ayesha Sohail",null,null],
+[2,"N-03","Islamabad","N",7000,4033,"2026-04-08","Ayesha Shams",null,"2026-03-28"],
+[3,"N-04","Rawalpindi/Attock/Wah","N",9800,0,null,"Nabila Khalid",null,null],
+[4,"N-06 (Bahria)","Islamabad","N",2400,0,null,"Nighat Javed",null,null],
+[5,"N-06 (PWD)","Islamabad","N",1200,0,null,"Nighat Javed",null,null],
+[6,"N-07 (multi-city)","Chakwal/ISL/Pindi","N",31000,4000,null,"Ayesha Ansar",null,"2026-03-28"],
+[7,"N-07 (Chakwal only)","Chakwal","N",3200,0,"2026-04-29","Ayesha Ansar",null,null],
+[8,"N-08","Gujrat","N",4000,0,"2026-05-23","Kashif Hussain",null,null],
+[9,"N-09","Peshawar","N",3000,0,"2026-05-12","Sadia Yousaf",null,null],
+[10,"N-11","Abbottabad","N",1000,0,"2026-06-01","Zainab Jamil",null,null],
+[11,"N-12","Mandi Bahauddin","N",6000,0,"2026-05-21","Saima Bhatti",null,null],
+[12,"RON-HO (Swabi Uni)","Islamabad","N",16500,8000,null,"Iffat Ashhad",null,"2026-03-21"],
+[13,"RON-HO (QAU)","Islamabad","N",16000,0,null,"Iffat Ashhad",null,null],
+[14,"RON-HO (Mardan Women Uni)","Islamabad","N",17000,8000,null,"Iffat Ashhad",null,"2026-03-21"],
+[15,"RON-HO (F-9/ISB Greenbelts)","Islamabad","N",4000,2730,null,"Iffat Ashhad",null,"2026-03-17"],
+[16,"C-02","Lahore","C",3000,3000,"2026-04-04","Naila Khalid",null,"2026-04-01"],
+[17,"C-03","Lahore","C",10000,3000,"2026-04-04","Tehmina Naeem",null,"2026-04-01"],
+[18,"C-04","Lahore","C",5000,5000,"2026-04-05","Fariha Najam",null,"2026-04-03"],
+[19,"C-05","Lahore","C",5000,5000,"2026-04-10","M. Irshad Barkat",null,"2026-04-03"],
 [20,"C-06","Lahore","C",200,200,null,"—","—","2026-04-06"],
-[21,"C-07","Lahore","C",3000,0,null,"Nayyer Naveed Qureshi","03334066095",null],
-[22,"C-08 (Lahore/Bahria)","Lahore","C",2400,0,null,"Syeda Aniqa Shafique","03004839188",null],
-[23,"C-08 (Okara)","Okara","C",700,0,null,"Syeda Aniqa Shafique","03004839188",null],
-[24,"C-08 (Sahiwal)","Sahiwal","C",1400,0,null,"Syeda Aniqa Shafique","03004839188",null],
-[25,"C-10 (Faisalabad)","Faisalabad","C",3000,0,null,"Sabahet Malik","03026020050",null],
-[26,"C-10 (Jhang)","Jhang","C",5000,0,"2026-05-20","Nazish Arfa","03026020050",null],
-[27,"C-11 (Gojra/TTS)","Gojra","C",4260,0,"2026-04-23","Nousheen Haider","03009664983",null],
-[28,"C-11 (Faisalabad)","Faisalabad","C",4000,0,null,"Nousheen Haider","03009664983",null],
-[29,"C-13 (Campus)","Multan","C",450,0,null,"Asifa Tareen","03464811148",null],
-[30,"C-13 (Ext. Sites)","Multan","C",17905,12705,"2026-05-20","Asifa Tareen","03464811148","2026-04-08"],
-[31,"C-14","Bahawalpur","C",5000,0,"2026-05-05","Anjum Kaiwan","03008673833",null],
+[21,"C-07","Lahore","C",3000,0,null,"Nayyer Naveed Qureshi",null,null],
+[22,"C-08 (Lahore/Bahria)","Lahore","C",2400,0,null,"Syeda Aniqa Shafique",null,null],
+[23,"C-08 (Okara)","Okara","C",700,0,null,"Syeda Aniqa Shafique",null,null],
+[24,"C-08 (Sahiwal)","Sahiwal","C",1400,0,null,"Syeda Aniqa Shafique",null,null],
+[25,"C-10 (Faisalabad)","Faisalabad","C",3000,0,null,"Sabahet Malik",null,null],
+[26,"C-10 (Jhang)","Jhang","C",5000,0,"2026-05-20","Nazish Arfa",null,null],
+[27,"C-11 (Gojra/TTS)","Gojra","C",4260,0,"2026-04-23","Nousheen Haider",null,null],
+[28,"C-11 (Faisalabad)","Faisalabad","C",4000,0,null,"Nousheen Haider",null,null],
+[29,"C-13 (Campus)","Multan","C",450,0,null,"Asifa Tareen",null,null],
+[30,"C-13 (Ext. Sites)","Multan","C",17905,12705,"2026-05-20","Asifa Tareen",null,"2026-04-08"],
+[31,"C-14","Bahawalpur","C",5000,0,"2026-05-05","Anjum Kaiwan",null,null],
 [32,"Univ. of Sargodha","Sargodha","C",5000,0,null,"—","—",null],
 [33,"Univ. of Agriculture (Okara)","Okara","C",2200,3600,null,"—","—","2026-03-27"],
 [34,"District Offices (Okara)","Okara","C",115000,21000,null,"—","—","2026-03-27"],
 [35,"District Offices (Sahiwal)","Sahiwal","C",135000,0,null,"—","—",null],
 [36,"Beaconhouse Estate","Lahore","C",2650,0,null,"—","—",null],
-[37,"S-03","Karachi","S",3500,0,"2026-05-06","Tabinda Raza","03034442913",null],
+[37,"S-03","Karachi","S",3500,0,"2026-05-06","Tabinda Raza",null,null],
 [38,"S-04","Karachi","S",3200,0,null,"—","—",null],
-[39,"S-05","Karachi","S",5200,0,"2026-06-04","Maliha Noman","03223508046",null],
-[40,"S-06","Karachi","S",3000,0,"2026-06-16","Nausheen Bashir","03323416446",null],
-[41,"S-07","Karachi","S",300,0,"2026-05-27","Sadia Aamir","03009256638",null],
-[42,"S-08","Karachi","S",6200,0,"2026-05-26","Nausheen Ubaid","03333453753",null],
+[39,"S-05","Karachi","S",5200,0,"2026-06-04","Maliha Noman",null,null],
+[40,"S-06","Karachi","S",3000,0,"2026-06-16","Nausheen Bashir",null,null],
+[41,"S-07","Karachi","S",300,0,"2026-05-27","Sadia Aamir",null,null],
+[42,"S-08","Karachi","S",6200,0,"2026-05-26","Nausheen Ubaid",null,null],
 [43,"S-10","Karachi","S",1000,0,"2026-06-04","—","—",null],
-[44,"S-11 (Hyderabad)","Hyderabad","S",3300,0,"2026-05-15","Shifa Farhan","03123841292",null],
-[45,"S-11 (Nawabshah)","Nawabshah","S",1400,0,"2026-04-26","Shifa Farhan","03123841292",null],
-[46,"S-11 (Thatta)","Thatta","S",700,0,"2026-08-21","Shifa Farhan","03123841292",null],
-[47,"S-11 (Sukkur)","Sukkur","S",1150,0,null,"Shifa Farhan","03123841292",null],
-[48,"S-12 (Quetta)","Quetta","S",4000,4000,null,"Quratulain Khalid","03218150573","2026-04-14"],
-[49,"S-13 (Malir etc)","Karachi","S",1000,0,"2026-05-28","Rawaha Azfar","03332084219",null],
-[50,"S-13 (Tipu Sultan)","Karachi","S",700,0,null,"Rawaha Azfar","03332084219",null],
-[51,"S-14 (Hyderabad)","Hyderabad","S",3250,0,"2026-05-29","Anjuman Rashdi","03332646379",null]
+[44,"S-11 (Hyderabad)","Hyderabad","S",3300,0,"2026-05-15","Shifa Farhan",null,null],
+[45,"S-11 (Nawabshah)","Nawabshah","S",1400,0,"2026-04-26","Shifa Farhan",null,null],
+[46,"S-11 (Thatta)","Thatta","S",700,0,"2026-08-21","Shifa Farhan",null,null],
+[47,"S-11 (Sukkur)","Sukkur","S",1150,0,null,"Shifa Farhan",null,null],
+[48,"S-12 (Quetta)","Quetta","S",4000,4000,null,"Quratulain Khalid",null,"2026-04-14"],
+[49,"S-13 (Malir etc)","Karachi","S",1000,0,"2026-05-28","Rawaha Azfar",null,null],
+[50,"S-13 (Tipu Sultan)","Karachi","S",700,0,null,"Rawaha Azfar",null,null],
+[51,"S-14 (Hyderabad)","Hyderabad","S",3250,0,"2026-05-29","Anjuman Rashdi",null,null]
 ];
 
 const RN={N:"North",C:"Center",S:"South"};
@@ -1090,6 +1096,38 @@ async function restoreCluster(id){
     showInAppNotif('Cluster restored');
   }
   renderTrash();
+}
+
+// ─── DATA PRIVACY: one-time purge of convenor phone numbers ──────────────────
+async function purgeConvenorContacts(){
+  if(!isSettingsAdmin())return;
+  const affected=state._rawSchools.filter(s=>s.contact&&s.contact!=='—');
+  if(!affected.length){showInAppNotif('No phone numbers found — nothing to purge.');return;}
+  if(!confirm(`Permanently remove the phone number for ${affected.length} cluster${affected.length>1?'s':''} from the shared database?\n\nConvenor names stay. This can't be undone — you'd need to re-enter numbers manually afterward if you ever want them back.`))return;
+  const btn=document.getElementById('purge-contacts-btn');
+  if(btn){btn.disabled=true;btn.textContent='Purging…';}
+  try{
+    if(fbReady()){
+      updateSyncBadge('saving');
+      const batch=db.batch();
+      affected.forEach(s=>batch.update(db.collection('clusters').doc(String(s.id)),{contact:null}));
+      await batch.commit();
+      updateSyncBadge('connected');
+    }
+    affected.forEach(s=>{
+      const idx=state._rawSchools.findIndex(x=>x.id===s.id);
+      if(idx>-1)state._rawSchools[idx]={...state._rawSchools[idx],contact:null};
+    });
+    if(!fbReady())saveClustersLocal();
+    deriveSchools();
+    renderAllViews();
+    showInAppNotif(`Purged ${affected.length} phone number${affected.length>1?'s':''} from the shared database`);
+  }catch(e){
+    console.warn('Contact purge failed:',e.message);
+    updateSyncBadge('error');
+    showInAppNotif(`⚠️ Could not purge — the shared database rejected this (${e.message}).`);
+  }
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-shield-lock"></i>Purge phone numbers now';}
 }
 
 // ─── TRASH / RECOVERY ─────────────────────────────────────────────────────────
@@ -1530,7 +1568,7 @@ function showClusterDetail(id){
     </h3>
     <div class="cd-grid">
       <div class="cd-side">
-        <div class="stat"><div class="cd-label">Convenor</div>${getConvenor(s)}<br><a href="tel:${s.contact}" style="color:var(--bl-d);font-size:12px"><i class="ti ti-phone"></i> ${s.contact}</a></div>
+        <div class="stat"><div class="cd-label">Convenor</div>${getConvenor(s)}${s.contact?`<br><a href="tel:${esc(s.contact)}" style="color:var(--bl-d);font-size:12px"><i class="ti ti-phone"></i> ${esc(s.contact)}</a>`:''}</div>
         <div class="stat"><div class="cd-label">Planting date</div>${fmtD(s.plantingDate)}</div>
         <div class="stat"><div class="cd-label">Required / dispatched</div>${fmt(s.required)} / ${fmt(s.dispatched)}<div style="margin-top:8px">${sproutBar(pc)}</div></div>
         <div class="stat"><div class="cd-label">Species requested</div><div>${speciesHtml}</div></div>
@@ -1583,7 +1621,7 @@ function rAlerts(){
   updateBadge(due.length);
   document.getElementById('al').innerHTML=due.length===0?`<div class="alert ag"><i class="ti ti-circle-check"></i><div>No clusters with planting dates within the next ${days} days need dispatch preparation.</div></div>`:
     due.map(s=>{const d=du(s.plantingDate);const msg=d<0?`Overdue ${Math.abs(d)} days`:d===0?'Today!':d===1?'Tomorrow':`In ${d} days`;const cls=d<=2?'aw':'ai';
-    return`<div class="alert ${cls}"><i class="ti ti-bell"></i><div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong>${s.cluster}</strong> — ${getConvenor(s)} (${s.city})</div><span class="badge b-pending">${msg}</span></div><div style="font-size:12px;margin-top:4px">Planting: ${fmtD(s.plantingDate)} · Still needed: <strong>${fmt(remaining(s))} plants</strong></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-plus"></i>Log dispatch</button><a href="tel:${s.contact}" class="btn btn-s"><i class="ti ti-phone"></i>${s.contact}</a></div></div></div>`;}).join('');
+    return`<div class="alert ${cls}"><i class="ti ti-bell"></i><div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong>${s.cluster}</strong> — ${getConvenor(s)} (${s.city})</div><span class="badge b-pending">${msg}</span></div><div style="font-size:12px;margin-top:4px">Planting: ${fmtD(s.plantingDate)} · Still needed: <strong>${fmt(remaining(s))} plants</strong></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openDM(${s.id})"><i class="ti ti-plus"></i>Log dispatch</button>${s.contact?`<a href="tel:${esc(s.contact)}" class="btn btn-s"><i class="ti ti-phone"></i>${esc(s.contact)}</a>`:''}</div></div></div>`;}).join('');
 }
 function updateBadge(n){
   if(n===undefined){const days=parseInt(state.settings.alertDays)||5;n=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=days&&gst(s)!=='done';}).length;}
