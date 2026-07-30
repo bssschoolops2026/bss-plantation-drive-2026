@@ -1204,8 +1204,11 @@ function parseConvenorsCSV(csv){
 }
 async function fetchLiveHeads(){
   if(_liveHeads||_headsLoading)return;
-  const cached=localStorage.getItem('bhs_live_heads');
-  const cachedTime=parseInt(localStorage.getItem('bhs_live_heads_time')||'0');
+  // Cache key bumped to v2 (from bhs_live_heads) to invalidate any browser's old cached
+  // copy that still holds phone numbers from before the Contact column was dropped.
+  localStorage.removeItem('bhs_live_heads');localStorage.removeItem('bhs_live_heads_time');
+  const cached=localStorage.getItem('bhs_live_heads_v2');
+  const cachedTime=parseInt(localStorage.getItem('bhs_live_heads_v2_time')||'0');
   if(cached&&(Date.now()-cachedTime)<3600000){_liveHeads=JSON.parse(cached);refreshClusterViewsIfActive();return;}
   _headsLoading=true;
   try{
@@ -1213,8 +1216,8 @@ async function fetchLiveHeads(){
     if(!resp.ok){_headsLoading=false;return;}
     const csv=await resp.text();
     _liveHeads=parseHeadsCSV(csv);
-    localStorage.setItem('bhs_live_heads',JSON.stringify(_liveHeads));
-    localStorage.setItem('bhs_live_heads_time',String(Date.now()));
+    localStorage.setItem('bhs_live_heads_v2',JSON.stringify(_liveHeads));
+    localStorage.setItem('bhs_live_heads_v2_time',String(Date.now()));
   }catch(e){console.warn('Could not load live school heads:',e.message);}
   _headsLoading=false;
   refreshClusterViewsIfActive();
@@ -1228,13 +1231,13 @@ function parseHeadsCSV(csv){
   const lines=csv.split('\n');
   const headerLine=lines[0].split(',');
   const colIdx=(name)=>headerLine.findIndex(h=>h.toLowerCase().includes(name.toLowerCase()));
-  const iCluster=colIdx('cluster'),iCampus=colIdx('campus'),iCity=colIdx('city'),iHead=colIdx('school head'),iContact=colIdx('contact'),iEmail=colIdx('email'),iRegion=colIdx('region');
+  const iCluster=colIdx('cluster'),iCampus=colIdx('campus'),iCity=colIdx('city'),iHead=colIdx('school head'),iRegion=colIdx('region');
   const result={};
   lines.slice(1).forEach(line=>{
     const cols=splitCSVLine(line);
     const cluster=(cols[iCluster]||'').trim().toUpperCase();
     if(!cluster||cluster==='.'||!cluster.match(/^[A-Z]+-?\d*/))return;
-    const entry={campus:(cols[iCampus]||'').trim(),city:(cols[iCity]||'').trim(),head:(cols[iHead]||'').trim(),contact:(cols[iContact]||'').trim(),email:(cols[iEmail]||'').trim(),region:(cols[iRegion]||'').trim()};
+    const entry={campus:(cols[iCampus]||'').trim(),city:(cols[iCity]||'').trim(),head:(cols[iHead]||'').trim(),region:(cols[iRegion]||'').trim()};
     if(!entry.campus||entry.campus==='.')return;
     if(!result[cluster])result[cluster]=[];
     result[cluster].push(entry);
@@ -1280,17 +1283,16 @@ function renderHeadsModal(clusterCode){
       <td style="font-size:13px;font-weight:500">${esc(c.campus)||'—'}</td>
       <td style="font-size:12px;color:var(--tx2)">${esc(c.city)||'—'}</td>
       <td style="font-size:13px">${esc(c.head)||'<span style="color:var(--tx3)">Vacant</span>'}</td>
-      <td><a href="tel:${esc(c.contact)}" class="btn btn-s" style="font-size:11px"><i class="ti ti-phone"></i>${esc(c.contact)||'—'}</a></td>
     </tr>`).join('');
   body.innerHTML=`
     <div style="font-size:12px;color:var(--tx3);margin-bottom:.75rem;display:flex;justify-content:space-between">
       <span>Live data · ${campuses.length} campus${campuses.length>1?'es':''}</span>
       <button class="btn btn-s" onclick="refreshHeads('${clusterCode}')"><i class="ti ti-refresh"></i>Refresh</button>
     </div>
-    <div class="tw"><table><thead><tr><th>Campus / Branch</th><th>City</th><th>School Head</th><th>Contact</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    <div class="tw"><table><thead><tr><th>Campus / Branch</th><th>City</th><th>School Head</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 async function refreshHeads(clusterCode){
-  localStorage.removeItem('bhs_live_heads');localStorage.removeItem('bhs_live_heads_time');
+  localStorage.removeItem('bhs_live_heads_v2');localStorage.removeItem('bhs_live_heads_v2_time');
   _liveHeads=null;_headsLoading=false;
   document.getElementById('heads-modal-body').innerHTML=`<div style="padding:.5rem 0"><div class="skeleton" style="height:36px;margin-bottom:8px"></div><div class="skeleton" style="height:36px"></div></div>`;
   await fetchLiveHeads();
