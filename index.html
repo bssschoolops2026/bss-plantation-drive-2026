@@ -97,6 +97,8 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg2)}
 .tabular{font-variant-numeric:tabular-nums}
 .bulk-row{display:grid;grid-template-columns:1.4fr .9fr .8fr auto;gap:8px;margin-bottom:8px;align-items:center}
 .bulk-row select,.bulk-row input{padding:6px 9px;font-size:12px}
+.d-sp-row{display:grid;grid-template-columns:1.4fr .8fr auto;gap:8px;margin-bottom:8px;align-items:center}
+.d-sp-row select,.d-sp-row input{padding:6px 9px;font-size:12px}
 .feed-item{display:flex;gap:10px;padding:10px 0;border-bottom:.5px solid var(--bd);font-size:13px}
 .feed-item:last-child{border-bottom:none}
 .feed-avatar{width:28px;height:28px;border-radius:50%;background:var(--gr-l);color:var(--gr-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
@@ -450,6 +452,12 @@ service cloud.firestore {
       <button class="btn btn-p" onclick="openClusterAdmin()"><i class="ti ti-building-school"></i>Manage clusters</button>
     </div>
 
+    <div class="sec-t">Manage nursery species</div>
+    <div class="card">
+      <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">The master list of plant varieties — this is what fills the species dropdown when logging a dispatch, and what Nursery Inventory tracks stock for. Add a new variety here first if it's missing when you go to log a dispatch.</p>
+      <button class="btn btn-p" onclick="openNurseryAdmin()"><i class="ti ti-plant-2"></i>Manage nursery species</button>
+    </div>
+
     <div class="sec-t">Data privacy</div>
     <div class="card">
       <p style="font-size:12px;color:var(--tx2);margin-bottom:10px">Convenor phone numbers that were seeded into the shared database when the app first launched. Convenor names are unaffected — this only clears the phone numbers, everywhere they're stored. This can't be undone.</p>
@@ -517,19 +525,16 @@ service cloud.firestore {
 <div class="md">
   <h3><i class="ti ti-truck-delivery" style="color:var(--gr)"></i> Log a dispatch</h3>
   <div class="fr"><label>Cluster *</label><select id="d-cluster"></select></div>
-  <div class="fg2">
-    <div class="fr"><label>Dispatch date *</label><input type="date" id="d-date"></div>
-    <div class="fr"><label>Plants dispatched *</label><input type="number" id="d-qty" min="1" placeholder="e.g. 500">
-      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-        <button type="button" class="chip-qty" onclick="setQty(500)">500</button>
-        <button type="button" class="chip-qty" onclick="setQty(1000)">1,000</button>
-        <button type="button" class="chip-qty" onclick="setQty(2500)">2,500</button>
-        <button type="button" class="chip-qty" onclick="setQty(5000)">5,000</button>
-      </div>
-    </div>
-  </div>
+  <div class="fr"><label>Dispatch date *</label><input type="date" id="d-date"></div>
   <div class="fr"><label>Logged by</label><input type="text" id="d-by" placeholder="Your name"></div>
-  <div class="fr"><label>Species breakdown (optional)</label><textarea id="d-sp" placeholder="Kachnar: 100, Neem: 200..."></textarea></div>
+  <div class="fr"><label>Species &amp; quantities *</label>
+    <div id="d-species-rows"></div>
+    <button type="button" class="btn btn-s" onclick="addDSpeciesRow()" style="margin-top:4px"><i class="ti ti-plus"></i> Add species</button>
+    <div style="font-size:11px;color:var(--tx3);margin-top:6px">Species list not showing what you need? Add it in <a href="#" onclick="closeMo();go('settings');return false" style="color:var(--bl-d)">Settings → Manage nursery species</a>.</div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:.5px solid var(--bd);margin-top:4px">
+    <span style="font-size:13px;color:var(--tx2)">Plants dispatched: <strong id="d-total" class="tabular">0</strong></span>
+  </div>
   <div class="fr"><label>Notes (vehicle, driver, delivery point)</label><textarea id="d-notes" placeholder="e.g. Mazda truck LHR-1234, driver Ali, to school gate"></textarea></div>
   <div class="ma"><button class="btn" onclick="closeMo()">Cancel</button><button class="btn btn-p" onclick="saveDispatch()"><i class="ti ti-check"></i>Save</button></div>
 </div>
@@ -2100,6 +2105,7 @@ function editZoneNote(zoneId){
 // ─── NURSERY INVENTORY (Kasuri Farms stock, by species and height batch) ─────
 const NURSERY_SEED=[{"species":"Kachnar","readyToDispatch":40000,"totalDispatched":10750,"batch1Monthly":{"AUG":7313,"SEP":7313,"OCT":7312,"NOV":7312},"batch2Monthly":{"DEC":3000,"JAN":3000,"FEB":3000,"MAR":3000,"APR":3000},"id":1},{"species":"Amaltas","readyToDispatch":40000,"totalDispatched":7775,"batch1Monthly":{"AUG":8057,"SEP":8056,"OCT":8056,"NOV":8056},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":2},{"species":"Lemon (Khati)","readyToDispatch":20000,"totalDispatched":2600,"batch1Monthly":{"AUG":4350,"SEP":4350,"OCT":4350,"NOV":4350},"batch2Monthly":{"DEC":3000,"JAN":3000,"FEB":3000,"MAR":3000,"APR":3000},"id":3},{"species":"Gul-e-Nishter","readyToDispatch":10000,"totalDispatched":1600,"batch1Monthly":{"AUG":2100,"SEP":2100,"OCT":2100,"NOV":2100},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":4},{"species":"Sukh Chayn","readyToDispatch":6000,"totalDispatched":4690,"batch1Monthly":{"AUG":328,"SEP":328,"OCT":327,"NOV":327},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":5},{"species":"Jamun","readyToDispatch":18000,"totalDispatched":4865,"batch1Monthly":{"AUG":3284,"SEP":3284,"OCT":3284,"NOV":3283},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":6},{"species":"Alstonia","readyToDispatch":30000,"totalDispatched":5830,"batch1Monthly":{"AUG":6043,"SEP":6043,"OCT":6042,"NOV":6042},"batch2Monthly":{"DEC":1600,"JAN":1600,"FEB":1600,"MAR":1600,"APR":1600},"id":7},{"species":"Moringa","readyToDispatch":50000,"totalDispatched":7800,"batch1Monthly":{"AUG":10550,"SEP":10550,"OCT":10550,"NOV":10550},"batch2Monthly":{"DEC":6000,"JAN":6000,"FEB":6000,"MAR":6000,"APR":6000},"id":8},{"species":"Gum Arabic","readyToDispatch":4425,"totalDispatched":4425,"batch1Monthly":{"AUG":0,"SEP":0,"OCT":0,"NOV":0},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":9},{"species":"Mulberry","readyToDispatch":24000,"totalDispatched":5960,"batch1Monthly":{"AUG":4510,"SEP":4510,"OCT":4510,"NOV":4510},"batch2Monthly":{"DEC":5000,"JAN":5000,"FEB":5000,"MAR":5000,"APR":5000},"id":10},{"species":"Neem/Bakain","readyToDispatch":40000,"totalDispatched":9020,"batch1Monthly":{"AUG":7745,"SEP":7745,"OCT":7745,"NOV":7745},"batch2Monthly":{"DEC":6000,"JAN":6000,"FEB":6000,"MAR":6000,"APR":6000},"id":11},{"species":"Arjun","readyToDispatch":10000,"totalDispatched":3390,"batch1Monthly":{"AUG":1653,"SEP":1653,"OCT":1652,"NOV":1652},"batch2Monthly":{"DEC":10000,"JAN":10000,"FEB":10000,"MAR":10000,"APR":10000},"id":12},{"species":"Sheesham","readyToDispatch":13000,"totalDispatched":5000,"batch1Monthly":{"AUG":2000,"SEP":2000,"OCT":2000,"NOV":2000},"batch2Monthly":{"DEC":10000,"JAN":10000,"FEB":10000,"MAR":10000,"APR":10000},"id":13},{"species":"Semal","readyToDispatch":18000,"totalDispatched":1300,"batch1Monthly":{"AUG":4175,"SEP":4175,"OCT":4175,"NOV":4175},"batch2Monthly":{"DEC":6000,"JAN":6000,"FEB":6000,"MAR":6000,"APR":6000},"id":14},{"species":"Poplar","readyToDispatch":18575,"totalDispatched":2900,"batch1Monthly":{"AUG":3919,"SEP":3919,"OCT":3919,"NOV":3918},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":15},{"species":"Gavava","readyToDispatch":20000,"totalDispatched":4400,"batch1Monthly":{"AUG":3900,"SEP":3900,"OCT":3900,"NOV":3900},"batch2Monthly":{"DEC":4000,"JAN":4000,"FEB":4000,"MAR":4000,"APR":4000},"id":16},{"species":"Sharen","readyToDispatch":1000,"totalDispatched":1000,"batch1Monthly":{"AUG":0,"SEP":0,"OCT":0,"NOV":0},"batch2Monthly":{"DEC":7400,"JAN":7400,"FEB":7400,"MAR":7400,"APR":7400},"id":17},{"species":"Beri","readyToDispatch":1000,"totalDispatched":1000,"batch1Monthly":{"AUG":0,"SEP":0,"OCT":0,"NOV":0},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":18},{"species":"Terminila","readyToDispatch":5000,"totalDispatched":500,"batch1Monthly":{"AUG":1125,"SEP":1125,"OCT":1125,"NOV":1125},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":19},{"species":"Kanar","readyToDispatch":1000,"totalDispatched":0,"batch1Monthly":{"AUG":250,"SEP":250,"OCT":250,"NOV":250},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":20},{"species":"Lasora","readyToDispatch":15000,"totalDispatched":200,"batch1Monthly":{"AUG":3700,"SEP":3700,"OCT":3700,"NOV":3700},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":21}];
 let _nurseryInventory=[];
+function nurserySpeciesOptions(){return _nurseryInventory.map(r=>r.species).slice().sort((a,b)=>a.localeCompare(b));}
 // ─── NURSERY DISPATCHED — computed live from the Dispatch Log's species text ──
 // Bulk-logged dispatches store one clean species name per record (with that
 // record's own qty). Manually-logged multi-species deliveries are typed as
@@ -2139,6 +2145,12 @@ function matchNurseryAlias(raw){
   return norm?(_NURSERY_ALIAS_LOOKUP[norm]||null):null;
 }
 function parseSpeciesQtyFromDispatch(d){
+  // New dispatches (logged via the species dropdown, single or bulk form) carry a
+  // clean structured breakdown — no parsing needed. Older dispatches, logged before
+  // that existed, only have free text and are parsed on a best-effort basis below.
+  if(Array.isArray(d.speciesBreakdown)&&d.speciesBreakdown.length){
+    return d.speciesBreakdown.map(r=>({name:r.species,qty:Number(r.qty)||0}));
+  }
   const text=(d.species||'').trim();
   if(!text)return[];
   const pairs=[...text.matchAll(/([A-Za-z][A-Za-z\s\-\/\(\)]*?)\s*:\s*([\d,]+)/g)];
@@ -2689,16 +2701,30 @@ function exportPlan(){
 
 // ─── DISPATCH MODAL ───────────────────────────────────────────────────────────
 let delTarget=null;
-function setQty(n){document.getElementById('d-qty').value=n;}
+let _dSpeciesRowN=0;
+function addDSpeciesRow(){
+  const id=_dSpeciesRowN++;
+  const opts=nurserySpeciesOptions();
+  const row=document.createElement('div');
+  row.className='d-sp-row';
+  row.id='d-sp-row-'+id;
+  row.innerHTML=`<select class="d-sp-species">${opts.map(sp=>`<option value="${esc(sp)}">${esc(sp)}</option>`).join('')}</select><input type="number" class="d-sp-qty" placeholder="Qty" min="1" oninput="updateDTotal()"><button type="button" class="btn btn-s btn-d" onclick="document.getElementById('d-sp-row-${id}').remove();updateDTotal()" title="Remove row"><i class="ti ti-x"></i> Remove</button>`;
+  document.getElementById('d-species-rows').appendChild(row);
+  updateDTotal();
+}
+function updateDTotal(){
+  const qtys=[...document.querySelectorAll('#d-species-rows .d-sp-qty')].map(el=>parseInt(el.value)||0);
+  document.getElementById('d-total').textContent=fmt(qtys.reduce((a,b)=>a+b,0));
+}
 function openDM(schoolId){
   const sel=document.getElementById('d-cluster');
   sel.innerHTML=state.schools.map(s=>`<option value="${s.id}">${s.cluster} — ${s.city} (${fmt(remaining(s))} remaining)</option>`).join('');
   if(schoolId)sel.value=schoolId;
   document.getElementById('d-date').value=todayLocal();
-  document.getElementById('d-qty').value='';
   document.getElementById('d-by').value=localStorage.getItem('bhs_by')||'';
-  document.getElementById('d-sp').value='';
   document.getElementById('d-notes').value='';
+  document.getElementById('d-species-rows').innerHTML='';
+  addDSpeciesRow();
   document.getElementById('dm').classList.remove('hidden');
 }
 
@@ -2711,12 +2737,17 @@ document.addEventListener('click',e=>{
 });
 async function saveDispatch(){
   const sid=parseInt(document.getElementById('d-cluster').value);
-  const qty=parseInt(document.getElementById('d-qty').value)||0;
-  if(!sid||qty<=0){alert('Select a cluster and enter a quantity.');return;}
+  const speciesBreakdown=[...document.querySelectorAll('#d-species-rows .d-sp-row')].map(row=>({
+    species:row.querySelector('.d-sp-species').value,
+    qty:parseInt(row.querySelector('.d-sp-qty').value)||0
+  })).filter(r=>r.qty>0);
+  const qty=speciesBreakdown.reduce((a,r)=>a+r.qty,0);
+  if(!sid||qty<=0){alert('Select a cluster and enter at least one species quantity.');return;}
   const s=state.schools.find(x=>x.id===sid);
   const by=document.getElementById('d-by').value.trim();
   if(by)localStorage.setItem('bhs_by',by);
-  const newDispatch={id:'d_'+Date.now(),schoolId:sid,cluster:s.cluster,city:s.city,date:document.getElementById('d-date').value,qty,species:document.getElementById('d-sp').value.trim(),notes:document.getElementById('d-notes').value.trim(),by,imported:false,createdAt:new Date().toISOString()};
+  const species=speciesBreakdown.map(r=>`${r.species}: ${fmt(r.qty)}`).join(', ');
+  const newDispatch={id:'d_'+Date.now(),schoolId:sid,cluster:s.cluster,city:s.city,date:document.getElementById('d-date').value,qty,species,speciesBreakdown,notes:document.getElementById('d-notes').value.trim(),by,imported:false,createdAt:new Date().toISOString()};
   closeMo();
   if(fbReady()){
     updateSyncBadge('saving');
@@ -2777,7 +2808,7 @@ function addBulkRow(){
   const row=document.createElement('div');
   row.className='bulk-row';
   row.id='bulk-row-'+id;
-  row.innerHTML=`<select class="bulk-cluster">${state.schools.map(s=>`<option value="${s.id}">${s.cluster} — ${s.city}</option>`).join('')}</select><input type="text" class="bulk-species" placeholder="Species"><input type="number" class="bulk-qty" placeholder="Qty" min="1" oninput="updateBulkTotal()"><button class="btn btn-s btn-d" onclick="document.getElementById('bulk-row-${id}').remove();updateBulkTotal()" title="Remove row"><i class="ti ti-x"></i> Remove</button>`;
+  row.innerHTML=`<select class="bulk-cluster">${state.schools.map(s=>`<option value="${s.id}">${s.cluster} — ${s.city}</option>`).join('')}</select><select class="bulk-species">${nurserySpeciesOptions().map(sp=>`<option value="${esc(sp)}">${esc(sp)}</option>`).join('')}</select><input type="number" class="bulk-qty" placeholder="Qty" min="1" oninput="updateBulkTotal()"><button class="btn btn-s btn-d" onclick="document.getElementById('bulk-row-${id}').remove();updateBulkTotal()" title="Remove row"><i class="ti ti-x"></i> Remove</button>`;
   document.getElementById('bulk-rows').appendChild(row);
   updateBulkTotal();
 }
@@ -2796,10 +2827,10 @@ async function saveBulkDispatch(){
   rows.forEach((row,i)=>{
     const sid=parseInt(row.querySelector('.bulk-cluster').value);
     const qty=parseInt(row.querySelector('.bulk-qty').value)||0;
-    const species=row.querySelector('.bulk-species').value.trim();
+    const species=row.querySelector('.bulk-species').value;
     if(!sid||qty<=0)return;
     const s=state.schools.find(x=>x.id===sid);
-    entries.push({id:'d_'+Date.now()+'_'+i,schoolId:sid,cluster:s.cluster,city:s.city,date,qty,species,notes:vehicle,by,imported:false,createdAt});
+    entries.push({id:'d_'+Date.now()+'_'+i,schoolId:sid,cluster:s.cluster,city:s.city,date,qty,species,speciesBreakdown:[{species,qty}],notes:vehicle,by,imported:false,createdAt});
   });
   if(!entries.length){alert('Enter a quantity for at least one cluster.');return;}
   closeMo();
