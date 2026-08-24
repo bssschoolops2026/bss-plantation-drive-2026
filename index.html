@@ -654,7 +654,7 @@ service cloud.firestore {
   <div class="fr"><label>Plant variety *</label><input type="text" id="nf-species" placeholder="e.g. Kachnar"></div>
   <div class="fg2">
     <div class="fr"><label>Total stock (3–4ft)</label><input type="number" id="nf-ready" min="0"></div>
-    <div class="fr"><label>Total Dispatched</label><input type="number" id="nf-dispatched" min="0"></div>
+    <div class="fr"><label>Total Dispatched <span style="font-weight:400;color:var(--tx3)">(calculated from Dispatch Log)</span></label><input type="number" id="nf-dispatched" min="0" readonly disabled style="background:var(--bg3);color:var(--tx2)"></div>
   </div>
   <div class="sec-t" style="margin-top:1rem">3–4ft batch — monthly (Aug–Nov)</div>
   <div class="fg4">
@@ -1424,11 +1424,12 @@ function renderDashNursery(){
   const el=document.getElementById('d-nursery');if(!el)return;
   const rows=_nurseryInventory||[];
   if(!rows.length){el.innerHTML=`<p style="color:var(--tx3);font-size:13px">No nursery data yet.</p>`;return;}
+  const dispatchTotals=computeSpeciesDispatchTotals().totals;
   const totReady=rows.reduce((a,r)=>a+(r.readyToDispatch||0),0);
-  const totDispatched=rows.reduce((a,r)=>a+(r.totalDispatched||0),0);
-  const totRemaining=rows.reduce((a,r)=>a+nurseryRemaining(r),0);
+  const totDispatched=rows.reduce((a,r)=>a+(dispatchTotals[r.species]||0),0);
+  const totRemaining=rows.reduce((a,r)=>a+nurseryRemaining(r,dispatchTotals[r.species]),0);
   const totUpcoming=rows.reduce((a,r)=>a+nurseryBatch2Total(r),0);
-  const totGrand=rows.reduce((a,r)=>a+nurseryGrandTotal(r),0);
+  const totGrand=rows.reduce((a,r)=>a+nurseryGrandTotal(r,dispatchTotals[r.species]),0);
   el.innerHTML=`<div class="metrics">
     <div class="metric"><div class="mlabel">Ready to dispatch</div><div class="mval">${fmt(totRemaining)}</div><div class="msub">current inventory</div></div>
     <div class="metric"><div class="mlabel">Already dispatched</div><div class="mval" style="color:var(--gr)">${fmt(totDispatched)}</div><div class="msub">of ${fmt(totReady)} total stock</div></div>
@@ -2099,9 +2100,70 @@ function editZoneNote(zoneId){
 // ─── NURSERY INVENTORY (Kasuri Farms stock, by species and height batch) ─────
 const NURSERY_SEED=[{"species":"Kachnar","readyToDispatch":40000,"totalDispatched":10750,"batch1Monthly":{"AUG":7313,"SEP":7313,"OCT":7312,"NOV":7312},"batch2Monthly":{"DEC":3000,"JAN":3000,"FEB":3000,"MAR":3000,"APR":3000},"id":1},{"species":"Amaltas","readyToDispatch":40000,"totalDispatched":7775,"batch1Monthly":{"AUG":8057,"SEP":8056,"OCT":8056,"NOV":8056},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":2},{"species":"Lemon (Khati)","readyToDispatch":20000,"totalDispatched":2600,"batch1Monthly":{"AUG":4350,"SEP":4350,"OCT":4350,"NOV":4350},"batch2Monthly":{"DEC":3000,"JAN":3000,"FEB":3000,"MAR":3000,"APR":3000},"id":3},{"species":"Gul-e-Nishter","readyToDispatch":10000,"totalDispatched":1600,"batch1Monthly":{"AUG":2100,"SEP":2100,"OCT":2100,"NOV":2100},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":4},{"species":"Sukh Chayn","readyToDispatch":6000,"totalDispatched":4690,"batch1Monthly":{"AUG":328,"SEP":328,"OCT":327,"NOV":327},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":5},{"species":"Jamun","readyToDispatch":18000,"totalDispatched":4865,"batch1Monthly":{"AUG":3284,"SEP":3284,"OCT":3284,"NOV":3283},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":6},{"species":"Alstonia","readyToDispatch":30000,"totalDispatched":5830,"batch1Monthly":{"AUG":6043,"SEP":6043,"OCT":6042,"NOV":6042},"batch2Monthly":{"DEC":1600,"JAN":1600,"FEB":1600,"MAR":1600,"APR":1600},"id":7},{"species":"Moringa","readyToDispatch":50000,"totalDispatched":7800,"batch1Monthly":{"AUG":10550,"SEP":10550,"OCT":10550,"NOV":10550},"batch2Monthly":{"DEC":6000,"JAN":6000,"FEB":6000,"MAR":6000,"APR":6000},"id":8},{"species":"Gum Arabic","readyToDispatch":4425,"totalDispatched":4425,"batch1Monthly":{"AUG":0,"SEP":0,"OCT":0,"NOV":0},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":9},{"species":"Mulberry","readyToDispatch":24000,"totalDispatched":5960,"batch1Monthly":{"AUG":4510,"SEP":4510,"OCT":4510,"NOV":4510},"batch2Monthly":{"DEC":5000,"JAN":5000,"FEB":5000,"MAR":5000,"APR":5000},"id":10},{"species":"Neem/Bakain","readyToDispatch":40000,"totalDispatched":9020,"batch1Monthly":{"AUG":7745,"SEP":7745,"OCT":7745,"NOV":7745},"batch2Monthly":{"DEC":6000,"JAN":6000,"FEB":6000,"MAR":6000,"APR":6000},"id":11},{"species":"Arjun","readyToDispatch":10000,"totalDispatched":3390,"batch1Monthly":{"AUG":1653,"SEP":1653,"OCT":1652,"NOV":1652},"batch2Monthly":{"DEC":10000,"JAN":10000,"FEB":10000,"MAR":10000,"APR":10000},"id":12},{"species":"Sheesham","readyToDispatch":13000,"totalDispatched":5000,"batch1Monthly":{"AUG":2000,"SEP":2000,"OCT":2000,"NOV":2000},"batch2Monthly":{"DEC":10000,"JAN":10000,"FEB":10000,"MAR":10000,"APR":10000},"id":13},{"species":"Semal","readyToDispatch":18000,"totalDispatched":1300,"batch1Monthly":{"AUG":4175,"SEP":4175,"OCT":4175,"NOV":4175},"batch2Monthly":{"DEC":6000,"JAN":6000,"FEB":6000,"MAR":6000,"APR":6000},"id":14},{"species":"Poplar","readyToDispatch":18575,"totalDispatched":2900,"batch1Monthly":{"AUG":3919,"SEP":3919,"OCT":3919,"NOV":3918},"batch2Monthly":{"DEC":2000,"JAN":2000,"FEB":2000,"MAR":2000,"APR":2000},"id":15},{"species":"Gavava","readyToDispatch":20000,"totalDispatched":4400,"batch1Monthly":{"AUG":3900,"SEP":3900,"OCT":3900,"NOV":3900},"batch2Monthly":{"DEC":4000,"JAN":4000,"FEB":4000,"MAR":4000,"APR":4000},"id":16},{"species":"Sharen","readyToDispatch":1000,"totalDispatched":1000,"batch1Monthly":{"AUG":0,"SEP":0,"OCT":0,"NOV":0},"batch2Monthly":{"DEC":7400,"JAN":7400,"FEB":7400,"MAR":7400,"APR":7400},"id":17},{"species":"Beri","readyToDispatch":1000,"totalDispatched":1000,"batch1Monthly":{"AUG":0,"SEP":0,"OCT":0,"NOV":0},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":18},{"species":"Terminila","readyToDispatch":5000,"totalDispatched":500,"batch1Monthly":{"AUG":1125,"SEP":1125,"OCT":1125,"NOV":1125},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":19},{"species":"Kanar","readyToDispatch":1000,"totalDispatched":0,"batch1Monthly":{"AUG":250,"SEP":250,"OCT":250,"NOV":250},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":20},{"species":"Lasora","readyToDispatch":15000,"totalDispatched":200,"batch1Monthly":{"AUG":3700,"SEP":3700,"OCT":3700,"NOV":3700},"batch2Monthly":{"DEC":0,"JAN":0,"FEB":0,"MAR":0,"APR":0},"id":21}];
 let _nurseryInventory=[];
-function nurseryRemaining(row){return Math.max(0,(row.readyToDispatch||0)-(row.totalDispatched||0));}
+// ─── NURSERY DISPATCHED — computed live from the Dispatch Log's species text ──
+// Bulk-logged dispatches store one clean species name per record (with that
+// record's own qty). Manually-logged multi-species deliveries are typed as
+// "Name: Qty, Name: Qty, ..." in one record's species field — parsed below.
+// Spellings drift (e.g. "Guava"/"Amrood" for what Nursery Inventory calls
+// "Gavava"), so an alias table absorbs known variants; anything unmatched
+// (e.g. Cassia, Hibiscus — species outside this Kasuri Farms stock list) or
+// with no species text at all (older imported dispatches) is safely skipped
+// rather than mis-attributed to the wrong variety.
+const NURSERY_ALIASES={
+  'Kachnar':['kachnar'],
+  'Amaltas':['amaltas'],
+  'Lemon (Khati)':['lemon (khati)','lemon khati','lemon','khati'],
+  'Gul-e-Nishter':['gul-e-nishter','gul e nishter','gulenishter','nishter'],
+  'Sukh Chayn':['sukh chayn','sukh chain','sukhchayn'],
+  'Jamun':['jamun'],
+  'Alstonia':['alstonia'],
+  'Moringa':['moringa'],
+  'Gum Arabic':['gum arabic','gumarabic'],
+  'Mulberry':['mulberry','shahtoot','shehtoot','toot'],
+  'Neem/Bakain':['neem','bakain','neem/bakain','neem (bakain)','neem bakain'],
+  'Arjun':['arjun'],
+  'Sheesham':['sheesham','shesham','shisham'],
+  'Semal':['semal','simal'],
+  'Poplar':['poplar','popular'],
+  'Gavava':['gavava','guava','amrood'],
+  'Sharen':['sharen','shreen','shreein','shirin'],
+  'Beri':['beri','beri patta','ber'],
+  'Terminila':['terminila','terminilia','terminalia'],
+  'Kanar':['kanar'],
+  'Lasora':['lasora'],
+};
+const _NURSERY_ALIAS_LOOKUP={};
+Object.entries(NURSERY_ALIASES).forEach(([canon,aliases])=>{aliases.forEach(a=>{_NURSERY_ALIAS_LOOKUP[a]=canon;});});
+function matchNurseryAlias(raw){
+  const norm=(raw||'').toLowerCase().replace(/\s+/g,' ').trim();
+  return norm?(_NURSERY_ALIAS_LOOKUP[norm]||null):null;
+}
+function parseSpeciesQtyFromDispatch(d){
+  const text=(d.species||'').trim();
+  if(!text)return[];
+  const pairs=[...text.matchAll(/([A-Za-z][A-Za-z\s\-\/\(\)]*?)\s*:\s*([\d,]+)/g)];
+  if(pairs.length)return pairs.map(m=>({name:m[1].trim(),qty:parseInt(m[2].replace(/,/g,''),10)||0}));
+  return[{name:text,qty:d.qty||0}]; // no "Name: Qty" breakdown — whole record is one species
+}
+function computeSpeciesDispatchTotals(){
+  // Imported entries (the pre-existing tracking-sheet baseline, logged before this
+  // app's Dispatch Log existed) are excluded on purpose: they were dispatched from an
+  // earlier phase, unrelated to the current Kasuri Farms stock Nursery Inventory
+  // tracks. Only manually-logged deliveries draw from - and should count against -
+  // this current inventory.
+  const totals={};let attributed=0,overall=0;
+  state.dispatches.filter(d=>!d.deleted&&!d.imported).forEach(d=>{
+    overall+=d.qty||0;
+    parseSpeciesQtyFromDispatch(d).forEach(({name,qty})=>{
+      const canon=matchNurseryAlias(name);
+      if(canon){totals[canon]=(totals[canon]||0)+qty;attributed+=qty;}
+    });
+  });
+  return{totals,attributed,overall};
+}
+function nurseryRemaining(row,dispatched){return Math.max(0,(row.readyToDispatch||0)-(dispatched||0));}
 function nurseryBatch2Total(row){return Object.values(row.batch2Monthly||{}).reduce((a,b)=>a+(Number(b)||0),0);}
-function nurseryGrandTotal(row){return nurseryRemaining(row)+nurseryBatch2Total(row);}
+function nurseryGrandTotal(row,dispatched){return nurseryRemaining(row,dispatched)+nurseryBatch2Total(row);}
 function saveNurseryInventoryLocal(){
   localStorage.setItem('bhs_nursery_inventory_v1',JSON.stringify(_nurseryInventory));
 }
@@ -2145,31 +2207,35 @@ async function persistNurseryInventory(){
 function renderNurseryInventory(){
   const rows=_nurseryInventory;
   document.getElementById('nursery-admin-btn').innerHTML=isSettingsAdmin()?`<button class="btn btn-p" onclick="openNurseryAdmin()"><i class="ti ti-plant-2"></i>Manage nursery inventory</button>`:'';
+  const{totals:dispatchTotals,attributed,overall}=computeSpeciesDispatchTotals();
   const totReady=rows.reduce((a,r)=>a+(r.readyToDispatch||0),0);
-  const totDispatched=rows.reduce((a,r)=>a+(r.totalDispatched||0),0);
-  const totRemaining=rows.reduce((a,r)=>a+nurseryRemaining(r),0);
+  const totDispatched=rows.reduce((a,r)=>a+(dispatchTotals[r.species]||0),0);
+  const totRemaining=rows.reduce((a,r)=>a+nurseryRemaining(r,dispatchTotals[r.species]),0);
   const totUpcoming=rows.reduce((a,r)=>a+nurseryBatch2Total(r),0);
-  const totGrand=rows.reduce((a,r)=>a+nurseryGrandTotal(r),0);
+  const totGrand=rows.reduce((a,r)=>a+nurseryGrandTotal(r,dispatchTotals[r.species]),0);
   const pctAll=totReady>0?Math.round(totDispatched/totReady*100):0;
+  const coveragePct=overall>0?Math.round(attributed/overall*100):0;
   document.getElementById('nursery-summary').innerHTML=`
     <div class="metrics" style="margin-bottom:1rem">
       <div class="metric"><div class="mlabel">Ready to dispatch (3–4ft)</div><div class="mval">${fmt(totRemaining)}</div><div class="msub">current inventory, across ${rows.length} varieties</div></div>
       <div class="metric"><div class="mlabel">Already dispatched</div><div class="mval" style="color:var(--gr)">${fmt(totDispatched)}</div><div class="msub">${pctAll}% of total stock (${fmt(totReady)})</div></div>
       <div class="metric"><div class="mlabel">Upcoming (6in–1ft, Dec–Apr)</div><div class="mval" style="color:var(--am)">${fmt(totUpcoming)}</div><div class="msub">next growth batch</div></div>
       <div class="metric"><div class="mlabel">Grand total</div><div class="mval">${fmt(totGrand)}</div><div class="msub">both batches combined</div></div>
-    </div>`;
+    </div>
+    <div style="font-size:11px;color:var(--tx3);margin:-6px 0 1rem">"Dispatched" is calculated live from manually-logged Dispatch Log deliveries drawn from this current stock — ${fmt(attributed)} of ${fmt(overall)} such plants (${coveragePct}%) have a species recorded and matched to a variety here. Imported/historical deliveries (from before this stock) and deliveries logged without a species breakdown aren't counted toward any variety.</div>`;
   document.getElementById('nursery-table').innerHTML=`<div class="tw"><table>
     <thead><tr>
       <th>Variety</th><th>Ready to dispatch</th><th>Dispatched</th><th>Upcoming (6in–1ft)</th><th>Grand total</th><th></th>
     </tr></thead>
     <tbody>${rows.map(r=>{
-      const pct=r.readyToDispatch>0?Math.min(100,Math.round(r.totalDispatched/r.readyToDispatch*100)):0;
+      const dispatched=dispatchTotals[r.species]||0;
+      const pct=r.readyToDispatch>0?Math.min(100,Math.round(dispatched/r.readyToDispatch*100)):0;
       return `<tr tabindex="0" onclick="showNurseryDetail(${r.id})" style="cursor:pointer" title="Click for monthly breakdown">
       <td><strong class="cluster-link" style="text-decoration:underline;text-decoration-color:var(--bd2)">${esc(r.species)}</strong></td>
-      <td class="tabular" style="font-weight:600">${fmt(nurseryRemaining(r))}</td>
+      <td class="tabular" style="font-weight:600">${fmt(nurseryRemaining(r,dispatched))}</td>
       <td style="min-width:90px">${progBar(pct)}</td>
       <td class="tabular" style="color:var(--am-d)">${fmt(nurseryBatch2Total(r))}</td>
-      <td class="tabular" style="font-weight:600;color:var(--gr-d)">${fmt(nurseryGrandTotal(r))}</td>
+      <td class="tabular" style="font-weight:600;color:var(--gr-d)">${fmt(nurseryGrandTotal(r,dispatched))}</td>
       <td><button class="btn btn-s" onclick="event.stopPropagation();showNurseryDetail(${r.id})"><i class="ti ti-calendar"></i> Months</button></td>
     </tr>`;}).join('')}</tbody>
   </table></div>`;
@@ -2177,17 +2243,18 @@ function renderNurseryInventory(){
 }
 function showNurseryDetail(id){
   const r=_nurseryInventory.find(x=>x.id===id);if(!r)return;
-  const pct=r.readyToDispatch>0?Math.min(100,Math.round(r.totalDispatched/r.readyToDispatch*100)):0;
+  const dispatched=computeSpeciesDispatchTotals().totals[r.species]||0;
+  const pct=r.readyToDispatch>0?Math.min(100,Math.round(dispatched/r.readyToDispatch*100)):0;
   const monthBar=(label,val,max,color)=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--tx3);margin-bottom:2px"><span>${label}</span><span class="tabular" style="font-weight:600;color:${color}">${fmt(val)}</span></div><div class="prog"><div class="pf" style="width:${max>0?Math.round(val/max*100):0}%;background:${color}"></div></div></div>`;
   const b1max=Math.max(1,...Object.values(r.batch1Monthly));
   const b2max=Math.max(1,...Object.values(r.batch2Monthly));
   document.getElementById('nursery-detail-body').innerHTML=`
     <h3 style="margin-bottom:1rem"><i class="ti ti-plant-2" style="color:var(--gr)"></i> ${esc(r.species)}</h3>
     <div class="metrics" style="margin-bottom:1.25rem">
-      <div class="metric"><div class="mlabel">Ready to dispatch</div><div class="mval">${fmt(nurseryRemaining(r))}</div><div class="msub">current inventory</div></div>
-      <div class="metric"><div class="mlabel">Dispatched</div><div class="mval" style="color:var(--gr)">${fmt(r.totalDispatched)}</div><div class="msub">${pct}% of total stock (${fmt(r.readyToDispatch)})</div></div>
+      <div class="metric"><div class="mlabel">Ready to dispatch</div><div class="mval">${fmt(nurseryRemaining(r,dispatched))}</div><div class="msub">current inventory</div></div>
+      <div class="metric"><div class="mlabel">Dispatched</div><div class="mval" style="color:var(--gr)">${fmt(dispatched)}</div><div class="msub">${pct}% of total stock (${fmt(r.readyToDispatch)}) · from Dispatch Log</div></div>
       <div class="metric"><div class="mlabel">Upcoming (6in–1ft)</div><div class="mval" style="color:var(--am)">${fmt(nurseryBatch2Total(r))}</div></div>
-      <div class="metric"><div class="mlabel">Grand total</div><div class="mval" style="color:var(--gr-d)">${fmt(nurseryGrandTotal(r))}</div></div>
+      <div class="metric"><div class="mlabel">Grand total</div><div class="mval" style="color:var(--gr-d)">${fmt(nurseryGrandTotal(r,dispatched))}</div></div>
     </div>
     <div class="cd-grid">
       <div>
@@ -2215,15 +2282,18 @@ function openNurseryAdmin(){
 }
 function renderNurseryAdmin(){
   const el=document.getElementById('nursery-admin-list');if(!el)return;
-  el.innerHTML=_nurseryInventory.map(r=>`<tr>
+  const dispatchTotals=computeSpeciesDispatchTotals().totals;
+  el.innerHTML=_nurseryInventory.map(r=>{
+    const dispatched=dispatchTotals[r.species]||0;
+    return `<tr>
     <td><strong>${esc(r.species)}</strong></td>
     <td class="tabular">${fmt(r.readyToDispatch)}</td>
-    <td class="tabular">${fmt(r.totalDispatched)}</td>
-    <td class="tabular">${fmt(nurseryRemaining(r))}</td>
+    <td class="tabular" title="Calculated live from the Dispatch Log">${fmt(dispatched)}</td>
+    <td class="tabular">${fmt(nurseryRemaining(r,dispatched))}</td>
     <td class="tabular">${fmt(nurseryBatch2Total(r))}</td>
-    <td class="tabular" style="font-weight:600">${fmt(nurseryGrandTotal(r))}</td>
+    <td class="tabular" style="font-weight:600">${fmt(nurseryGrandTotal(r,dispatched))}</td>
     <td style="white-space:nowrap"><button class="btn btn-s" onclick="openNurseryRowForm(${r.id})"><i class="ti ti-pencil"></i> Edit</button> <button class="btn btn-s btn-d" onclick="deleteNurseryRow(${r.id})"><i class="ti ti-trash"></i> Delete</button></td>
-  </tr>`).join('');
+  </tr>`;}).join('');
 }
 function openNurseryRowForm(id){
   document.getElementById('nursery-admin-modal').classList.add('hidden');
@@ -2232,7 +2302,7 @@ function openNurseryRowForm(id){
   document.getElementById('nf-id').value=r?r.id:'';
   document.getElementById('nf-species').value=r?r.species:'';
   document.getElementById('nf-ready').value=r?r.readyToDispatch:'';
-  document.getElementById('nf-dispatched').value=r?r.totalDispatched:'';
+  document.getElementById('nf-dispatched').value=r?(computeSpeciesDispatchTotals().totals[r.species]||0):0;
   ['AUG','SEP','OCT','NOV'].forEach(m=>{document.getElementById('nf-b1-'+m).value=r?r.batch1Monthly[m]:'';});
   ['DEC','JAN','FEB','MAR','APR'].forEach(m=>{document.getElementById('nf-b2-'+m).value=r?r.batch2Monthly[m]:'';});
   document.getElementById('nursery-row-modal').classList.remove('hidden');
@@ -2242,7 +2312,7 @@ function saveNurseryRow(){
   const species=document.getElementById('nf-species').value.trim();
   if(!species){alert('Plant variety name is required.');return;}
   const readyToDispatch=parseInt(document.getElementById('nf-ready').value)||0;
-  const totalDispatched=parseInt(document.getElementById('nf-dispatched').value)||0;
+  const totalDispatched=computeSpeciesDispatchTotals().totals[species]||0;
   const batch1Monthly={};['AUG','SEP','OCT','NOV'].forEach(m=>{batch1Monthly[m]=parseInt(document.getElementById('nf-b1-'+m).value)||0;});
   const batch2Monthly={};['DEC','JAN','FEB','MAR','APR'].forEach(m=>{batch2Monthly[m]=parseInt(document.getElementById('nf-b2-'+m).value)||0;});
   const isEdit=!!idRaw;
