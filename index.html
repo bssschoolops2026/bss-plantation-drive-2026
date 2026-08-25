@@ -301,7 +301,15 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
     </div>
   </div>
   <div class="fr" style="margin-bottom:.75rem;max-width:320px"><input type="text" id="dt-search" placeholder="Search cluster, city, species, notes, logged by..." oninput="dispatchSearch=this.value;dispatchPage=0;rDispatch()"></div>
-  <div class="card" style="padding:0"><div class="tw"><table><thead><tr><th>Date</th><th>Cluster</th><th>City</th><th>Qty sent</th><th>Species / notes</th><th>Logged by</th><th>Source</th><th></th></tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"></div>
+  <div class="card" style="padding:0"><div class="tw"><table><thead><tr>
+    <th class="sortable" onclick="sortDispatch('date')">Date <i class="ti ti-arrows-sort sort-icon" data-col="date"></i></th>
+    <th class="sortable" onclick="sortDispatch('cluster')">Cluster <i class="ti ti-arrows-sort sort-icon" data-col="cluster"></i></th>
+    <th class="sortable" onclick="sortDispatch('city')">City <i class="ti ti-arrows-sort sort-icon" data-col="city"></i></th>
+    <th class="sortable" onclick="sortDispatch('qty')">Qty sent <i class="ti ti-arrows-sort sort-icon" data-col="qty"></i></th>
+    <th>Species / notes</th>
+    <th class="sortable" onclick="sortDispatch('by')">Logged by <i class="ti ti-arrows-sort sort-icon" data-col="by"></i></th>
+    <th>Source</th><th></th>
+  </tr></thead><tbody id="dt"></tbody></table><div id="de" class="empty"></div>
   <div class="pager" id="dt-pager"></div>
   </div>
 </div>
@@ -1479,6 +1487,11 @@ function sortClusters(col){
   if(clusterSort.col===col){clusterSort.dir*=-1;}else{clusterSort.col=col;clusterSort.dir=1;}
   rClusters();
 }
+let dispatchSort={col:'date',dir:-1};
+function sortDispatch(col){
+  if(dispatchSort.col===col){dispatchSort.dir*=-1;}else{dispatchSort.col=col;dispatchSort.dir=col==='date'?-1:1;}
+  rDispatch();
+}
 // ─── PAGINATION (shared by Clusters and Dispatch Log — keeps rendering fast as data grows) ──
 const PAGE_SIZE=20;
 let clusterPage=0, dispatchPage=0, dispatchSearch='';
@@ -1602,8 +1615,22 @@ function rDispatch(){
     return;
   }
   const q=dispatchSearch.trim().toLowerCase();
-  let all=state.dispatches.filter(d=>!d.deleted).slice().reverse();
+  let all=state.dispatches.filter(d=>!d.deleted).slice();
   if(q)all=all.filter(d=>[d.cluster,d.city,d.species,d.notes,d.by].some(f=>(f||'').toLowerCase().includes(q)));
+  const{col,dir}=dispatchSort;
+  all.sort((a,b)=>{
+    let av,bv;
+    switch(col){
+      case 'date':av=a.date?new Date(a.date).getTime():-Infinity;bv=b.date?new Date(b.date).getTime():-Infinity;break;
+      case 'cluster':av=a.cluster||'';bv=b.cluster||'';break;
+      case 'city':av=a.city||'';bv=b.city||'';break;
+      case 'qty':av=a.qty||0;bv=b.qty||0;break;
+      case 'by':av=a.by||'';bv=b.by||'';break;
+      default:av=a.date?new Date(a.date).getTime():-Infinity;bv=b.date?new Date(b.date).getTime():-Infinity;
+    }
+    if(typeof av==='string')return av.localeCompare(bv)*dir;
+    return (av-bv)*dir;
+  });
   if(!all.length){
     document.getElementById('de').classList.remove('hidden');
     document.getElementById('de').innerHTML=`${saplingSvg(48)}<div>No dispatches match "${esc(dispatchSearch)}"</div>`;
@@ -1620,6 +1647,11 @@ function rDispatch(){
     const del=d.imported?'':` <button class="btn btn-s btn-d" data-del-id="${esc(d.id)}" title="Delete"><i class="ti ti-trash"></i> Delete</button>`;
     return`<tr><td style="font-size:12px;white-space:nowrap">${fmtD(d.date)}</td><td><strong>${esc(d.cluster)}</strong></td><td style="font-size:12px;color:var(--tx2)">${esc(d.city)}</td><td style="font-weight:600;color:var(--gr)">${fmt(d.qty)}</td><td style="font-size:11px;color:var(--tx2);max-width:200px">${esc(d.species||d.notes||'—')}</td><td style="font-size:12px">${esc(d.by||'—')}</td><td>${src}</td><td>${del}</td></tr>`;}).join('');
   renderPager('dt-pager',dispatchPage,all.length,'goToDispatchPage');
+  document.querySelectorAll('#pane-dispatch .sort-icon').forEach(ic=>{
+    const col=ic.dataset.col;
+    if(col===dispatchSort.col){ic.className='ti '+(dispatchSort.dir===1?'ti-sort-ascending':'ti-sort-descending')+' sort-icon active';}
+    else{ic.className='ti ti-arrows-sort sort-icon';}
+  });
 }
 
 // ─── ALERTS ───────────────────────────────────────────────────────────────────
