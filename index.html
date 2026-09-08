@@ -1395,11 +1395,12 @@ function closeMo(){document.querySelectorAll('.mo').forEach(x=>x.classList.add('
 function rDash(){
   const tot=state.schools.reduce((a,s)=>a+s.required,0);
   const dis=state.schools.reduce((a,s)=>a+s.dispatched,0);
+  const dis2026=state.dispatches.filter(d=>!d.deleted&&d.date&&new Date(d.date).getFullYear()===2026).reduce((a,d)=>a+(parseInt(d.qty)||0),0);
   const rem=state.schools.reduce((a,s)=>a+remaining(s),0);
   const p=tot>0?Math.round(dis/tot*100):0;
   animateCount('m1',tot);
   animateCount('m2',dis);
-  document.getElementById('m2s').textContent=p+'% complete';
+  document.getElementById('m2s').textContent=p+'% complete · '+fmt(dis2026)+' in 2026';
   animateCount('m3',rem);
   document.getElementById('m4').textContent=p+'%';
   document.getElementById('m4s').textContent=fmt(dis)+' of '+fmt(tot)+' dispatched';
