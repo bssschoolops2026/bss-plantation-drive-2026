@@ -802,7 +802,7 @@ const SD=[
 [3,"N-04","Rawalpindi/Attock/Wah","N",9800,0,null,"Nabila Khalid",null,null],
 [4,"N-06 (Bahria)","Islamabad","N",2400,0,null,"Nighat Javed",null,null],
 [5,"N-06 (PWD)","Islamabad","N",1200,0,null,"Nighat Javed",null,null],
-[6,"N-07 (multi-city)","Chakwal/ISL/Pindi","N",31000,4000,null,"Ayesha Ansar",null,"2026-03-28"],
+[6,"N-07 (multi-city)","Chakwal/ISL/Pindi","N",31000,0,null,"Ayesha Ansar",null,null],
 [7,"N-07 (Chakwal only)","Chakwal","N",3200,0,"2026-04-29","Ayesha Ansar",null,null],
 [8,"N-08","Gujrat","N",4000,0,"2026-05-23","Kashif Hussain",null,null],
 [9,"N-09","Peshawar","N",3000,0,"2026-05-12","Sadia Yousaf",null,null],
@@ -1409,7 +1409,7 @@ function rDash(){
     .sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate)).slice(0,8);
   document.getElementById('d-urgent').innerHTML=urgent.length===0?`<div style="color:var(--tx3);font-size:13px;padding:.5rem 0">No overdue or imminent dispatches — <a href="#" onclick="go('alerts')" style="color:var(--bl-d)">check Alerts tab</a> for full picture.</div>`:
     urgent.map(s=>{const d=du(s.plantingDate);
-      const msg=d<0?`Overdue ${Math.abs(d)}d`:d===0?'Today!':d===1?'Tomorrow':`In ${d}d`;
+      const msg=d<0?'Overdue':d===0?'Today!':d===1?'Tomorrow':`In ${d}d`;
       const cls=d<0?'b-pending':d<=2?'b-pending':'b-partial';
       return`<div class="stat-row"><div><strong>${s.cluster}</strong> <span style="font-size:11px;color:var(--tx3)">${s.city}</span><br><span style="font-size:11px;color:var(--tx3)">${getConvenor(s)} · ${fmt(remaining(s))} plants pending</span></div><span class="badge ${cls}">${msg}</span></div>`;}).join('');
 
@@ -1424,7 +1424,7 @@ function rDash(){
   const upLabel=up.length>0?`Upcoming ${up.length} dispatch${up.length>1?'es':''} in next 30 days`:`No upcoming dates — showing ${Math.min(overdue.length,5)} most recently overdue`;
   document.getElementById('d-upcoming').innerHTML=upShow.length===0?'<p style="color:var(--tx3);font-size:13px">No dates set. Assign planting dates in the cluster data to see scheduling.</p>':
     upShow.map(s=>{const d=du(s.plantingDate);const past=d!==null&&d<=0;
-    return`<div class="stat-row"><div><strong>${s.cluster}</strong> — ${s.city}<br><span style="font-size:11px;color:${past?'var(--re-d)':'var(--tx3)'}">${getConvenor(s)} · Planting ${fmtD(s.plantingDate)}${past?` <strong>(overdue ${Math.abs(d)}d)</strong>`:''} · ${fmt(remaining(s))} needed</span></div><button class="btn btn-s" onclick="openDM(${s.id})">Log</button></div>`;}).join('')+
+    return`<div class="stat-row"><div><strong>${s.cluster}</strong> — ${s.city}<br><span style="font-size:11px;color:${past?'var(--re-d)':'var(--tx3)'}">${getConvenor(s)} · Planting ${fmtD(s.plantingDate)}${past?` <strong>(overdue)</strong>`:''} · ${fmt(remaining(s))} needed</span></div><button class="btn btn-s" onclick="openDM(${s.id})">Log</button></div>`;}).join('')+
     `<div style="font-size:11px;color:var(--tx3);margin-top:8px;padding-top:8px;border-top:.5px solid var(--bd)">${upLabel} · <a href="#" onclick="go('alerts')" style="color:var(--bl-d)">View all alerts →</a></div>`;
   renderActivityFeed();
   renderDashNursery();
