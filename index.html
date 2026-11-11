@@ -1645,7 +1645,7 @@ function rDispatch(){
   const pageItems=all.slice(dispatchPage*PAGE_SIZE,(dispatchPage+1)*PAGE_SIZE);
   document.getElementById('dt').innerHTML=pageItems.map((d)=>{
     const src=d.imported?'<span class="badge b-imp">Imported</span>':'<span class="badge b-done">Manual</span>';
-    const del=d.imported?'':` <button class="btn btn-s btn-d" data-del-id="${esc(d.id)}" title="Delete"><i class="ti ti-trash"></i> Delete</button>`;
+    const del=` <button class="btn btn-s btn-d" data-del-id="${esc(d.id)}" title="Delete"><i class="ti ti-trash"></i> Delete</button>`;
     return`<tr><td style="font-size:12px;white-space:nowrap">${fmtD(d.date)}</td><td><strong>${esc(d.cluster)}</strong></td><td style="font-size:12px;color:var(--tx2)">${esc(d.city)}</td><td style="font-weight:600;color:var(--gr)">${fmt(d.qty)}</td><td style="font-size:11px;color:var(--tx2);max-width:200px">${esc(d.species||d.notes||'—')}</td><td style="font-size:12px">${esc(d.by||'—')}</td><td>${src}</td><td>${del}</td></tr>`;}).join('');
   renderPager('dt-pager',dispatchPage,all.length,'goToDispatchPage');
   document.querySelectorAll('#pane-dispatch .sort-icon').forEach(ic=>{
