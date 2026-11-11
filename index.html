@@ -241,7 +241,7 @@ tr[tabindex]{cursor:default}tr[tabindex]:focus{outline:2px solid var(--gr);outli
     <div class="metric"><div class="mlabel">Total ordered</div><div class="mval" id="m1">—</div><div class="msub">across all clusters</div></div>
     <div class="metric"><div class="mlabel">Dispatched</div><div class="mval" id="m2" style="color:var(--gr)">—</div><div class="msub" id="m2s">0%</div></div>
     <div class="metric"><div class="mlabel">Remaining</div><div class="mval" id="m3" style="color:var(--am)">—</div><div class="msub">plants to send</div></div>
-    <div class="metric"><div class="mlabel">Project completion</div><div class="mval" id="m4" style="color:var(--gr)">—</div><div class="msub" id="m4s">dispatched vs required</div></div>
+    <div class="metric"><div class="mlabel">Planted since 2025</div><div class="mval" id="m4" style="color:var(--gr)">—</div><div class="msub" id="m4s">2025 Initiative + 2026 dispatched</div></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
     <div class="card stagger-item" id="dash-card-1"><div class="ch"><h3><i class="ti ti-alert-triangle" style="color:var(--re)"></i> Prepare immediately</h3></div><div id="d-urgent"></div></div>
@@ -1402,8 +1402,9 @@ function rDash(){
   animateCount('m2',dis);
   document.getElementById('m2s').textContent=p+'% complete · '+fmt(dis2026)+' in 2026';
   animateCount('m3',rem);
-  document.getElementById('m4').textContent=p+'%';
-  document.getElementById('m4s').textContent=fmt(dis)+' of '+fmt(tot)+' dispatched';
+  const last2025=get2025Data().reduce((a,d)=>a+d.tr,0);
+  animateCount('m4',last2025+dis);
+  document.getElementById('m4s').textContent=fmt(last2025)+' (2025) + '+fmt(dis)+' (2026)';
 
   const urgent=state.schools.filter(s=>{const d=du(s.plantingDate);return d!==null&&d<=7&&gst(s)!=='done';})
     .sort((a,b)=>new Date(a.plantingDate)-new Date(b.plantingDate)).slice(0,8);
